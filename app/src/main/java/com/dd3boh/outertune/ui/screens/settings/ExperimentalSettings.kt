@@ -25,7 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.ConfirmationNumber
 import androidx.compose.material.icons.rounded.Coronavirus
@@ -70,8 +69,6 @@ import com.dd3boh.outertune.constants.AudioOffloadKey
 import com.dd3boh.outertune.constants.DevSettingsKey
 import com.dd3boh.outertune.constants.MaxQueuesKey
 import com.dd3boh.outertune.constants.OobeStatusKey
-import com.dd3boh.outertune.constants.SCANNER_OWNER_LM
-import com.dd3boh.outertune.constants.ScannerImpl
 import com.dd3boh.outertune.constants.TabletUiKey
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.constants.VisitorDataKey
@@ -83,9 +80,7 @@ import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.dialog.CounterDialog
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.dataStore
-import com.dd3boh.outertune.utils.lmScannerCoroutine
 import com.dd3boh.outertune.utils.rememberPreference
-import com.dd3boh.outertune.utils.scanners.LocalMediaScanner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
