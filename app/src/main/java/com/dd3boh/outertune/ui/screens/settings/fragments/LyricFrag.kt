@@ -50,6 +50,8 @@ import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.dialog.CounterDialog
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ColumnScope.LyricFormatFrag() {
@@ -206,5 +208,37 @@ fun ColumnScope.LyricAdvancedFrag() {
             },
             isEnabled = lyricsFancy
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LyricFormatFragPreview() {
+    Column {
+        LyricFormatFrag()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LyricParserFragPreview() {
+    Column {
+        LyricParserFrag()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LyricSourceFragPreview() {
+    Column {
+        LyricSourceFrag()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LyricAdvancedFragPreview() {
+    Column {
+        LyricAdvancedFrag()
     }
 }

@@ -31,14 +31,21 @@ import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -180,4 +187,19 @@ fun SettingsScreen(
         windowInsets = TopBarInsets,
         scrollBehavior = scrollBehavior
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+private fun SettingsScreenPreview() {
+    CompositionLocalProvider(
+        LocalSnackbarHostState provides remember { SnackbarHostState() },
+        LocalPlayerAwareWindowInsets provides WindowInsets(0, 0, 0, 0),
+    ) {
+        SettingsScreen(
+            navController = rememberNavController(),
+            scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+        )
+    }
 }

@@ -54,6 +54,12 @@ import com.dd3boh.outertune.ui.screens.settings.fragments.PlaybackBehaviourFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.PlayerGeneralFrag
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.rememberPreference
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,4 +194,18 @@ fun PlayerSettings(
         windowInsets = TopBarInsets,
         scrollBehavior = scrollBehavior
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+private fun PlayerSettingsPreview() {
+    CompositionLocalProvider(
+        LocalPlayerAwareWindowInsets provides WindowInsets(0, 0, 0, 0),
+    ) {
+        PlayerSettings(
+            navController = rememberNavController(),
+            scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+        )
+    }
 }

@@ -72,6 +72,8 @@ import com.dd3boh.outertune.ui.component.button.IconButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.roundToInt
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun MiniPlayer(
@@ -263,5 +265,24 @@ fun MiniMediaInfo(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MiniMediaInfoPreview() {
+    CompositionLocalProvider(
+        LocalPlayerConnection provides null,
+    ) {
+        MiniMediaInfo(
+            mediaMetadata = MediaMetadata(
+                id = "preview",
+                title = "Preview Song Title",
+                artists = listOf(MediaMetadata.Artist(id = null, name = "Preview Artist")),
+                duration = 240,
+                genre = null,
+            ),
+            error = null,
+        )
     }
 }

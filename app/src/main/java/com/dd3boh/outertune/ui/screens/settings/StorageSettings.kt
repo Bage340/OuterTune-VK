@@ -40,6 +40,13 @@ import com.dd3boh.outertune.ui.screens.settings.fragments.DownloadsFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.ImageCacheFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.SongCacheFrag
 import com.dd3boh.outertune.ui.utils.backToMain
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
+import com.dd3boh.outertune.LocalPlayerConnection
 
 
 @SuppressLint("PrivateResource")
@@ -106,4 +113,19 @@ fun StorageSettings(
         windowInsets = TopBarInsets,
         scrollBehavior = scrollBehavior
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+private fun StorageSettingsPreview() {
+    CompositionLocalProvider(
+        LocalPlayerAwareWindowInsets provides WindowInsets(0, 0, 0, 0),
+        LocalPlayerConnection provides null,
+    ) {
+        StorageSettings(
+            navController = rememberNavController(),
+            scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+        )
+    }
 }

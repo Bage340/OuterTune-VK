@@ -19,6 +19,8 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.SlimNavBarKey
 import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ColumnScope.AppearanceMiscFrag() {
@@ -31,4 +33,12 @@ fun ColumnScope.AppearanceMiscFrag() {
         checked = slimNav,
         onCheckedChange = onSlimNavChange
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AppearanceMiscFragPreview() {
+    Column {
+        AppearanceMiscFrag()
+    }
 }

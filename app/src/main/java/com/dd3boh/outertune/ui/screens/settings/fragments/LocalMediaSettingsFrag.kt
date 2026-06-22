@@ -106,6 +106,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import androidx.compose.ui.tooling.preview.Preview
 
 
 @Composable
@@ -618,5 +619,11 @@ fun ColumnScope.LocalScannerExtraFrag() {
         values = ScannerImpl.entries,
     )
     InfoLabel(stringResource(R.string.scanner_type_tooltip))
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LocalScannerExtraFragPreview() {
+    Column { LocalScannerExtraFrag() }
 }
 

@@ -33,6 +33,8 @@ import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ColumnScope.ThemeAppFrag() {
@@ -103,5 +105,21 @@ fun ColumnScope.ThemePlayerFrag() {
         },
         values = availableBackgroundStyles
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ThemeAppFragPreview() {
+    Column {
+        ThemeAppFrag()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ThemePlayerFragPreview() {
+    Column {
+        ThemePlayerFrag()
+    }
 }
 

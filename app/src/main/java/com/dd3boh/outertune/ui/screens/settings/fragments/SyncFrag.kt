@@ -60,6 +60,8 @@ import com.dd3boh.outertune.utils.rememberPreference
 import com.zionhuang.innertube.utils.parseCookieString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -248,4 +250,22 @@ fun SyncProgressItem(isSyncing: Boolean, modifier: Modifier = Modifier) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SyncAutoFragPreview() {
+    Column { SyncAutoFrag() }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SyncParamsFragPreview() {
+    Column { SyncParamsFrag() }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SyncExtrasFragPreview() {
+    Column { SyncExtrasFrag() }
 }

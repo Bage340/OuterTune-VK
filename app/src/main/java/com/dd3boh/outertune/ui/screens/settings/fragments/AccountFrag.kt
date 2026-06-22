@@ -46,6 +46,9 @@ import com.dd3boh.outertune.ui.dialog.TextFieldDialog
 import com.dd3boh.outertune.utils.rememberPreference
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.utils.parseCookieString
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,4 +183,21 @@ fun ColumnScope.AccountExtrasFrag() {
             onUseLoginForBrowseChange(it)
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+private fun AccountFragPreview() {
+    Column {
+        AccountFrag(navController = rememberNavController())
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AccountExtrasFragPreview() {
+    Column {
+        AccountExtrasFrag()
+    }
 }

@@ -68,6 +68,8 @@ import com.zionhuang.innertube.YouTube
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import java.util.Locale
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ColumnScope.TabArrangementFrag() {
@@ -466,4 +468,36 @@ fun ColumnScope.LocalizationFrag() {
             onContentCountryChange(newValue)
         }
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TabArrangementFragPreview() {
+    Column {
+        TabArrangementFrag()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TabExtrasFragPreview() {
+    Column {
+        TabExtrasFrag()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SwipeGesturesFragPreview() {
+    Column {
+        SwipeGesturesFrag()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LocalizationFragPreview() {
+    Column {
+        LocalizationFrag()
+    }
 }

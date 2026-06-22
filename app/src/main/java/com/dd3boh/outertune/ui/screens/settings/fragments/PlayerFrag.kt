@@ -38,6 +38,7 @@ import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.dialog.CounterDialog
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun PlayerGeneralFrag() {
@@ -186,4 +187,28 @@ fun PlaybackBehaviourFrag() {
             }
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PlayerGeneralFragPreview() {
+    PlayerGeneralFrag()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AudioQualityFragPreview() {
+    AudioQualityFrag()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AudioEffectsFragPreview() {
+    AudioEffectsFrag()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PlaybackBehaviourFragPreview() {
+    PlaybackBehaviourFrag()
 }

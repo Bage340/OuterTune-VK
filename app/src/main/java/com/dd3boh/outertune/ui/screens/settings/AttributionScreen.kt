@@ -38,6 +38,12 @@ import com.dd3boh.outertune.ui.component.ContributorType.LEAD_DEVELOPER
 import com.dd3boh.outertune.ui.component.ContributorType.MAINTAINER
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.utils.backToMain
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,3 +136,17 @@ val contributors = mutableListOf(
 
 //val translators = mutableListOf(
 //)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true)
+@Composable
+private fun AttributionScreenPreview() {
+    CompositionLocalProvider(
+        LocalPlayerAwareWindowInsets provides WindowInsets(0, 0, 0, 0),
+    ) {
+        AttributionScreen(
+            navController = rememberNavController(),
+            scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+        )
+    }
+}
