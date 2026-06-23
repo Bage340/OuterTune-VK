@@ -10,6 +10,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
  * Appearance
  */
 val DynamicThemeKey = booleanPreferencesKey("dynamicTheme")
+val CustomThemeKey = booleanPreferencesKey("customTheme")
+val CustomThemeColorKey = intPreferencesKey("customThemeColor")
 val PlayerBackgroundStyleKey = stringPreferencesKey("playerBackgroundStyle")
 val DarkModeKey = stringPreferencesKey("darkMode")
 val PureBlackKey = booleanPreferencesKey("pureBlack")
