@@ -110,6 +110,8 @@ import androidx.navigation.navArgument
 import androidx.window.core.layout.WindowSizeClass
 import com.dd3boh.outertune.constants.AppBarHeight
 import com.dd3boh.outertune.constants.DEFAULT_ENABLED_TABS
+import com.dd3boh.outertune.constants.CustomThemeColorKey
+import com.dd3boh.outertune.constants.CustomThemeKey
 import com.dd3boh.outertune.constants.DarkMode
 import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.DefaultOpenTabKey
@@ -177,6 +179,7 @@ import com.dd3boh.outertune.ui.screens.settings.LyricsSettings
 import com.dd3boh.outertune.ui.screens.settings.PlayerSettings
 import com.dd3boh.outertune.ui.screens.settings.SettingsScreen
 import com.dd3boh.outertune.ui.screens.settings.StorageSettings
+import com.dd3boh.outertune.ui.theme.DefaultThemeColor
 import com.dd3boh.outertune.ui.theme.OuterTuneTheme
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
 import com.dd3boh.outertune.utils.ActivityLauncherHelper
@@ -257,6 +260,8 @@ class MainActivity : ComponentActivity() {
             val snackbarHostState = remember { SnackbarHostState() }
 
             val enableDynamicTheme by rememberPreference(DynamicThemeKey, defaultValue = true)
+            val customTheme by rememberPreference(CustomThemeKey, defaultValue = false)
+            val customThemeColorArgb by rememberPreference(CustomThemeColorKey, defaultValue = DefaultThemeColor.toArgb())
             val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
             val pureBlack by rememberPreference(PureBlackKey, defaultValue = false)
             val isSystemInDarkTheme = isSystemInDarkTheme()
@@ -319,6 +324,8 @@ class MainActivity : ComponentActivity() {
                 isSystemInDarkTheme = isSystemInDarkTheme,
                 darkTheme = useDarkTheme,
                 pureBlack = pureBlack,
+                customTheme = customTheme,
+                customThemeColor = Color(customThemeColorArgb),
             ) {
                 if (UI_DEBUG) Log.v(MAIN_TAG, "RC-2.1")
                 val density = LocalDensity.current

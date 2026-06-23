@@ -232,6 +232,9 @@ We recycle translations from upstream, they are pulled periodically. -->
     <string name="appearance">Appearance</string>
     <string name="theme">Theme</string>
     <string name="enable_dynamic_theme">Enable dynamic theme</string>
+    <string name="custom_accent_color">Custom accent color</string>
+    <string name="custom_accent_color_description">Use a fixed color of your choice as the accent throughout the app</string>
+    <string name="accent_color">Accent color</string>
     <string name="dark_theme">Dark theme</string>
     <string name="dark_theme_on">On</string>
     <string name="dark_theme_off">Off</string>

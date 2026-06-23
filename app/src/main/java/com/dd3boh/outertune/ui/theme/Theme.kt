@@ -48,8 +48,25 @@ import com.google.material.color.score.Score
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-// TODO: support for custom accent
 val DefaultThemeColor = Color(0xFFED5564)
+
+// Preset accent colors the user can choose from. Each value is a seed color; the full Material3
+// color scheme is generated from it via SchemeTonalSpot.
+val PresetThemeColors = listOf(
+    Color(0xFFED5564), // red
+    Color(0xFFEC407A), // pink
+    Color(0xFFAB47BC), // purple
+    Color(0xFF7E57C2), // deep purple
+    Color(0xFF5C6BC0), // indigo
+    Color(0xFF42A5F5), // blue
+    Color(0xFF26C6DA), // cyan
+    Color(0xFF26A69A), // teal
+    Color(0xFF66BB6A), // green
+    Color(0xFF9CCC65), // lime
+    Color(0xFFFFCA28), // yellow
+    Color(0xFFFFA726), // orange
+    Color(0xFF8D6E63), // brown
+)
 
 @Composable
 fun OuterTuneTheme(
@@ -59,6 +76,8 @@ fun OuterTuneTheme(
     isSystemInDarkTheme: Boolean,
     darkTheme: Boolean = isSystemInDarkTheme(),
     pureBlack: Boolean = false,
+    customTheme: Boolean = false,
+    customThemeColor: Color = DefaultThemeColor,
     content: @Composable () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -68,7 +87,12 @@ fun OuterTuneTheme(
         mutableStateOf(DefaultThemeColor)
     }
 
-    LaunchedEffect(playerConnection, enableDynamicTheme, isSystemInDarkTheme) {
+    LaunchedEffect(playerConnection, enableDynamicTheme, isSystemInDarkTheme, customTheme, customThemeColor) {
+        // A user-selected accent color takes priority over artwork-based and system dynamic theming.
+        if (customTheme) {
+            themeColor = customThemeColor
+            return@LaunchedEffect
+        }
         val playerConnection = playerConnection
         if (!enableDynamicTheme || playerConnection == null) {
             themeColor = DefaultThemeColor
@@ -102,8 +126,10 @@ fun OuterTuneTheme(
     }
 
 
-    val colorScheme = remember(darkTheme, pureBlack, themeColor, highContrast) {
-       if (themeColor == DefaultThemeColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val colorScheme = remember(darkTheme, pureBlack, themeColor, customTheme, highContrast) {
+       // When customTheme is on, always use SchemeTonalSpot even if the chosen color happens to
+       // equal DefaultThemeColor, so it does not fall through to the system Material You branch.
+       if (!customTheme && themeColor == DefaultThemeColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val systemTheme = if (darkTheme) {
                 dynamicDarkColorScheme(context).pureBlack(pureBlack)
             } else {
