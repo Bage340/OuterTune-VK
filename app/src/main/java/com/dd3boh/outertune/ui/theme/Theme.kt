@@ -8,6 +8,7 @@
  */
 package com.dd3boh.outertune.ui.theme
 
+import android.app.UiModeManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Build
@@ -17,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +28,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
@@ -56,10 +59,10 @@ fun OuterTuneTheme(
     isSystemInDarkTheme: Boolean,
     darkTheme: Boolean = isSystemInDarkTheme(),
     pureBlack: Boolean = false,
-    highContrastCompat: Boolean,
     content: @Composable () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val highContrast = rememberSystemHighContrast(context)
 
     var themeColor by rememberSaveable(stateSaver = ColorSaver) {
         mutableStateOf(DefaultThemeColor)
@@ -99,7 +102,7 @@ fun OuterTuneTheme(
     }
 
 
-    val colorScheme = remember(darkTheme, pureBlack, themeColor) {
+    val colorScheme = remember(darkTheme, pureBlack, themeColor, highContrast) {
        if (themeColor == DefaultThemeColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val systemTheme = if (darkTheme) {
                 dynamicDarkColorScheme(context).pureBlack(pureBlack)
@@ -111,7 +114,7 @@ fun OuterTuneTheme(
             // when high contrast mode Android collapses all accent colours into (more or less) one shade. We use
             // secondaryContainer and onSecondaryContainer weirdly in several places in terms of theming so just replace
             // those with shades that make sense
-            if (highContrastCompat) {
+            if (highContrast) {
                 systemTheme.copy(
                     secondaryContainer = systemTheme.surfaceContainerHigh,
                     onSecondaryContainer = systemTheme.secondary,
@@ -131,6 +134,36 @@ fun OuterTuneTheme(
         typography = MaterialTheme.typography,
         content = content
     )
+}
+
+/**
+ * Detects whether Android's system contrast is set to medium or higher and keeps it up to date.
+ *
+ * The contrast setting and its change listener are only available on API 34+; on older versions
+ * (which have no such setting) this always returns false.
+ */
+@Composable
+fun rememberSystemHighContrast(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        return false
+    }
+
+    val uiModeManager = remember(context) {
+        context.getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+    }
+    var highContrast by remember { mutableStateOf(uiModeManager.contrast >= 0.5f) }
+
+    DisposableEffect(uiModeManager) {
+        val listener = UiModeManager.ContrastChangeListener { contrast ->
+            highContrast = contrast >= 0.5f
+        }
+        uiModeManager.addContrastChangeListener(ContextCompat.getMainExecutor(context), listener)
+        onDispose {
+            uiModeManager.removeContrastChangeListener(listener)
+        }
+    }
+
+    return highContrast
 }
 
 fun Bitmap.extractThemeColor(): Color {
