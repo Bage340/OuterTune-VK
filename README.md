@@ -22,6 +22,9 @@ Changes applied on top of [OuterTune/OuterTune](https://github.com/OuterTune/Out
 - Added "keep audio focus" player setting
 - Restored tablet UI; fixed player double overlay; made dialogs scrollable
 - Replaced taglib with ffMetadataEx; improved local music linking and gapless playback
+- Fixed the album song count shown on the album screen
+- Replaced the manual high contrast toggle with automatic detection of the system contrast setting (Android 14+)
+- Added a custom accent color option with a palette of 13 presets, mutually exclusive with dynamic (Material You) theming
 - Updated Kotlin, KSP, NewPipeExtractor, Ktor, AGP, and Gradle
 
 ## Features
