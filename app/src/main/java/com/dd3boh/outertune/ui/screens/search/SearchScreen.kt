@@ -155,8 +155,12 @@ fun SearchBarContainer(
         }
         val currentRoute = navBackStackEntry?.destination?.route
         previousRoute?.let { savedHeightOffsets[it] = scrollBehavior.state.heightOffset }
-        scrollBehavior.state.heightOffset = savedHeightOffsets[currentRoute] ?: 0f
-        scrollBehavior.state.contentOffset = 0f
+        if (currentRoute?.startsWith("${Screens.Folders.route}/") == true) {
+            savedHeightOffsets[Screens.Folders.route] = 0f
+        } else {
+            scrollBehavior.state.heightOffset = savedHeightOffsets[currentRoute] ?: 0f
+            scrollBehavior.state.contentOffset = 0f
+        }
         previousRoute = currentRoute
     }
 
