@@ -149,8 +149,8 @@ fun FolderScreen(
     val lastLocalScan by rememberPreference(LastLocalScanKey, 0L)
     val localLibEnable by rememberPreference(LocalLibraryEnableKey, defaultValue = true)
 
-    val (sortType, onSortTypeChange) = rememberEnumPreference(FolderSongSortTypeKey, FolderSongSortType.NAME)
-    val (sortDescending, onSortDescendingChange) = rememberPreference(FolderSongSortDescendingKey, true)
+    val (sortType, onSortTypeChange) = rememberEnumPreference(FolderSongSortTypeKey, FolderSongSortType.TRACK_NUMBER)
+    val (sortDescending, onSortDescendingChange) = rememberPreference(FolderSongSortDescendingKey, false)
     val (folderSortType, onFolderSortTypeChange) = rememberEnumPreference(FolderSortTypeKey, FolderSortType.NAME)
     val swipeEnabled by rememberPreference(SwipeToQueueKey, true)
 
@@ -195,6 +195,12 @@ fun FolderScreen(
 
     val mutableSongs = remember {
         mutableStateListOf<Song>()
+    }
+    val mutableSubdirs = remember {
+        mutableStateListOf<DirectoryTree>()
+    }
+    val mutableFlatSubdirs = remember {
+        mutableStateListOf<DirectoryTree>()
     }
 
     // search
@@ -255,11 +261,18 @@ fun FolderScreen(
 
         if (sortDescending) {
             newSubdirs.reverse()
-            currDir.subdirs.apply {
-                clear()
-                addAll(newSubdirs)
-            }
             tempList.reverse()
+        }
+
+        mutableSubdirs.apply {
+            clear()
+            addAll(newSubdirs)
+        }
+
+        val newFlatSubdirs = currDir.getFlattenedSubdirs().sortedBy { it.currentDir.lowercase() }
+        mutableFlatSubdirs.apply {
+            clear()
+            addAll(if (sortDescending) newFlatSubdirs.reversed() else newFlatSubdirs)
         }
 
         mutableSongs.apply {
@@ -455,7 +468,7 @@ fun FolderScreen(
 
                 // all subdirectories listed here
                 itemsIndexed(
-                    items = if (flatSubfolders) currDir.getFlattenedSubdirs() else currDir.subdirs,
+                    items = if (flatSubfolders) mutableFlatSubdirs else mutableSubdirs,
                     key = { _, item -> item.uid },
                     contentType = { _, _ -> CONTENT_TYPE_FOLDER }
                 ) { index, folder ->
