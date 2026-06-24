@@ -12,7 +12,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -69,7 +68,6 @@ import com.dd3boh.outertune.LocalSnackbarHostState
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.DownloadExtraPathKey
 import com.dd3boh.outertune.constants.DownloadPathKey
-import com.dd3boh.outertune.constants.ENABLE_FFMETADATAEX
 import com.dd3boh.outertune.constants.ExcludedScanPathsKey
 import com.dd3boh.outertune.constants.LastLocalScanKey
 import com.dd3boh.outertune.constants.SCANNER_OWNER_LM
@@ -141,7 +139,7 @@ fun ColumnScope.LocalScannerFrag() {
     )
     val scannerImpl by rememberEnumPreference(
         key = ScannerImplKey,
-        defaultValue = ScannerImpl.MEDIASTORE
+        defaultValue = ScannerImpl.TAGLIB
     )
     val strictExtensions by rememberPreference(ScannerStrictExtKey, defaultValue = false)
     val strictFilePaths by rememberPreference(ScannerStrictFilePathsKey, defaultValue = false)
@@ -565,7 +563,7 @@ fun ColumnScope.LocalScannerExtraFrag() {
     )
     val (scannerImpl, onScannerImplChange) = rememberEnumPreference(
         key = ScannerImplKey,
-        defaultValue = ScannerImpl.MEDIASTORE
+        defaultValue = ScannerImpl.TAGLIB
     )
     val (strictExtensions, onStrictExtensionsChange) = rememberPreference(ScannerStrictExtKey, defaultValue = false)
     val (strictFilePaths, onStrictFilePathsChange) = rememberPreference(ScannerStrictFilePathsKey, defaultValue = false)
@@ -612,11 +610,12 @@ fun ColumnScope.LocalScannerExtraFrag() {
         valueText = {
             when (it) {
                 ScannerImpl.MEDIASTORE -> stringResource(R.string.scanner_type_mediastore)
-                ScannerImpl.FFMPEG_EXT -> stringResource(R.string.scanner_type_ffmpeg_ext)
+                ScannerImpl.TAGLIB -> stringResource(R.string.scanner_type_taglib)
+                // legacy value, hidden from the list but kept for exhaustiveness
+                ScannerImpl.FFMPEG_EXT -> stringResource(R.string.scanner_type_taglib)
             }
         },
-        disabled = { it == ScannerImpl.FFMPEG_EXT && !ENABLE_FFMETADATAEX && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R },
-        values = ScannerImpl.entries,
+        values = listOf(ScannerImpl.MEDIASTORE, ScannerImpl.TAGLIB),
     )
     InfoLabel(stringResource(R.string.scanner_type_tooltip))
 }

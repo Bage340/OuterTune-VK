@@ -76,7 +76,6 @@
     <string name="scan_paths_incl">Rutas de escaneo</string>
     <string name="scan_paths_excl">Rutas de escaneo excluidas</string>
     <string name="scanner_local_title">Escáner local</string>
-    <string name="scanner_missing_ffmpeg">Extractor FFmpeg no detectado</string>
     <string name="scanner_missing_storage_perm">El escáner de medios local requiere permisos de almacenamiento para funcionar</string>
     <string name="scanner_btn_idle">Escanear</string>
     <string name="scanner_progress_complete">Escaneo completo</string>
@@ -111,7 +110,6 @@
     <string name="queues_empty">Sin colas</string>
     <string name="err_stop_on_error">Ha ocurrido un error. Reproducción detenida</string>
     <string name="scanner_strict_file_name_title">Nombres de archivo estrictos</string>
-    <string name="scanner_type_ffmpeg_ext">Utilice el extractor de metadatos de FFmpeg. Utilice únicamente la versión completa de la aplicación. La versión básica podría causar problemas con el seguimiento de canciones</string>
     <string name="auto_scanner_title">Escanear automáticamente</string>
     <string name="scanner_warning">Por defecto, el escáner NO recargará los metadatos de las canciones existentes a menos que especifiques lo contrario más arriba. Dependiendo del tamaño de tu biblioteca, puede llevar un tiempo.</string>
     <string name="scanner_ytm_link_start">Iniciando vinculación de artistas de YouTube…</string>

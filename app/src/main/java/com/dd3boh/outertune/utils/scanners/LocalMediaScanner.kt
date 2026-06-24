@@ -15,14 +15,11 @@ import android.os.Build
 import android.os.ext.SdkExtensions
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.ui.util.fastDistinctBy
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastMapNotNull
 import androidx.datastore.preferences.core.edit
 import androidx.documentfile.provider.DocumentFile
-import com.dd3boh.outertune.constants.AutomaticScannerKey
-import com.dd3boh.outertune.constants.ENABLE_FFMETADATAEX
 import com.dd3boh.outertune.constants.SCANNER_DEBUG
 import com.dd3boh.outertune.constants.SYNC_SCANNER
 import com.dd3boh.outertune.constants.ScannerImpl
@@ -57,7 +54,6 @@ import com.zionhuang.innertube.models.ArtistItem
 import com.zionhuang.innertube.models.SongItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -76,8 +72,9 @@ class LocalMediaScanner(context: Context, scannerImpl: ScannerImpl) {
     val context: Context = context.applicationContext
     private val TAG = LocalMediaScanner::class.simpleName.toString()
     private var advancedScannerImpl: MetadataScanner = when (scannerImpl) {
-        ScannerImpl.FFMPEG_EXT -> if (ENABLE_FFMETADATAEX) FFmpegScanner() else MediaStoreExtractor()
-        ScannerImpl.MEDIASTORE -> MediaStoreExtractor() // unused
+        // FFMPEG_EXT is a legacy stored value; it is migrated to TAGLIB in getScanner().
+        ScannerImpl.TAGLIB, ScannerImpl.FFMPEG_EXT -> TagLibScanner()
+        ScannerImpl.MEDIASTORE -> MediaStoreExtractor() // advanced extraction disabled
     }
 
     init {
@@ -105,15 +102,9 @@ class LocalMediaScanner(context: Context, scannerImpl: ScannerImpl) {
         try {
             if (!file.exists()) throw IOException("File not found")
 
-            // decide which scanner to use
-            val ffmpegData =
-                if (ENABLE_FFMETADATAEX && advancedScannerImpl is FFmpegScanner) {
-                    advancedScannerImpl.getAllMetadataFromFile(file)
-                } else {
-                    throw RuntimeException("Unsupported extractor")
-                }
-
-            return ffmpegData
+            // TagLib handles every flavor. MediaStoreExtractor throws (advanced extraction
+            // disabled), which is caught below and treated as an unscannable file.
+            return advancedScannerImpl.getAllMetadataFromFile(file)
         } catch (e: Exception) {
             when (e) {
                 is IOException, is IllegalArgumentException, is IllegalStateException -> {
@@ -1082,21 +1073,11 @@ class LocalMediaScanner(context: Context, scannerImpl: ScannerImpl) {
         fun getScanner(context: Context, scannerImpl: ScannerImpl, owner: Int): LocalMediaScanner {
 
             if (localScanner == null) {
-                // reset to mediastore if ffMetadataEx disappears
-                if (scannerImpl == ScannerImpl.FFMPEG_EXT && !ENABLE_FFMETADATAEX) {
+                // migrate the legacy FFMPEG_EXT preference to TAGLIB (TagLib is always available)
+                if (scannerImpl == ScannerImpl.FFMPEG_EXT) {
                     CoroutineScope(lmScannerCoroutine).launch {
                         context.dataStore.edit { settings ->
-                            settings[ScannerImplKey] = ScannerImpl.MEDIASTORE.toString()
-                            settings[AutomaticScannerKey] = false
-                            runBlocking(Dispatchers.Main) {
-                                // TODO: string resource (but will anyone even notice this...)
-                                Toast.makeText(context, "FFmpeg extractors are missing", Toast.LENGTH_SHORT).show()
-                                Toast.makeText(
-                                    context,
-                                    "Auto scanner has been disabled to prevent data conflicts. You will need to enable this in local media settings again if you want automatic scanning.",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
+                            settings[ScannerImplKey] = ScannerImpl.TAGLIB.toString()
                         }
                     }
                 }

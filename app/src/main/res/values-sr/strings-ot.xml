@@ -138,7 +138,6 @@
     <string name="scanner_manual_btn">Pokreni ručnu sinhronizaciju</string>
     <string name="scanner_rejected_dir">Nevažeći izbor. Fasikla za skeniranje ne može biti poddirektorijum fascikle za preuzimanje, niti sama fascikla za preuzimanje</string>
     <string name="scanner_warning">Podrazumevano, skener NEČE ponovo učitati metapodatke postojećih pesama osim ako gore ne navedete drugačije. U zavisnosti od veličine vaše biblioteke, to može potrajati neko vreme.</string>
-    <string name="scanner_missing_ffmpeg">FFmpeg ekstraktor ne postoji</string>
     <string name="scanner_missing_storage_perm">Lokalni skener medija zahteva dozvole za skladištenje da bi funkcionisao</string>
     <string name="scanner_btn_idle">Skeniranje</string>
     <string name="scanner_progress_complete">Skeniranje završeno</string>
@@ -169,7 +168,6 @@
     <string name="scanner_sensitivity_L3">Podudaranje naslova, izvođača i albuma</string>
     <string name="scanner_type_title">Ekstraktor metapodataka</string>
     <string name="scanner_type_taglib">Koristi integrisani ekstraktor metapodataka TagLib</string>
-    <string name="scanner_type_ffmpeg_ext">Koristi FFmpeg ekstraktor metapodataka. Potrebna je instalacija eksternog paketa</string>
     <string name="scanner_variant_rescan">Ponovo skeniraj celu biblioteku i ponovo učitaj metapodatke svih pesama</string>
     <string name="scanner_online_artist_linking">Pokušaj da povežeš lokalne izvođače sa onima na YouTube</string>
     <string name="clear_downloads_confirm">Da li ste sigurni da želite da uklonite sva preuzimanja? Biće uklonjena samo preuzimanja u glavnoj fascikli za preuzimanja.</string>

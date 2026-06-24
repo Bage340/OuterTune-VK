@@ -133,7 +133,6 @@
     <string name="scanner_manual_btn">تشغيل المزامنة اليدوية</string>
     <string name="scanner_local_title">الماسح المحلي</string>
     <string name="scanner_warning">بشكل افتراضي، لن يقوم المسح بإعادة تحميل أي بيانات وصفية للأغاني الموجودة ما لم تحدد خلاف ذلك أعلاه. اعتمادًا على حجم مكتبتك، يستغرق الأمر بعض الوقت.</string>
-    <string name="scanner_missing_ffmpeg">لم يتم اكتشاف مستخرج FFmpeg</string>
     <string name="scanner_missing_storage_perm">يتطلب الماسح أذونات التخزين</string>
     <string name="scanner_btn_idle">مسح</string>
     <string name="scanner_progress_complete">اكتمل المسح</string>
@@ -151,7 +150,6 @@
     <string name="scanner_sensitivity_L3">تطابق العناوين, الفنان, الالبوم</string>
     <string name="scanner_type_title">مستخرج البيانات الوصفية</string>
     <string name="scanner_type_taglib">استخدام مستخرج البيانات الوصفية TagLib المدمج</string>
-    <string name="scanner_type_ffmpeg_ext">استخدام مستخرج البيانات الوصفية FFmpeg. يتطلب تثبيت حزمة خارجية</string>
     <string name="pause_remote_listen_history">إيقاف مؤقت لمشاركة سجل الاستماع مع YouTube Music</string>
     <string name="scanner_variant_rescan">اعادة فحص كامل المكتبة وتحديث \' metadata</string>
     <string name="scanner_online_artist_linking">محاولة ربط ملف\' فنان مع YouTube Music</string>

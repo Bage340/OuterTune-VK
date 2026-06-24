@@ -131,7 +131,6 @@
     <string name="scanner_manual_btn">開始手動同步</string>
     <string name="scanner_rejected_dir">此選擇無效。掃描資料夾不能是音樂下載的資料夾或其下所有子目錄</string>
     <string name="scanner_warning">默認情況下除非另有指定，否則掃描器不會重新載入已有歌曲的元資料。根據指定媒體庫的大小，可能需要一段時間。</string>
-    <string name="scanner_missing_ffmpeg">未檢測到 FFmpeg 擷取器</string>
     <string name="scanner_missing_storage_perm">掃描器需要儲存空間權限</string>
     <string name="scanner_auto_end">已刷新本地媒體與歌曲下載資料夾！</string>
     <string name="scanner_auto_start">正在刷新本地媒體與歌曲下載資料夾…</string>
@@ -163,7 +162,6 @@
     <string name="scanner_type_title">元資料擷取器</string>
     <string name="scanner_type_tooltip">使用系統掃描器將會更快，但相比於其他擷取器，在擷取元數據時可能會不太準確。請注意切換掃描器並不會自動載入已有歌曲的元資料。</string>
     <string name="scanner_type_taglib">使用集成之 TagLib 元資料擷取器</string>
-    <string name="scanner_type_ffmpeg_ext">使用 FFmpeg 元資料擷取器。由於此選項會導致核心版本在歌曲追蹤時出錯，請安裝此應用的完整版本</string>
     <string name="scanner_variant_rescan">重新掃描媒體庫並載入所有歌曲的元資料</string>
     <string name="scanner_online_artist_linking">嘗試將本地音檔的創作者與 YouTube Music 上的創作者相關聯</string>
 </resources>

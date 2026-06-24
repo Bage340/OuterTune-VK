@@ -23,7 +23,6 @@
     <string name="scanner_btn_idle">Сканирай</string>
     <string name="scanner_sensitivity_L3">Съпоставете заглавие, изпълнители, албуми</string>
     <string name="oobe_welcome_message">Добре дошли в OuterTune</string>
-    <string name="scanner_type_ffmpeg_ext">Използвайте инструмент за извличане на FFmpeg метаданни. Моля, използвайте само пълния вариант на приложението. Основният вариант може да причини проблеми с проследяването на песните</string>
     <string name="grp_interface">Интерфейс</string>
     <string name="grp_layout">Оформление</string>
     <string name="grp_lyrics_parser">Анализатор</string>
@@ -55,7 +54,6 @@
     <string name="ytm_sync">Автоматично синхронизиране с вашия профил в YouTube Music</string>
     <string name="tab_arrangement_home_required">Разделът Начало е задължителен.</string>
     <string name="lyrics_prefer_local_description">Дайте приоритет на разрешаването на локални текстови файлове, преди да използвате всички доставчици на облачни услуги. Изключете тази опция, за да дадете приоритет на доставчиците на облачни услуги</string>
-    <string name="scanner_missing_ffmpeg">FFmpeg екстракторът не е открит</string>
     <string name="scanner_type_taglib">Използвайте интегриран инструмент за извличане на метаданни TagLib</string>
     <string name="recent_activity">Скорошна дейнист</string>
     <string name="local_history">Локално</string>

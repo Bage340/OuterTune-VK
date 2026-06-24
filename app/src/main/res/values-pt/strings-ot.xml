@@ -144,7 +144,6 @@
     <string name="scanner_manual_btn">Executar sincronização manual</string>
     <string name="scanner_rejected_dir">Seleção inválida. A pasta de análise não pode ser uma subpasta da pasta de descargas ou ser a própria pasta de descargas.</string>
     <string name="scanner_warning">Por padrão, a análise NÃO recarregará os metadados de músicas existentes, exceto se especificar que o quer. Dependendo do tamanho da sua coleção, pode demorar um pouco.</string>
-    <string name="scanner_missing_ffmpeg">Extrator FFmpeg não detetado</string>
     <string name="scanner_missing_storage_perm">A análise de ficheiros locais requer acesso ao armazenamento</string>
     <string name="scanner_btn_idle">Analisar</string>
     <string name="scanner_progress_complete">Análise concluída</string>
@@ -175,7 +174,6 @@
     <string name="scanner_sensitivity_L3">Correspondência com título, artista e álbum</string>
     <string name="scanner_type_title">Extrator de metadados</string>
     <string name="scanner_type_taglib">Utilizar extrator de metadados TagLib integrado</string>
-    <string name="scanner_type_ffmpeg_ext">Utilizar extrator de metadados FFmpeg. Utilize apenas a versão completa da aplicação. A versão principal pode causar problemas com o rastreio de músicas.</string>
     <string name="scanner_variant_rescan">Analisar novamente a coleção e recarregar os metadados de todas as músicas</string>
     <string name="scanner_online_artist_linking">Tentar sincronizar os artistas dos ficheiros locais com YouTube Music</string>
     <string name="clear_downloads_confirm">Tem a certeza se que deseja remover todas as descargas? Apenas ia ficheiros existentes na pasta principal de descargas serão removidos.</string>

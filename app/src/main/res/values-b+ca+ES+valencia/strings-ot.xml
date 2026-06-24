@@ -191,7 +191,6 @@
     <string name="scanner_manual_btn">Inicia la sincronització manual</string>
     <string name="scanner_rejected_dir">Selecció no vàlida. Una carpeta d’escaneig no pot ser un subdirectori de la carpeta de descàrregues ni la mateixa carpeta de descàrregues</string>
     <string name="scanner_warning">Per defecte, l’escàner NO tornarà a carregar les metadades de les cançons existents, llevat que ho especifiques més amunt. Depenent de la mida de la teua biblioteca, pot tardar una estona.</string>
-    <string name="scanner_missing_ffmpeg">No s’ha detectat l’extractor de FFmpeg</string>
     <string name="scanner_missing_storage_perm">L’escàner de multimèdia local necessita permisos d’emmagatzematge per a funcionar</string>
     <string name="scanner_auto_end">S’ha completat l’actualització de la multimèdia local i de les descàrregues de cançons!</string>
     <string name="scanner_auto_start">S’estan actualitzant les carpetes de multimèdia local i de descàrregues de cançons…</string>

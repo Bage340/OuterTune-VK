@@ -64,7 +64,6 @@
     <string name="local_player_settings_title">Media lokalne</string>
     <string name="lyrics_prefer_local_description">Priorytetyzuj rozwiązanie lokalnych plików tekstowych przed użyciem wszystkich dostawców z chmury. Wyłącz tę opcję aby priorytetyzować dostawców z chmury</string>
     <string name="scanner_progress_syncing">Synchronizacja…</string>
-    <string name="scanner_missing_ffmpeg">Nie wykryto ekstraktora FFmpeg</string>
     <string name="grp_lyrics_source">Źródła tekstów</string>
     <plurals name="scanner_n_song_processed">
         <item quantity="one">%d piosenki przetworzone</item>
@@ -141,7 +140,6 @@
     <string name="scanner_strict_file_name_description">Po włączeniu nazwy plików NIE BĘDĄ ignorowane. np. Utwór.ogg będzie inną piosenką niż Utwór.flac. Wrażliwość skanera pozostanie taka sama</string>
     <string name="scanner_sensitivity_title">Dostosuj wrażliwość skanera</string>
     <string name="scanner_type_taglib">Używaj zintegrowanego wykrywacza metadanych TagLib</string>
-    <string name="scanner_type_ffmpeg_ext">Używaj wykrywacza danych FFmpeg. Proszę używać tylko pełnej wersji aplikacji. Rdzeniowy wariant może powodować problemy ze śledzeniem piosenek</string>
     <string name="pause_remote_listen_history">Zatrzymaj udostępnianie historii odtwarzania z YouTube Music</string>
     <string name="experimental_settings_title">Eksperymentalne</string>
     <string name="dev_settings_description">Odkrywa dodatkowe ustawienia przeznaczone do użycia podczas programowania</string>

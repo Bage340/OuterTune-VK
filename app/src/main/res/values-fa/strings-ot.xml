@@ -123,7 +123,6 @@
     <string name="scanner_manual_btn">همگام‌ سازی دستی را فعال کنید</string>
     <string name="scanner_rejected_dir">انتخاب نامعتبر است. پوشه اسکن نمی‌تواند زیرشاخه‌ای از پوشه دانلود یا خود پوشه دانلود باشد</string>
     <string name="scanner_warning">به طور پیش‌فرض، اسکنر هیچ فراداده‌ای از آهنگ‌های موجود را بارگیری مجدد نمی‌کند، مگر اینکه در بالا طور دیگری مشخص کرده باشید. بسته به اندازه کتابخانه شما، این کار کمی طول می‌کشد.</string>
-    <string name="scanner_missing_ffmpeg">استخراج کننده FFmpeg شناسایی نشد</string>
     <string name="scanner_missing_storage_perm">اسکنر رسانه محلی برای عملکرد به مجوزهای ذخیره‌ سازی نیاز دارد</string>
     <string name="scanner_btn_idle">اسکن</string>
     <string name="scanner_progress_complete">اسکن کامل شد</string>
@@ -151,7 +150,6 @@
     <string name="scanner_sensitivity_L3">مطابق عنوان، آلبوم ها، هنرمندان</string>
     <string name="scanner_type_title">استخراج کننده فراداده</string>
     <string name="scanner_type_taglib">از استخراج‌ کننده‌ فراداده‌ یکپارچه‌ TagLib استفاده کنید</string>
-    <string name="scanner_type_ffmpeg_ext">از استخراج‌ کننده‌ فراداده‌ FFmpeg استفاده کنید. نیاز به نصب بسته‌ ی خارجی دارد</string>
     <string name="scanner_variant_rescan">کل کتابخانه را دوباره اسکن کنید و ابرداده همه آهنگ‌ها را دوباره بارگیری کنید</string>
     <string name="scanner_online_artist_linking">سعی کند هنرمندان فایل‌های محلی را با هنرمندان موجود در یوتیوب موزیک مرتبط کند</string>
     <string name="clear_downloads_confirm">آیا از حذف همه دانلودها مطمئن هستید؟ فقط دانلودهای موجود در پوشه اصلی دانلود حذف خواهند شد.</string>
