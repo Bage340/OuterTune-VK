@@ -395,7 +395,7 @@ fun ColumnScope.TabExtrasFrag() {
 
 @Composable
 fun ColumnScope.SwipeGesturesFrag() {
-    val (swipeToSkip, onSwipeToSkipChange) = rememberPreference(SwipeToSkipKey, defaultValue = false)
+    val (swipeToSkip, onSwipeToSkipChange) = rememberPreference(SwipeToSkipKey, defaultValue = true)
     val (swipe2Queue, onSwipe2QueueChange) = rememberPreference(SwipeToQueueKey, defaultValue = true)
 
     SwitchPreference(
