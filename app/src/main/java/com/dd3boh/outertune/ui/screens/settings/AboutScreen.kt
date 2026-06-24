@@ -71,7 +71,6 @@ import com.dd3boh.outertune.ui.component.SettingsClickToReveal
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.button.IconLabelButton
 import com.dd3boh.outertune.ui.utils.backToMain
-import com.dd3boh.outertune.utils.scanners.FFmpegScanner
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.FfmpegLibrary
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.TopAppBarDefaults
@@ -227,7 +226,8 @@ fun AboutScreen(
             ) {
                 SettingsClickToReveal(stringResource(R.string.app_info_title)) {
                     val info = mutableListOf<String>(
-                        "FFMetadataEx: $ENABLE_FFMETADATAEX",
+                        "TagLib: ${BuildConfig.TAGLIB_VERSION}",
+                        "FFmpeg decoder: $ENABLE_FFMETADATAEX",
                         "LM scanner concurrency: $MAX_LM_SCANNER_JOBS",
                         "LYRIC_FETCH_TIMEOUT: $LYRIC_FETCH_TIMEOUT",
                         "OOBE_VERSION: $OOBE_VERSION",
@@ -235,7 +235,6 @@ fun AboutScreen(
                         "SNACKBAR_VERY_SHORT: $SNACKBAR_VERY_SHORT"
                     )
                     if (ENABLE_FFMETADATAEX) {
-                        info.add("FFMetadataEx version: ${FFmpegScanner.VERSION_STRING}")
                         info.add("FFmpeg version: ${FfmpegLibrary.getVersion()}")
                         info.add("FFmpeg isAvailable: ${FfmpegLibrary.isAvailable()}")
                     }

@@ -194,7 +194,6 @@
     <string name="scanner_manual_btn">הפעל סנכרון ידני</string>
     <string name="scanner_rejected_dir">בחירה לא חוקית. תיקיית סריקה אינה יכולה להיות ספריית משנה של תיקיית ההורדות, או תיקיית ההורדה עצמה</string>
     <string name="scanner_warning">כברירת מחדל, הסורק לא יטען מחדש מטא נתונים של שירים קיימים, אלא אם כן תציין אחרת לעיל. בהתאם לגודל הספרייה שלך, זה יכול לקחת זמן.</string>
-    <string name="scanner_missing_ffmpeg">מחלץ FFmpeg לא זוהה</string>
     <string name="scanner_missing_storage_perm">סורק המדיה המקומי דורש הרשאות אחסון כדי לעבוד</string>
     <string name="scanner_btn_idle">סרוק</string>
     <string name="scanner_progress_complete">סריקה הושלמה</string>

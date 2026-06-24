@@ -5,8 +5,9 @@ flavor instead of being built from source as part of this repository.
 
 ## `ffMetadataEx-release.aar`
 
-A prebuilt build of **ffMetadataEx**, the FFmpeg-based metadata extractor and
-audio decoder module used by the `full` flavor.
+A prebuilt build of **ffMetadataEx**, used by the `full` flavor for its FFmpeg
+audio decoders (extended-codec playback such as ALAC/APE/WavPack/DSD). Tag
+extraction no longer uses this module; it uses TagLib in all flavors.
 
 - **License:** GPLv3
 - **Source:** https://github.com/OuterTune/ffMetadataEx

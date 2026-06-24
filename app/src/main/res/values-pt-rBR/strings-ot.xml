@@ -79,7 +79,6 @@
     <string name="scanner_sensitivity_L1">Corresponder ao título</string>
     <string name="scanner_sensitivity_L2">Corresponder título e artistas</string>
     <string name="scanner_type_title">Extrator de metadados</string>
-    <string name="scanner_type_ffmpeg_ext">Usar o extrator de metadados do FFmpeg. Por favor use a versão full do app. A versão core pode levar a problemas com o rastreamento de músicas</string>
     <string name="scanner_online_artist_linking">Tentar sincronizar os artistas dos arquivos locais com os no YouTube Music</string>
     <string name="experimental_settings_title">Experimentais</string>
     <string name="dev_settings_title">Ativar configurações de desenvolvedor</string>
@@ -122,7 +121,6 @@
         <item quantity="many">%d de músicas encontradas</item>
         <item quantity="other">%d músicas encontradas</item>
     </plurals>
-    <string name="scanner_missing_ffmpeg">O extrator FFmpeg não foi detectado</string>
     <string name="sync_progress_active">Sincronizando com a conta do YouTube…</string>
     <string name="grp_lyrics_format">Formatação</string>
     <string name="grp_lyrics_source">Fontes das letras</string>

@@ -23,7 +23,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.dd3boh.outertune"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.dd3boh.outertune"
@@ -32,6 +32,9 @@ android {
         versionCode = 76
         versionName = "0.10.6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // expose the TagLib library version (from the version catalog) for the About screen
+        buildConfigField("String", "TAGLIB_VERSION", "\"${libs.versions.taglib.get()}\"")
     }
 
     signingConfigs {
@@ -132,11 +135,10 @@ android {
     }
 
     tasks.withType<KotlinCompile> {
-        if (!name.substringAfter("compile").lowercase().startsWith("full")) {
-            exclude("**/*FFmpegScanner.kt")
-            exclude("**/*NextRendersFactory.kt")
-        } else {
-            exclude("**/*FFmpegScannerDud.kt")
+        // Tag extraction uses TagLib in every flavor. Only the FFmpeg playback decoder
+        // (nextlib) is flavor-gated: the "full" flavor links it from the prebuilt AAR,
+        // while other flavors compile the dud stub.
+        if (name.substringAfter("compile").lowercase().startsWith("full")) {
             exclude("**/*ffdecoderDud.kt")
         }
     }
@@ -260,6 +262,9 @@ dependencies {
 
     // misc
     implementation(libs.aboutlibraries.compose.m3)
+
+    // local metadata tag extraction (TagLib, all flavors)
+    implementation(libs.taglib)
 
     // sdk24 support
     // Support for N is officially unsupported even it the app should still work. Leave this outside of the version catalog.

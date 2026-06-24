@@ -114,7 +114,6 @@
     <string name="scanner_ytm_link_start">Начало привязки исполнителей к YouTube…</string>
     <string name="scanner_ytm_link_success">Привязка исполнителей к YouTube успешно завершена</string>
     <string name="scanner_type_taglib">Использовать встроенный экстрактор TagLib</string>
-    <string name="scanner_type_ffmpeg_ext">Использовать экстрактор метаданных FFmpeg. Пожалуйста, используйте только полную версию приложения. Базовая версия может вызвать проблемы с отслеживанием песен</string>
     <string name="queue_local_history">История (локальная)</string>
     <string name="queue_remote_history">История (удаленная)</string>
     <string name="keep_alive_description">Использовать постоянную службу на переднем плане, чтобы предотвратить закрытие OuterTune в фоновом режиме</string>
@@ -136,7 +135,6 @@
     <string name="grp_general">Общее</string>
     <string name="tab_arrangement_home_required">Вкладка «Главная» обязательна.</string>
     <string name="scan_paths_incl">Папки для поиска</string>
-    <string name="scanner_missing_ffmpeg">Экстрактор FFmpeg не найден</string>
     <string name="import_innertune_tooltip">Восстановление резервных копий InnerTune поддерживается, однако возможны аномалии из-за технических ограничений. Форки НЕ поддерживаются.</string>
     <string name="lyrics_prefer_local_description">Отдавать приоритет локальным файлам текстов песен перед использованием облачных источников. Отключите эту опцию, чтобы отдать приоритет облачным источникам</string>
     <string name="auto_scanner_description">Периодически обновлять локальные песни и папки пользовательских загрузок при открытии приложения</string>

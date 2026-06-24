@@ -180,7 +180,6 @@
     <string name="scanner_type_title">Extractor de metadata</string>
     <string name="scanner_type_tooltip">L’escàner del sistema és més ràpid, però pot extreure metadades de manera incorrecta en comparació amb altres extractors. Tingues en compte que canviar d’escàner no tornarà a carregar automàticament les metadades de les cançons existents.</string>
     <string name="scanner_type_taglib">Utilitza l’extractor de metadades TagLib integrat</string>
-    <string name="scanner_type_ffmpeg_ext">Utilitza l’extractor de metadades FFmpeg. Utilitza només la versió completa de l’aplicació. La versió bàsica pot causar problemes amb el seguiment de cançons</string>
     <string name="scanner_variant_rescan">Torna a escanejar tota la biblioteca i recarrega les metadades de totes les cançons</string>
     <string name="scanner_online_artist_linking">Intenta vincular els artistes dels fitxers locals amb els de YouTube Music</string>
     <string name="clear_downloads_confirm">Estàs segur que vols eliminar totes les descàrregues? Només s’eliminaran les descàrregues de la carpeta principal de descàrregues.</string>
@@ -249,7 +248,6 @@
     <string name="scanner_manual_btn">Inicia la sincronització manual</string>
     <string name="scanner_rejected_dir">Selecció no vàlida. Una carpeta d’escaneig no pot ser una subcarpeta de la carpeta de descàrregues ni la pròpia carpeta de descàrregues</string>
     <string name="scanner_warning">Per defecte, l’escàner NO tornarà a carregar cap metadada de les cançons existents, tret que ho especifiquis a dalt. Depenent de la mida de la teva biblioteca, pot trigar una estona.</string>
-    <string name="scanner_missing_ffmpeg">No s’ha detectat l’extractor FFmpeg</string>
     <string name="scanner_missing_storage_perm">L’escàner de mitjans locals requereix permisos d’emmagatzematge per funcionar</string>
     <string name="scanner_auto_end">Actualització de mitjans locals i descàrregues de cançons completada!</string>
     <string name="scanner_auto_start">S’estan actualitzant les carpetes de mitjans locals i descàrregues de cançons…</string>

@@ -48,7 +48,6 @@
     <string name="scanner_local_title">端末内スキャン</string>
     <string name="scanner_manual_btn">手動で同期する</string>
     <string name="scanner_warning">初期設定では、上記で指定しない限り、スキャンは既存の曲のメタデータを再読み込みしません。ライブラリの量によっては、時間がかかります。</string>
-    <string name="scanner_missing_ffmpeg">FFmpeg 抽出プログラムが検出されませんでした</string>
     <string name="scanner_missing_storage_perm">端末内メディアをスキャンするにはストレージの権限が必要</string>
     <string name="scanner_auto_end">ローカルメディアと楽曲ダウンロードの更新が完了しました！</string>
     <string name="scanner_auto_start">ローカルメディアと楽曲ダウンロードフォルダを更新しています…</string>
@@ -131,7 +130,6 @@
     <string name="player_background_style">プレーヤーの背景スタイル</string>
     <string name="oobe_use_backup">バックアップがある</string>
     <string name="token_adv_login_description">これは高度なログイン方法です。ウェブポータルの代わりに、ここでログイントークンを直接入力または更新することもできます。たとえば、これにより複数の端末でのログインが高速化されます</string>
-    <string name="scanner_type_ffmpeg_ext">FFmpeg メタデータ抽出ツールを使用します。完全版のみをご利用ください。コア版では曲の操作に問題を起こすことがあります</string>
     <string name="scanner_variant_rescan">ライブラリ全体を再スキャンし、すべての曲のメタデータを再読み込み</string>
     <string name="new_interface">新しいレイアウト</string>
     <string name="experimental_settings_title">実験的な設定</string>

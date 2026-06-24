@@ -206,7 +206,6 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="scanner_warning">By default, the scanner will NOT reload any metadata of existing songs unless you specify otherwise above. Depending on the size of your library, it may take a while.</string>
 
 <!-- Scanner progress strings-->
-	<string name="scanner_missing_ffmpeg">FFmpeg extractor not detected</string>
     <string name="scanner_missing_storage_perm">The local media scanner requires storage permissions to function</string>
 
     <string name="scanner_auto_end">Local media and song downloads refresh complete!</string>
@@ -248,7 +247,6 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="scanner_type_tooltip">The system scanner is faster, but may incorrectly extract some metadata compared to other extractors. Please note that switching scanners won\'t automatically reload the metadata of existing songs.</string>
     <string name="scanner_type_mediastore" translatable="false">(BETA) Use MediaStore system scanner and extractors</string>
     <string name="scanner_type_taglib">Use integrated TagLib metadata extractor</string>
-    <string name="scanner_type_ffmpeg_ext">Use FFmpeg metadata extractor. Please only use the "full" variant of the app. The "core" variant could cause issues with song tracking</string>
 
     <string name="scanner_variant_rescan">Rescan the entire library and reload all songs\' metadata</string>
     <string name="scanner_online_artist_linking">Try to link local files\' artists with ones on YouTube Music</string>

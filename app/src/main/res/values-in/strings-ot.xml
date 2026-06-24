@@ -142,7 +142,6 @@
     <string name="scanner_manual_btn">Mulai sinkronisasi manual</string>
     <string name="scanner_rejected_dir">Pilihan tidak valid. Folder pemindaian tidak dapat menjadi subfolder dari folder unduhan, atau folder unduhan itu sendiri</string>
     <string name="scanner_warning">Secara bawaan, pemindai TIDAK akan memuat ulang metadata dari lagu-lagu yang sudah ada, kecuali jika Anda menentukannya sebaliknya di bagian atas. Tergantung pada ukuran koleksi Anda, proses ini mungkin akan memakan waktu.</string>
-    <string name="scanner_missing_ffmpeg">Ekstraktor FFmpeg tidak terdeteksi</string>
     <string name="scanner_missing_storage_perm">Pemindai media lokal memerlukan izin penyimpanan agar berfungsi</string>
     <string name="scanner_btn_idle">Pindai</string>
     <string name="scanner_progress_complete">Pemindaian selesai</string>
@@ -169,7 +168,6 @@
     <string name="scanner_sensitivity_L3">Cocokkan judul, artis, dan album</string>
     <string name="scanner_type_title">Ekstraktor metadata</string>
     <string name="scanner_type_taglib">Gunakan ekstraktor metadata TagLib yang terintegrasi</string>
-    <string name="scanner_type_ffmpeg_ext">Gunakan ekstraktor metadata FFmpeg. Memerlukan paket eksternal untuk dipasang</string>
     <string name="scanner_variant_rescan">Pindai ulang seluruh pustaka dan muat ulang semua metadata lagu</string>
     <string name="scanner_online_artist_linking">Coba tautkan artis dari file lokal dengan yang ada di YouTube Music</string>
     <string name="clear_downloads_confirm">Apakah Anda yakin ingin menghapus semua unduhan? Hanya unduhan di folder unduhan utama yang akan dihapus.</string>

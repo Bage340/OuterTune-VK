@@ -14,6 +14,7 @@ room = "2.8.4"
 hilt = "2.57.2"
 ktor = "3.5.0"
 ksp = "2.3.9"
+taglib = "1.0.6"
 
 [libraries]
 annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
@@ -76,6 +77,7 @@ ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlin
 # misc
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 brotli = { group = "org.brotli", name = "dec", version = "0.1.2" }
+taglib = { module = "io.github.kyant0:taglib", version.ref = "taglib" }
 
 desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version = "2.1.5" }
 

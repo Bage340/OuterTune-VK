@@ -92,7 +92,6 @@
     <string name="grp_proxy">Проксі</string>
     <string name="lyrics_prefer_local_description">Надавати пріоритет локальним файлам текстів пісень перед використанням усіх хмарних провайдерів. Вимкніть це, щоби визначити пріоритетність хмарних провайдерів</string>
     <string name="scanner_strict_file_name_description">Якщо увімкнено, назви файлів НЕ ігноруватимуться. Наприклад, «Song.ogg» буде відрізнятися від «Song.flac». Налаштування чутливості сканера все одно буде застосовано</string>
-    <string name="scanner_type_ffmpeg_ext">Використовуйте екстрактор метаданих FFmpeg. Будь ласка, використовуйте лише повну версію програми. Базова версія може спричинити проблеми з відстеженням пісень</string>
     <string name="dev_settings_title">Увімкнути налаштування розробника</string>
     <string name="action_next">Вперед</string>
     <string name="dev_settings_description">Відкриває додаткові розширені налаштування, призначені для використання під час розробки</string>
@@ -105,7 +104,6 @@
     <string name="tab_arrangement_disable_tip">--- Перетягніть нижче, щоби вимкнути ---</string>
     <string name="swipe2Queue_description">Проведіть по пісні, щоби додати її до черги одразу після пісні, яка відтворюється зараз</string>
     <string name="swipe2Queue">Проведіть для додавання в чергу</string>
-    <string name="scanner_missing_ffmpeg">Витягувач FFmpeg не виявлено</string>
     <string name="scanner_missing_storage_perm">Для роботи локального сканера медіа потрібні дозволи на зберігання</string>
     <string name="scanner_progress_scanning">Сканування…</string>
     <string name="scanner_scan_fail">Не вдалося просканувати</string>
