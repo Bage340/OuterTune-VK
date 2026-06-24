@@ -25,7 +25,7 @@ Changes applied on top of [OuterTune/OuterTune](https://github.com/OuterTune/Out
 - Fixed bottom navigation: tapping a tab goes directly to the tab root; re-tapping the active tab scrolls to top and resets the search bar; search bar state is preserved per route
 - Added "keep audio focus" player setting
 - Restored tablet UI; fixed player double overlay; made dialogs scrollable
-- Replaced taglib with ffMetadataEx; improved local music linking and gapless playback
+- Local tag extraction via TagLib (all flavors); ffMetadataEx kept for the FFmpeg audio decoder (full flavor); improved local music linking and gapless playback
 - Fixed the album song count shown on the album screen
 - Replaced the manual high contrast toggle with automatic detection of the system contrast setting (Android 14+)
 - Added a custom accent color option with a palette of 13 presets, mutually exclusive with dynamic (Material You) theming
