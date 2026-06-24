@@ -809,16 +809,14 @@ class MainActivity : ComponentActivity() {
                                                     navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
                                                     scrollBehavior.state.heightOffset = 0f
                                                     scrollBehavior.state.contentOffset = 0f
-                                                }
-
-                                                if (screen.route == Screens.Home.route) {
+                                                } else if (screen.route == Screens.Home.route) {
                                                     navController.navigate(screen.route) {
                                                         popUpTo(navController.graph.startDestinationId) {
                                                             saveState = true
                                                         }
                                                         launchSingleTop = true
                                                     }
-                                                } else if (isCurrentTab || isInCurrentTabStack) {
+                                                } else if (isInCurrentTabStack) {
                                                     navController.navigate(screen.route) {
                                                         popUpTo(screen.route)
                                                         launchSingleTop = true
@@ -921,16 +919,14 @@ class MainActivity : ComponentActivity() {
                                                     navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
                                                     scrollBehavior.state.heightOffset = 0f
                                                     scrollBehavior.state.contentOffset = 0f
-                                                }
-
-                                                if (screen.route == Screens.Home.route) {
+                                                } else if (screen.route == Screens.Home.route) {
                                                     navController.navigate(screen.route) {
                                                         popUpTo(navController.graph.startDestinationId) {
                                                             saveState = true
                                                         }
                                                         launchSingleTop = true
                                                     }
-                                                } else if (isCurrentTab || isInCurrentTabStack) {
+                                                } else if (isInCurrentTabStack) {
                                                     navController.navigate(screen.route) {
                                                         popUpTo(screen.route)
                                                         launchSingleTop = true
