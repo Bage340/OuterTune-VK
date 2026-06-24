@@ -2,6 +2,10 @@
 
 [![OuterTune app icon](https://github.com/yuuichi-s/OuterTune/raw/dev/assets/outertune.webp)](https://github.com/yuuichi-s/OuterTune/blob/dev/assets/outertune.webp)
 
+
+[![Latest release](https://img.shields.io/github/v/release/yuuichi-s/OuterTune?include_prereleases)](https://github.com/yuuichi-s/OuterTune/releases)
+[![License](https://img.shields.io/github/license/yuuichi-s/OuterTune)](https://www.gnu.org/licenses/gpl-3.0)
+
 A Material 3 YouTube Music client & local music player for Android
 
 > [!NOTE]
