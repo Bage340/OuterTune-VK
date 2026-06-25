@@ -158,6 +158,7 @@ fun PlayerSliderTrack(
     }
 }
 
+/** @param trackHeight thickness of the drawn line (stroke width), not a layout height. */
 private fun DrawScope.drawTrack(
     tickFractions: FloatArray,
     activeRangeStart: Float,
@@ -166,7 +167,7 @@ private fun DrawScope.drawTrack(
     activeTrackColor: Color,
     inactiveTickColor: Color,
     activeTickColor: Color,
-    trackHeight: Dp = 2.dp
+    trackHeight: Dp
 ) {
     val isRtl = layoutDirection == LayoutDirection.Rtl
     val sliderLeft = Offset(0f, center.y)
