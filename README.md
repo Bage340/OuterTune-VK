@@ -29,6 +29,8 @@ Changes applied on top of [OuterTune/OuterTune](https://github.com/OuterTune/Out
 - Fixed the album song count shown on the album screen
 - Replaced the manual high contrast toggle with automatic detection of the system contrast setting (Android 14+)
 - Added a custom accent color option with a palette of 13 presets, mutually exclusive with dynamic (Material You) theming
+- Fixed Folders screen: restores the search bar on back navigation; corrected default sort to track number ascending; fixed list not refreshing on sort change
+- Added selectable slider styles with an animated squiggly line as the default
 - Updated Kotlin, KSP, NewPipeExtractor, Ktor, AGP, and Gradle
 
 ## Features
