@@ -87,6 +87,10 @@
     <string name="player_background_gradient">グラデーション効果</string>
     <string name="slim_navbar_title">細いナビバー</string>
     <string name="slim_navbar_description">テキストラベルを削除してナビバーの高さを減らす</string>
+    <string name="slider_style_title">スライダーの形式</string>
+    <string name="slider_style_squiggly">波状</string>
+    <string name="slider_style_default">標準</string>
+    <string name="slider_style_slim">細線</string>
     <string name="tab_arrangement">タブを並べ替える</string>
     <string name="tab_arrangement_home_required">ホームタブは必須です。</string>
     <string name="token_shown">再度タップすると、コピーまたは編集</string>

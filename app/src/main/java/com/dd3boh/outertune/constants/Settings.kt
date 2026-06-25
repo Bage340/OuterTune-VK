@@ -16,6 +16,12 @@ enum class PlayerBackgroundStyle {
     FOLLOW_THEME, GRADIENT, BLUR
 }
 
+enum class SliderStyle {
+    SQUIGGLY, DEFAULT, SLIM
+}
+
+val DEFAULT_SLIDER_STYLE = SliderStyle.SQUIGGLY
+
 enum class LibraryViewType {
     LIST, GRID;
 

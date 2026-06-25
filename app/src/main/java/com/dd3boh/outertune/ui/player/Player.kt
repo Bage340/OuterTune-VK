@@ -126,8 +126,10 @@ import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PLAYER_DEBUG
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.QueuePeekHeight
+import com.dd3boh.outertune.constants.DEFAULT_SLIDER_STYLE
 import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
+import com.dd3boh.outertune.constants.SliderStyleKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.SwipeToSkipKey
 import com.dd3boh.outertune.extensions.isPowerSaver
@@ -678,6 +680,11 @@ fun ControlsContent(
         defaultValue = DEFAULT_PLAYER_BACKGROUND
     )
 
+    val sliderStyle by rememberEnumPreference(
+        key = SliderStyleKey,
+        defaultValue = DEFAULT_SLIDER_STYLE
+    )
+
 
     val onBackgroundColor = when (playerBackground) {
         PlayerBackgroundStyle.FOLLOW_THEME -> MaterialTheme.colorScheme.secondary
@@ -821,7 +828,9 @@ fun ControlsContent(
                 track = { sliderState ->
                     PlayerSliderTrack(
                         sliderState = sliderState,
-                        colors = SliderDefaults.colors()
+                        colors = SliderDefaults.colors(),
+                        style = sliderStyle,
+                        animate = isPlaying && sliderPosition == null
                     )
                 },
                 modifier = Modifier.padding(horizontal = PlayerHorizontalPadding)
