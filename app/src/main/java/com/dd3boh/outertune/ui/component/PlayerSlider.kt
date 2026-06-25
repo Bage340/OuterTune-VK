@@ -8,6 +8,12 @@
 
 package com.dd3boh.outertune.ui.component
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,15 +22,55 @@ import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.dd3boh.outertune.constants.SliderStyle
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.sin
+
+/** Track thickness of the SLIM style. */
+private val SlimTrackHeight = 4.dp
+
+/** Stroke thickness of the SQUIGGLY wave. */
+private val SquigglyStrokeWidth = 4.dp
+
+/** Wave height of the squiggly active track. */
+private val SquigglyAmplitude = 2.dp
+
+/** Distance between wave crests of the squiggly active track. */
+private val SquigglyWavelength = 36.dp
+
+/** Duration of one full wave cycle. Larger is slower. */
+private const val SquigglyPeriodMillis = 2500
+
+/**
+ * Amplitude (in px) below which the wave is treated as flat and drawn as a straight
+ * line. This avoids degenerate paths while the wave animates to/from zero.
+ */
+private const val SquigglyFlatAmplitudeThresholdPx = 0.5f
+
+/**
+ * Number of line segments used to approximate one wavelength of the sine curve.
+ * The sampling step is derived from the wavelength so smoothness stays consistent
+ * across screen densities and wavelengths.
+ */
+private const val SquigglySegmentsPerWavelength = 12
+
+private val TwoPi = (2 * PI).toFloat()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +78,9 @@ fun PlayerSliderTrack(
     sliderState: SliderState,
     modifier: Modifier = Modifier,
     colors: SliderColors = SliderDefaults.colors(),
-    trackHeight: Dp = 10.dp
+    trackHeight: Dp = 10.dp,
+    style: SliderStyle = SliderStyle.SQUIGGLY,
+    animate: Boolean = false,
 ) {
     val inactiveTrackColor = colors.inactiveTrackColor
     val activeTrackColor = colors.activeTrackColor
@@ -40,26 +88,73 @@ fun PlayerSliderTrack(
     val activeTickColor = colors.activeTickColor
 
     val valueRange = sliderState.valueRange
+    val fraction = calcFraction(
+        valueRange.start,
+        valueRange.endInclusive,
+        sliderState.value.coerceIn(valueRange.start, valueRange.endInclusive)
+    )
+    val tickFractions = stepsToTickFractions(sliderState.steps)
 
-    Canvas(
-        modifier
-            .fillMaxWidth()
-            .height(trackHeight)
-    ) {
-        drawTrack(
-            stepsToTickFractions(sliderState.steps),
-            0f,
-            calcFraction(
-                valueRange.start,
-                valueRange.endInclusive,
-                sliderState.value.coerceIn(valueRange.start, valueRange.endInclusive)
-            ),
-            inactiveTrackColor,
-            activeTrackColor,
-            inactiveTickColor,
-            activeTickColor,
-            trackHeight
-        )
+    when (style) {
+        SliderStyle.SQUIGGLY -> {
+            // Only advance the wave phase while playing, so a paused/seeking player
+            // does not keep redrawing the (invisible) wave every frame.
+            val phase = remember { Animatable(0f) }
+            LaunchedEffect(animate) {
+                if (animate) {
+                    phase.snapTo(0f)
+                    phase.animateTo(
+                        targetValue = TwoPi,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = SquigglyPeriodMillis, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart
+                        )
+                    )
+                }
+            }
+            // Flatten the wave smoothly while paused or while the user is seeking.
+            val amplitude by animateDpAsState(
+                targetValue = if (animate) SquigglyAmplitude else 0.dp,
+                animationSpec = tween(durationMillis = 300),
+                label = "amplitude"
+            )
+
+            Canvas(
+                modifier
+                    .fillMaxWidth()
+                    .height(trackHeight)
+            ) {
+                drawSquigglyTrack(
+                    activeRangeEnd = fraction,
+                    inactiveTrackColor = inactiveTrackColor,
+                    activeTrackColor = activeTrackColor,
+                    trackStrokeWidth = SquigglyStrokeWidth.toPx(),
+                    amplitude = amplitude.toPx(),
+                    wavelength = SquigglyWavelength.toPx(),
+                    phase = phase.value
+                )
+            }
+        }
+
+        SliderStyle.DEFAULT, SliderStyle.SLIM -> {
+            val resolvedHeight = if (style == SliderStyle.SLIM) SlimTrackHeight else trackHeight
+            Canvas(
+                modifier
+                    .fillMaxWidth()
+                    .height(trackHeight)
+            ) {
+                drawTrack(
+                    tickFractions,
+                    0f,
+                    fraction,
+                    inactiveTrackColor,
+                    activeTrackColor,
+                    inactiveTickColor,
+                    activeTickColor,
+                    resolvedHeight
+                )
+            }
+        }
     }
 }
 
@@ -115,6 +210,78 @@ private fun DrawScope.drawTrack(
             radius = tickSize / 2f
         )
     }
+}
+
+/**
+ * Draws the active (played) portion of the track as an animated sine wave, with the
+ * remaining (inactive) portion drawn as a straight line. When [amplitude] is (near) zero
+ * the active portion is drawn straight, so the wave flattens smoothly when paused/seeking.
+ */
+private fun DrawScope.drawSquigglyTrack(
+    activeRangeEnd: Float,
+    inactiveTrackColor: Color,
+    activeTrackColor: Color,
+    trackStrokeWidth: Float,
+    amplitude: Float,
+    wavelength: Float,
+    phase: Float
+) {
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val sliderLeft = Offset(0f, center.y)
+    val sliderRight = Offset(size.width, center.y)
+    val sliderStart = if (isRtl) sliderRight else sliderLeft
+    val sliderEnd = if (isRtl) sliderLeft else sliderRight
+
+    val activeEnd = Offset(
+        sliderStart.x + (sliderEnd.x - sliderStart.x) * activeRangeEnd,
+        center.y
+    )
+
+    // Inactive (straight) portion: from the active end to the slider end.
+    drawLine(
+        inactiveTrackColor,
+        activeEnd,
+        sliderEnd,
+        trackStrokeWidth,
+        StrokeCap.Round
+    )
+
+    if (amplitude <= SquigglyFlatAmplitudeThresholdPx || wavelength <= 0f) {
+        // Effectively flat: draw the active portion as a straight line.
+        drawLine(
+            activeTrackColor,
+            sliderStart,
+            activeEnd,
+            trackStrokeWidth,
+            StrokeCap.Round
+        )
+        return
+    }
+
+    val direction = if (isRtl) -1f else 1f
+    val length = abs(activeEnd.x - sliderStart.x)
+    val step = (wavelength / SquigglySegmentsPerWavelength).coerceAtLeast(1f)
+    val path = Path().apply {
+        // Start exactly on the curve. Starting at center.y would leave a short
+        // vertical stub that shows up as a fixed thick dot under the round cap.
+        moveTo(sliderStart.x, center.y + amplitude * sin(phase))
+        var x = step
+        while (x <= length) {
+            val px = sliderStart.x + direction * x
+            val py = center.y + amplitude * sin(TwoPi * x / wavelength + phase)
+            lineTo(px, py)
+            x += step
+        }
+        // The loop can stop up to one step short of the active end; finish the
+        // curve exactly at activeEnd so it joins the inactive line without a gap.
+        val endY = center.y + amplitude * sin(TwoPi * length / wavelength + phase)
+        lineTo(activeEnd.x, endY)
+    }
+    drawPath(
+        path = path,
+        color = activeTrackColor,
+        style = Stroke(width = trackStrokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    )
 }
 
 private fun stepsToTickFractions(steps: Int): FloatArray {
