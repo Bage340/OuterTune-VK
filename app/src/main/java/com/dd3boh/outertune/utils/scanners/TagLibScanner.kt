@@ -74,7 +74,6 @@ class TagLibScanner : MetadataScanner {
             val sampleRate = audioProperties.sampleRate
             val bitrate = audioProperties.bitrate * 1000
 
-            // Read metadata (tags)
             val metadata = TagLib.getMetadata(fd = fd.dup().detachFd(), readPictures = false)
                 ?: throw RuntimeException("TagLib failed to read metadata for: ${file.absolutePath}")
 
@@ -146,10 +145,6 @@ class TagLibScanner : MetadataScanner {
                 Log.v(EXTRACTOR_TAG, "Full output for: ${file.absolutePath} \n $allData")
             }
 
-            /**
-             * These vars need a bit more parsing
-             */
-
             val timeNow = LocalDateTime.now()
 
             val title: String = if (!rawTitle.isNullOrBlank()) { // songs with no title tag
@@ -160,14 +155,12 @@ class TagLibScanner : MetadataScanner {
 
             val duration: Long = (rawDuration / 1000).toLong()
 
-            // should never be invalid if scanner even gets here fine...
             val dateModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(file.lastModified()), ZoneOffset.UTC)
             val albumId = if (albumName != null) AlbumEntity.generateAlbumId() else null
 
             // codec is not part of TagLib's audio properties; read it from MediaExtractor
             val codec = readCodec(file)
 
-            // parse album
             val albumEntity = if (albumName != null && albumId != null) AlbumEntity(
                 id = albumId,
                 title = albumName,

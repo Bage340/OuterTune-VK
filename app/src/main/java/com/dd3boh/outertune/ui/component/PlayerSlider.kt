@@ -57,17 +57,10 @@ private val SquigglyWavelength = 36.dp
 /** Duration of one full wave cycle. Larger is slower. */
 private const val SquigglyPeriodMillis = 2500
 
-/**
- * Amplitude (in px) below which the wave is treated as flat and drawn as a straight
- * line. This avoids degenerate paths while the wave animates to/from zero.
- */
+/** Amplitude (in px) below which the wave is drawn as a straight line. */
 private const val SquigglyFlatAmplitudeThresholdPx = 0.5f
 
-/**
- * Number of line segments used to approximate one wavelength of the sine curve.
- * The sampling step is derived from the wavelength so smoothness stays consistent
- * across screen densities and wavelengths.
- */
+/** Line segments per wavelength; deriving the step from the wavelength keeps smoothness density-independent. */
 private const val SquigglySegmentsPerWavelength = 12
 
 private val TwoPi = (2 * PI).toFloat()
@@ -213,11 +206,7 @@ private fun DrawScope.drawTrack(
     }
 }
 
-/**
- * Draws the active (played) portion of the track as an animated sine wave, with the
- * remaining (inactive) portion drawn as a straight line. When [amplitude] is (near) zero
- * the active portion is drawn straight, so the wave flattens smoothly when paused/seeking.
- */
+/** Draws the active portion as a sine wave and the inactive portion as a straight line. */
 private fun DrawScope.drawSquigglyTrack(
     activeRangeEnd: Float,
     inactiveTrackColor: Color,
@@ -238,7 +227,6 @@ private fun DrawScope.drawSquigglyTrack(
         center.y
     )
 
-    // Inactive (straight) portion: from the active end to the slider end.
     drawLine(
         inactiveTrackColor,
         activeEnd,
