@@ -15,6 +15,7 @@ import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.utils.YTPlayerUtils.MAIN_CLIENT
 import com.dd3boh.outertune.utils.YTPlayerUtils.STREAM_FALLBACK_CLIENTS
 import com.dd3boh.outertune.utils.YTPlayerUtils.validateStatus
+import com.dd3boh.outertune.utils.cipher.SignatureCipherManager
 import com.dd3boh.outertune.utils.potoken.PoTokenGenerator
 import com.dd3boh.outertune.utils.potoken.PoTokenResult
 import com.zionhuang.innertube.NewPipeUtils
@@ -52,8 +53,7 @@ object YTPlayerUtils {
      * Clients used for fallback streams in case the streams of the main client do not work.
      */
     private val STREAM_FALLBACK_CLIENTS: Array<YouTubeClient> = arrayOf(
-        // Could not parse deobfuscation function
-//        WEB_REMIX,
+        WEB_REMIX, // premium formats and correct metadata; requires working signature deobfuscation
 //        ANDROID,
 //        TVHTML5,
 //        TVHTML5_SIMPLY_EMBEDDED_PLAYER,
@@ -285,18 +285,30 @@ object YTPlayerUtils {
     }
 
     /**
-     * Wrapper around the [NewPipeUtils.getStreamUrl] function which reports exceptions
+     * Resolves the playable stream URL for the given audio [format].
+     *
+     * @param videoId the id of the video [format] belongs to
+     * @return the stream URL, or null if it could not be resolved; any error is reported, not thrown
      */
-    private fun findUrlOrNull(
+    private suspend fun findUrlOrNull(
         format: PlayerResponse.StreamingData.Format,
         videoId: String
     ): String? {
-        return NewPipeUtils.getStreamUrl(format, videoId)
-            .onFailure {
-                Log.e(TAG, "[$videoId] getStreamUrl failed (itag=${format.itag}, hasUrl=${format.url != null}, hasCipher=${format.signatureCipher != null})", it)
-                reportException(it)
-            }
-            .getOrNull()
+        val npResult = NewPipeUtils.getStreamUrl(format, videoId)
+        npResult.getOrNull()?.let { return it }
+
+        // fallback for cipher formats: deobfuscate in a WebView (see SignatureCipherManager)
+        val signatureCipher = format.signatureCipher
+        if (signatureCipher != null) {
+            val url = SignatureCipherManager.deobfuscateStreamUrl(signatureCipher, videoId)
+            if (url != null) return url
+        }
+
+        npResult.exceptionOrNull()?.let {
+            Log.e(TAG, "[$videoId] getStreamUrl failed (itag=${format.itag}, hasUrl=${format.url != null}, hasCipher=${format.signatureCipher != null})", it)
+            reportException(it)
+        }
+        return null
     }
 
     /**
