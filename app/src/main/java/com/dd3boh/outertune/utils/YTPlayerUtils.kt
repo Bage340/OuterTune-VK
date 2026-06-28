@@ -15,6 +15,7 @@ import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.utils.YTPlayerUtils.MAIN_CLIENT
 import com.dd3boh.outertune.utils.YTPlayerUtils.STREAM_FALLBACK_CLIENTS
 import com.dd3boh.outertune.utils.YTPlayerUtils.validateStatus
+import com.dd3boh.outertune.utils.cipher.SignatureCipherManager
 import com.dd3boh.outertune.utils.potoken.PoTokenGenerator
 import com.dd3boh.outertune.utils.potoken.PoTokenResult
 import com.zionhuang.innertube.NewPipeUtils
@@ -37,14 +38,8 @@ object YTPlayerUtils {
     private val poTokenGenerator = PoTokenGenerator()
 
     /**
-     * The main client is used for metadata and initial streams.
-     * Do not use other clients for this because it can result in inconsistent metadata.
-     * For example other clients can have different normalization targets (loudnessDb).
-     *
-     * [com.zionhuang.innertube.models.YouTubeClient.ANDROID_VR_NO_AUTH] Is temporally used as it is out only working client
-     * [com.zionhuang.innertube.models.YouTubeClient.WEB_REMIX] should be preferred here because currently it is the only client which provides:
-     * - the correct metadata (like loudnessDb)
-     * - premium formats
+     * Client used for metadata and the initial stream response. Other clients are not used here
+     * because their metadata can differ (e.g. different loudnessDb normalization targets).
      */
     private val MAIN_CLIENT: YouTubeClient = ANDROID_VR_NO_AUTH
 
@@ -52,12 +47,11 @@ object YTPlayerUtils {
      * Clients used for fallback streams in case the streams of the main client do not work.
      */
     private val STREAM_FALLBACK_CLIENTS: Array<YouTubeClient> = arrayOf(
-        // Could not parse deobfuscation function
-//        WEB_REMIX,
+        WEB_REMIX, // premium formats and correct metadata; requires working signature deobfuscation
 //        ANDROID,
 //        TVHTML5,
 //        TVHTML5_SIMPLY_EMBEDDED_PLAYER,
-        IOS, // recent api changes produce error 403 after 30 seconds
+        IOS,
     )
 
 
@@ -83,12 +77,8 @@ object YTPlayerUtils {
     ): Result<PlaybackData> = runCatching {
         Log.d(TAG, "Playback info requested: $videoId")
 
-        /**
-         * This is required for some clients to get working streams however
-         * it should not be forced for the [MAIN_CLIENT] because the response of the [MAIN_CLIENT]
-         * is required even if the streams won't work from this client.
-         * This is why it is allowed to be null.
-         */
+        // Required for some clients to get working streams, but not forced for MAIN_CLIENT: its
+        // response is needed even when its streams won't work, so this is allowed to be null.
         val signatureTimestamp = getSignatureTimestampOrNull(videoId)
 
         val isLoggedIn = YouTube.cookie != null
@@ -183,7 +173,7 @@ object YTPlayerUtils {
                 }
 
                 if (clientIndex == STREAM_FALLBACK_CLIENTS.size - 1) {
-                    /** skip [validateStatus] for last client */
+                    // skip validateStatus for the last client
                     break
                 }
                 if (validateStatus(streamUrl)) {
@@ -271,9 +261,7 @@ object YTPlayerUtils {
         return false
     }
 
-    /**
-     * Wrapper around the [NewPipeUtils.getSignatureTimestamp] function which reports exceptions
-     */
+    // Reports exceptions; returns null on failure.
     private fun getSignatureTimestampOrNull(
         videoId: String
     ): Int? {
@@ -285,23 +273,33 @@ object YTPlayerUtils {
     }
 
     /**
-     * Wrapper around the [NewPipeUtils.getStreamUrl] function which reports exceptions
+     * Resolves the playable stream URL for the given audio [format].
+     *
+     * @param videoId the id of the video [format] belongs to
+     * @return the stream URL, or null if it could not be resolved; any error is reported, not thrown
      */
-    private fun findUrlOrNull(
+    private suspend fun findUrlOrNull(
         format: PlayerResponse.StreamingData.Format,
         videoId: String
     ): String? {
-        return NewPipeUtils.getStreamUrl(format, videoId)
-            .onFailure {
-                Log.e(TAG, "[$videoId] getStreamUrl failed (itag=${format.itag}, hasUrl=${format.url != null}, hasCipher=${format.signatureCipher != null})", it)
-                reportException(it)
-            }
-            .getOrNull()
+        val npResult = NewPipeUtils.getStreamUrl(format, videoId)
+        npResult.getOrNull()?.let { return it }
+
+        // fallback for cipher formats: deobfuscate in a WebView (see SignatureCipherManager)
+        val signatureCipher = format.signatureCipher
+        if (signatureCipher != null) {
+            val url = SignatureCipherManager.deobfuscateStreamUrl(signatureCipher, videoId)
+            if (url != null) return url
+        }
+
+        npResult.exceptionOrNull()?.let {
+            Log.e(TAG, "[$videoId] getStreamUrl failed (itag=${format.itag}, hasUrl=${format.url != null}, hasCipher=${format.signatureCipher != null})", it)
+            reportException(it)
+        }
+        return null
     }
 
-    /**
-     * Wrapper around the [PoTokenGenerator.getWebClientPoToken] function which reports exceptions
-     */
+    // Reports exceptions; returns null on failure.
     private fun getWebClientPoTokenOrNull(videoId: String, sessionId: String?): PoTokenResult? {
         if (sessionId == null) {
             Log.d(TAG, "[$videoId] Session identifier is null")
