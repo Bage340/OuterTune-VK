@@ -21,9 +21,12 @@ import okhttp3.Request
 /**
  * Fetches YouTube's base player.js and its 8-hex hash.
  *
- * The hash is read from an embed page's `jsUrl` (`/s/player/<hash>/player_ias.vflset/.../base.js`),
- * then the base.js is downloaded. The player.js is the same across videos for a given rollout, so
- * the last fetched (hash, code) pair is cached and reused.
+ * The hash is read from an embed page, and the base.js URL is built as the `player_ias` / `en_US`
+ * variant that the bundled cipher configs match. Other variants (such as the embed page's own
+ * `player_embed` jsUrl) do not work with those configs, so the path is fixed rather than read from
+ * `jsUrl`. The player.js is the same across videos for a given rollout, so the last fetched (hash,
+ * code) pair is cached and reused; call [invalidate] to drop the cache when the player may have
+ * rotated.
  */
 object PlayerJsFetcher {
 
@@ -40,17 +43,19 @@ object PlayerJsFetcher {
 
     private val hashRegex = Regex("""/s/player/([0-9a-fA-F]{8})/""")
 
+    internal data class PlayerJs(val hash: String, val code: String, val fromCache: Boolean)
+
     /**
-     * Returns the (playerHash, playerJs) for the current web player, fetching it if not cached.
+     * Returns the player.js for the current web player, fetching it if not cached.
      *
      * @param videoId only used to load an embed page the current player hash is read from
      * @param forceRefresh fetch again even if a value is cached
-     * @return the (hash, player.js) pair, or null if it could not be fetched
+     * @return the player.js (and whether it came from the cache), or null if it could not be fetched
      */
-    suspend fun getPlayerJs(videoId: String, forceRefresh: Boolean = false): Pair<String, String>? =
+    internal suspend fun getPlayerJs(videoId: String, forceRefresh: Boolean = false): PlayerJs? =
         mutex.withLock {
             if (!forceRefresh) {
-                cached?.let { return it }
+                cached?.let { return PlayerJs(it.first, it.second, fromCache = true) }
             }
             val result = runCatching { fetch(videoId) }.getOrElse {
                 Log.e(TAG, "Failed to fetch player.js", it)
@@ -59,7 +64,7 @@ object PlayerJsFetcher {
             if (result != null) {
                 cached = result
             }
-            result
+            result?.let { PlayerJs(it.first, it.second, fromCache = false) }
         }
 
     fun invalidate() {

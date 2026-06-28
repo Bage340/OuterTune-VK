@@ -13,17 +13,13 @@ import com.dd3boh.outertune.App
 import org.json.JSONObject
 
 /**
- * Signature deobfuscation config for one player.js, looked up by its hash.
- *
- * Recent players obfuscate the signature with a multi-purpose function that NewPipe cannot
- * discover from the minified code, so the function name and its constants are kept here and run
- * against the real player.js (see [CipherWebView]).
+ * Signature deobfuscation config for one player.js, looked up by its hash and used by [CipherWebView].
  *
  * @property sigFuncName name of the deobfuscation function
  * @property sigConstantArgs constants placed before the signature, so the call is
  *   `sigFuncName(sigConstantArgs..., sig)`
- * @property nClass the player's URL builder class for the `n` throttling parameter; building
- *   `new g.<nClass>(url, true)` and reading `.get("n")` applies the n-transform
+ * @property nClass the player's URL builder class used to apply the n-transform to the `n`
+ *   throttling parameter
  */
 data class PlayerCipherConfig(
     val sigFuncName: String,
@@ -72,13 +68,7 @@ object PlayerCipherConfigStore {
         emptyMap()
     }
 
-    /**
-     * Parses one player entry, whose `sig` field is a `name(int,int,INPUT)` call; the constants
-     * before INPUT become [PlayerCipherConfig.sigConstantArgs].
-     *
-     * @return the parsed config, or null on any malformed field so one bad entry cannot break the
-     *   rest of the map
-     */
+    // sig is a `name(int,int,INPUT)` call; returns null on any malformed field so one bad entry can't break the map.
     private fun parseEntry(entry: JSONObject): PlayerCipherConfig? {
         val sig = entry.optString("sig")
         val nClass = entry.optString("nClass")

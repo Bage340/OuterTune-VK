@@ -40,39 +40,64 @@ object SignatureCipherManager {
      * @return the full stream URL with the signature appended, or null on failure
      */
     suspend fun deobfuscateStreamUrl(signatureCipher: String, videoId: String): String? = mutex.withLock {
-        try {
-            val params = parseQuery(signatureCipher)
-            val obfuscatedSig = params["s"]
-            val sigParam = params["sp"] ?: "signature"
-            val baseUrl = params["url"]
-            if (obfuscatedSig == null || baseUrl == null) {
-                Log.e(TAG, "[$videoId] could not parse signatureCipher (s=${obfuscatedSig != null}, url=${baseUrl != null})")
-                return null
-            }
+        val params = parseQuery(signatureCipher)
+        val obfuscatedSig = params["s"]
+        val sigParam = params["sp"] ?: "signature"
+        val baseUrl = params["url"]
+        if (obfuscatedSig == null || baseUrl == null) {
+            Log.e(TAG, "[$videoId] could not parse signatureCipher " +
+                    "(s=${obfuscatedSig != null}, url=${baseUrl != null})")
+            return@withLock null
+        }
 
-            val (playerHash, playerJs) = PlayerJsFetcher.getPlayerJs(videoId) ?: run {
+        // Try the cached player.js first (attempt 0). A cached player.js may be stale (the player
+        // rotated while running), so on a cache hit with no config, or on a deobfuscation failure,
+        // drop it and refetch once (attempt 1) before giving up.
+        for (attempt in 0..1) {
+            val forceRefresh = attempt > 0
+            val (playerHash, playerJs, fromCache) = PlayerJsFetcher.getPlayerJs(videoId, forceRefresh) ?: run {
                 Log.e(TAG, "[$videoId] could not fetch player.js")
-                return null
+                return@withLock null
             }
 
             val config = PlayerCipherConfigStore.get(playerHash)
             if (config == null) {
-                Log.w(TAG, "[$videoId] no cipher config for player $playerHash (${PlayerCipherConfigStore.knownHashes().size} known players)")
-                return null
+                if (attempt == 0 && fromCache) {
+                    // The cached player.js may be stale; refetch once in case the current player is
+                    // supported. A freshly fetched player.js is already current, so no retry there.
+                    Log.w(TAG, "[$videoId] no config for cached player $playerHash; refetching once")
+                    PlayerJsFetcher.invalidate()
+                    continue
+                }
+                Log.w(TAG, "[$videoId] no cipher config for player $playerHash " +
+                        "(${PlayerCipherConfigStore.knownHashes().size} known players)")
+                return@withLock null
             }
 
-            val cipher = getOrCreateWebView(playerHash, playerJs, config)
-            val deobfuscatedSig = cipher.deobfuscateSignature(obfuscatedSig)
-            val urlWithN = transformNParam(baseUrl, cipher, videoId)
+            val finalUrl = try {
+                val cipher = getOrCreateWebView(playerHash, playerJs, config)
+                val deobfuscatedSig = cipher.deobfuscateSignature(obfuscatedSig)
+                val urlWithN = transformNParam(baseUrl, cipher, videoId)
+                val separator = if ("?" in urlWithN) "&" else "?"
+                "$urlWithN$separator$sigParam=${Uri.encode(deobfuscatedSig)}"
+            } catch (e: Exception) {
+                Log.e(TAG, "[$videoId] cipher deobfuscation failed (forceRefresh=$forceRefresh)", e)
+                null
+            }
 
-            val separator = if ("?" in urlWithN) "&" else "?"
-            val finalUrl = "$urlWithN$separator$sigParam=${Uri.encode(deobfuscatedSig)}"
-            Log.i(TAG, "[$videoId] stream url built via WebView (player $playerHash)")
-            finalUrl
-        } catch (e: Exception) {
-            Log.e(TAG, "[$videoId] cipher deobfuscation failed", e)
-            null
+            if (finalUrl != null) {
+                Log.i(TAG, "[$videoId] stream url built via WebView (player $playerHash)")
+                return@withLock finalUrl
+            }
+            if (attempt > 0) break
+
+            // Deobfuscation failed; drop the cached code and the WebView so attempt 1 retries with a
+            // fresh player.js and a rebuilt WebView.
+            Log.w(TAG, "[$videoId] retrying with a refreshed player.js")
+            PlayerJsFetcher.invalidate()
+            closeWebView()
         }
+        null
     }
 
     /**
@@ -110,14 +135,18 @@ object SignatureCipherManager {
     ): CipherWebView {
         webView?.let { existing ->
             if (webViewHash == playerHash) return existing
-            withContext(Dispatchers.Main) { existing.close() }
-            webView = null
-            webViewHash = null
+            closeWebView()
         }
         val created = CipherWebView.create(App.instance, playerJs, config)
         webView = created
         webViewHash = playerHash
         return created
+    }
+
+    private suspend fun closeWebView() {
+        webView?.let { existing -> withContext(Dispatchers.Main) { existing.close() } }
+        webView = null
+        webViewHash = null
     }
 
     private fun parseQuery(query: String): Map<String, String> {

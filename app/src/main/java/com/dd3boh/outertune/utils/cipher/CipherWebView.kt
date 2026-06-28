@@ -17,6 +17,7 @@ import android.webkit.WebView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -25,19 +26,15 @@ import kotlin.coroutines.resumeWithException
 /**
  * Runs YouTube's signature deobfuscation function inside the full player.js.
  *
- * Recent players obfuscate the signature with a multi-purpose function that depends on the
- * player's global string array and other internal helpers, so it cannot be extracted and run in
- * isolation. We load the whole player.js into a WebView and inject a wrapper, inside the player's
- * IIFE so the function is in scope (the call below is the current player's; the name and constants
- * come from [PlayerCipherConfig]):
- *
- *     window._cipherSigFunc = function(sig) { return fJ(24, 1210, sig); };
+ * Players obfuscate the signature with a multi-purpose function that depends on the player's
+ * internal helpers, so it cannot be extracted and run in isolation. We load the whole player.js
+ * into a WebView and inject a wrapper, inside the player's IIFE so the function is in scope; the
+ * function name and constants come from [PlayerCipherConfig].
  *
  * Modeled on [com.dd3boh.outertune.utils.potoken.PoTokenWebView] for the WebView/coroutine bridge.
  */
 class CipherWebView private constructor(
     context: Context,
-    private val playerJs: String,
     private val config: PlayerCipherConfig,
     private val initContinuation: Continuation<CipherWebView>,
 ) {
@@ -66,27 +63,7 @@ class CipherWebView private constructor(
         }
     }
 
-    private fun loadPlayerJs() {
-        val argsStr = config.sigConstantArgs.joinToString(", ")
-        val sigWrapper =
-            "window._cipherSigFunc = function(sig) { try { return ${config.sigFuncName}($argsStr, sig); } catch(e) { return null; } };"
-        // n-transform: build a googlevideo URL carrying the n value and read it back through the
-        // player's URL class, which applies the n-transform on read.
-        val nWrapper =
-            "window._nTransformFunc = function(n) { try { var u = new g.${config.nClass}('https://x.googlevideo.com/videoplayback?n=' + n, true); var t = u.get('n'); return (t && t !== n) ? t : n; } catch(e) { return n; } };"
-        val wrapper = "; $sigWrapper $nWrapper"
-
-        val injected = playerJs.replace("})(_yt_player);", "$wrapper })(_yt_player);")
-        val modifiedJs = if (injected == playerJs) {
-            Log.w(TAG, "IIFE injection point not found, appending wrapper (sig may be out of scope)")
-            playerJs + "\n" + wrapper
-        } else {
-            injected
-        }
-
-        val cacheDir = File(webView.context.cacheDir, "cipher").apply { mkdirs() }
-        File(cacheDir, "player.js").writeText(modifiedJs)
-
+    private fun load(cacheDir: File) {
         webView.loadDataWithBaseURL(
             "file://${cacheDir.absolutePath}/",
             buildHtml(),
@@ -166,11 +143,13 @@ function transformN(n) {
      * @return the deobfuscated signature
      */
     suspend fun deobfuscateSignature(obfuscatedSig: String): String = withContext(Dispatchers.Main) {
-        suspendCancellableCoroutine { cont ->
-            cont.invokeOnCancellation { sigContinuation = null }
-            sigContinuation = cont
-            webView.evaluateJavascript("deobfuscateSig('${escapeJsString(obfuscatedSig)}')", null)
-        }
+        withTimeoutOrNull(CALL_TIMEOUT_MS) {
+            suspendCancellableCoroutine { cont ->
+                cont.invokeOnCancellation { sigContinuation = null }
+                sigContinuation = cont
+                webView.evaluateJavascript("deobfuscateSig('${escapeJsString(obfuscatedSig)}')", null)
+            }
+        } ?: throw CipherException("sig deobfuscation timed out after $CALL_TIMEOUT_MS ms")
     }
 
     /**
@@ -179,11 +158,13 @@ function transformN(n) {
      * @return the transformed value, or [n] unchanged if the transform does not apply
      */
     suspend fun transformNParam(n: String): String = withContext(Dispatchers.Main) {
-        suspendCancellableCoroutine { cont ->
-            cont.invokeOnCancellation { nContinuation = null }
-            nContinuation = cont
-            webView.evaluateJavascript("transformN('${escapeJsString(n)}')", null)
-        }
+        withTimeoutOrNull(CALL_TIMEOUT_MS) {
+            suspendCancellableCoroutine { cont ->
+                cont.invokeOnCancellation { nContinuation = null }
+                nContinuation = cont
+                webView.evaluateJavascript("transformN('${escapeJsString(n)}')", null)
+            }
+        } ?: throw CipherException("n transform timed out after $CALL_TIMEOUT_MS ms")
     }
 
     fun close() {
@@ -202,19 +183,71 @@ function transformN(n) {
         private const val TAG = "CipherWebView"
         private const val JS_INTERFACE = "CipherBridge"
 
-        /**
-         * Creates a [CipherWebView] and suspends until the player.js has loaded and its cipher
-         * functions are ready to call.
-         *
-         * @return the ready instance
-         */
+        // Upper bounds so a WebView/JS bridge callback that never fires cannot hang playback (and,
+        // since callers serialize on a mutex, cannot block later deobfuscation either).
+        private const val LOAD_TIMEOUT_MS = 10_000L
+        private const val CALL_TIMEOUT_MS = 10_000L
+
+        // Prefix of the googlevideo URL the n value is appended to before the n-transform reads it back.
+        private const val N_PROBE_URL = "https://x.googlevideo.com/videoplayback?n="
+
+        /** Suspends until the player.js has loaded and the cipher functions are ready. */
         suspend fun create(
             context: Context,
             playerJs: String,
             config: PlayerCipherConfig,
-        ): CipherWebView = withContext(Dispatchers.Main) {
-            suspendCancellableCoroutine { cont ->
-                CipherWebView(context, playerJs, config, cont).loadPlayerJs()
+        ): CipherWebView {
+            // The injected player.js can be a couple of megabytes; build and write it off the main
+            // thread, leaving only the WebView load below on the main thread.
+            val cacheDir = withContext(Dispatchers.IO) {
+                File(context.cacheDir, "cipher").apply { mkdirs() }.also { dir ->
+                    File(dir, "player.js").writeText(buildInjectedPlayerJs(playerJs, config))
+                }
+            }
+            return withContext(Dispatchers.Main) {
+                val holder = arrayOfNulls<CipherWebView>(1)
+                withTimeoutOrNull(LOAD_TIMEOUT_MS) {
+                    suspendCancellableCoroutine { cont ->
+                        CipherWebView(context, config, cont).also {
+                            holder[0] = it
+                            it.load(cacheDir)
+                        }
+                    }
+                } ?: run {
+                    holder[0]?.close()
+                    throw CipherException("player.js load timed out after $LOAD_TIMEOUT_MS ms")
+                }
+            }
+        }
+
+        // Injects the signature and n-transform wrappers into the player.js, inside the player's
+        // IIFE so the player's own functions are in scope, and returns the modified source.
+        private fun buildInjectedPlayerJs(playerJs: String, config: PlayerCipherConfig): String {
+            val argsStr = config.sigConstantArgs.joinToString(", ")
+            val sigWrapper = """
+                window._cipherSigFunc = function(sig) {
+                    try { return ${config.sigFuncName}($argsStr, sig); } catch (e) { return null; }
+                };
+            """.trimIndent()
+            // n-transform: build a googlevideo URL carrying the n value and read it back through the
+            // player's URL class, which applies the n-transform on read.
+            val nWrapper = """
+                window._nTransformFunc = function(n) {
+                    try {
+                        var u = new g.${config.nClass}('$N_PROBE_URL' + n, true);
+                        var t = u.get('n');
+                        return (t && t !== n) ? t : n;
+                    } catch (e) { return n; }
+                };
+            """.trimIndent()
+            val wrapper = "; $sigWrapper $nWrapper"
+
+            val injected = playerJs.replaceFirst("})(_yt_player);", "$wrapper })(_yt_player);")
+            return if (injected == playerJs) {
+                Log.w(TAG, "IIFE injection point not found, appending wrapper (sig may be out of scope)")
+                "$playerJs\n$wrapper"
+            } else {
+                injected
             }
         }
     }

@@ -38,14 +38,8 @@ object YTPlayerUtils {
     private val poTokenGenerator = PoTokenGenerator()
 
     /**
-     * The main client is used for metadata and initial streams.
-     * Do not use other clients for this because it can result in inconsistent metadata.
-     * For example other clients can have different normalization targets (loudnessDb).
-     *
-     * [com.zionhuang.innertube.models.YouTubeClient.ANDROID_VR_NO_AUTH] Is temporally used as it is out only working client
-     * [com.zionhuang.innertube.models.YouTubeClient.WEB_REMIX] should be preferred here because currently it is the only client which provides:
-     * - the correct metadata (like loudnessDb)
-     * - premium formats
+     * Client used for metadata and the initial stream response. Other clients are not used here
+     * because their metadata can differ (e.g. different loudnessDb normalization targets).
      */
     private val MAIN_CLIENT: YouTubeClient = ANDROID_VR_NO_AUTH
 
@@ -57,7 +51,7 @@ object YTPlayerUtils {
 //        ANDROID,
 //        TVHTML5,
 //        TVHTML5_SIMPLY_EMBEDDED_PLAYER,
-        IOS, // recent api changes produce error 403 after 30 seconds
+        IOS,
     )
 
 
@@ -83,12 +77,8 @@ object YTPlayerUtils {
     ): Result<PlaybackData> = runCatching {
         Log.d(TAG, "Playback info requested: $videoId")
 
-        /**
-         * This is required for some clients to get working streams however
-         * it should not be forced for the [MAIN_CLIENT] because the response of the [MAIN_CLIENT]
-         * is required even if the streams won't work from this client.
-         * This is why it is allowed to be null.
-         */
+        // Required for some clients to get working streams, but not forced for MAIN_CLIENT: its
+        // response is needed even when its streams won't work, so this is allowed to be null.
         val signatureTimestamp = getSignatureTimestampOrNull(videoId)
 
         val isLoggedIn = YouTube.cookie != null
@@ -183,7 +173,7 @@ object YTPlayerUtils {
                 }
 
                 if (clientIndex == STREAM_FALLBACK_CLIENTS.size - 1) {
-                    /** skip [validateStatus] for last client */
+                    // skip validateStatus for the last client
                     break
                 }
                 if (validateStatus(streamUrl)) {
@@ -271,9 +261,7 @@ object YTPlayerUtils {
         return false
     }
 
-    /**
-     * Wrapper around the [NewPipeUtils.getSignatureTimestamp] function which reports exceptions
-     */
+    // Reports exceptions; returns null on failure.
     private fun getSignatureTimestampOrNull(
         videoId: String
     ): Int? {
@@ -311,9 +299,7 @@ object YTPlayerUtils {
         return null
     }
 
-    /**
-     * Wrapper around the [PoTokenGenerator.getWebClientPoToken] function which reports exceptions
-     */
+    // Reports exceptions; returns null on failure.
     private fun getWebClientPoTokenOrNull(videoId: String, sessionId: String?): PoTokenResult? {
         if (sessionId == null) {
             Log.d(TAG, "[$videoId] Session identifier is null")
