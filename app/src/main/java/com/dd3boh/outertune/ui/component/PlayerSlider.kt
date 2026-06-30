@@ -54,11 +54,14 @@ private val SquigglyAmplitude = 2.dp
 /** Distance between wave crests of the squiggly active track. */
 private val SquigglyWavelength = 36.dp
 
+/** Gap that keeps the inactive track's left edge clear of the wave's end. */
+private val SquigglyTrackGap = 3.dp
+
 /** Duration of one full wave cycle. Larger is slower. */
 private const val SquigglyPeriodMillis = 2500
 
 /** Amplitude (in px) below which the wave is drawn as a straight line. */
-private const val SquigglyFlatAmplitudeThresholdPx = 0.5f
+private const val SquigglyFlatAmplitudeThresholdPx = 1.0f
 
 /** Line segments per wavelength; deriving the step from the wavelength keeps smoothness density-independent. */
 private const val SquigglySegmentsPerWavelength = 12
@@ -124,7 +127,8 @@ fun PlayerSliderTrack(
                     trackStrokeWidth = SquigglyStrokeWidth.toPx(),
                     amplitude = amplitude.toPx(),
                     wavelength = SquigglyWavelength.toPx(),
-                    phase = phase.value
+                    phase = phase.value,
+                    trackGap = SquigglyTrackGap.toPx()
                 )
             }
         }
@@ -214,29 +218,30 @@ private fun DrawScope.drawSquigglyTrack(
     trackStrokeWidth: Float,
     amplitude: Float,
     wavelength: Float,
-    phase: Float
+    phase: Float,
+    trackGap: Float
 ) {
     val isRtl = layoutDirection == LayoutDirection.Rtl
     val sliderLeft = Offset(0f, center.y)
     val sliderRight = Offset(size.width, center.y)
     val sliderStart = if (isRtl) sliderRight else sliderLeft
     val sliderEnd = if (isRtl) sliderLeft else sliderRight
+    val direction = if (isRtl) -1f else 1f
 
     val activeEnd = Offset(
         sliderStart.x + (sliderEnd.x - sliderStart.x) * activeRangeEnd,
         center.y
     )
 
-    drawLine(
-        inactiveTrackColor,
-        activeEnd,
-        sliderEnd,
-        trackStrokeWidth,
-        StrokeCap.Round
-    )
-
     if (amplitude <= SquigglyFlatAmplitudeThresholdPx || wavelength <= 0f) {
-        // Effectively flat: draw the active portion as a straight line.
+        // Flat: both portions are straight lines meeting at activeEnd, so no gap is needed.
+        drawLine(
+            inactiveTrackColor,
+            activeEnd,
+            sliderEnd,
+            trackStrokeWidth,
+            StrokeCap.Round
+        )
         drawLine(
             activeTrackColor,
             sliderStart,
@@ -247,7 +252,24 @@ private fun DrawScope.drawSquigglyTrack(
         return
     }
 
-    val direction = if (isRtl) -1f else 1f
+    // A butt left edge set a gap past the wave keeps the inactive cap from showing beside the
+    // off-center wave end; the cap circle restores the rounded far end.
+    val inactiveStart = Offset(activeEnd.x + direction * trackGap, center.y)
+    if ((sliderEnd.x - inactiveStart.x) * direction > 0f) {
+        drawLine(
+            inactiveTrackColor,
+            inactiveStart,
+            sliderEnd,
+            trackStrokeWidth,
+            StrokeCap.Butt
+        )
+        drawCircle(
+            color = inactiveTrackColor,
+            radius = trackStrokeWidth / 2f,
+            center = sliderEnd
+        )
+    }
+
     val length = abs(activeEnd.x - sliderStart.x)
     val step = (wavelength / SquigglySegmentsPerWavelength).coerceAtLeast(1f)
     val path = Path().apply {
