@@ -2,6 +2,10 @@
 
 [![OuterTune app icon](https://github.com/yuuichi-s/OuterTune/raw/dev/assets/outertune.webp)](https://github.com/yuuichi-s/OuterTune/blob/dev/assets/outertune.webp)
 
+
+[![Latest release](https://img.shields.io/github/v/release/yuuichi-s/OuterTune?include_prereleases)](https://github.com/yuuichi-s/OuterTune/releases)
+[![License](https://img.shields.io/github/license/yuuichi-s/OuterTune)](https://www.gnu.org/licenses/gpl-3.0)
+
 Android向け Material 3 YouTube Music クライアント & ローカル音楽プレイヤー
 
 > [!NOTE]
@@ -11,12 +15,6 @@ Android向け Material 3 YouTube Music クライアント & ローカル音楽�
 >
 > - APKの配布は現在予定していません。
 
-[![Latest release](https://img.shields.io/github/v/release/OuterTune/OuterTune?include_prereleases)](https://github.com/OuterTune/OuterTune/releases) [![License](https://img.shields.io/github/license/OuterTune/OuterTune)](https://www.gnu.org/licenses/gpl-3.0) [![Downloads](https://img.shields.io/github/downloads/OuterTune/OuterTune/total)](https://github.com/OuterTune/OuterTune/releases)
-
-<a href="https://github.com/OuterTune/OuterTune/releases/latest"><img src="assets/badge_github.png" alt="Get it on GitHub" height="50"></a>&nbsp;&nbsp;<a href="https://apt.izzysoft.de/fdroid/index/apk/com.dd3boh.outertune"><img src="assets/IzzyOnDroidButtonGreyBorder.svg" alt="Get it on IzzyOnDroid" height="50"></a>&nbsp;&nbsp;<a href="https://f-droid.org/en/packages/com.dd3boh.outertune/"><img src="assets/badge_fdroid.svg" alt="Get it on F-Droid" height="50"></a>&nbsp;&nbsp;<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.dd3boh.outertune%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FDD3Boh%2FOuterTune%22%2C%22author%22%3A%22DD3Boh%22%2C%22name%22%3A%22OuterTune%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22filterReleaseTitlesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22filterReleaseNotesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22verifyLatestTag%5C%22%3Afalse%2C%5C%22dontSortReleasesList%5C%22%3Afalse%2C%5C%22useLatestAssetDateAsReleaseDate%5C%22%3Afalse%2C%5C%22trackOnly%5C%22%3Afalse%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22matchGroupToUse%5C%22%3A%5C%22%5C%22%2C%5C%22versionDetection%5C%22%3Atrue%2C%5C%22releaseDateAsVersion%5C%22%3Afalse%2C%5C%22useVersionCodeAsOSVersion%5C%22%3Afalse%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22appName%5C%22%3A%5C%22%5C%22%2C%5C%22shizukuPretendToBeGooglePlay%5C%22%3Afalse%2C%5C%22allowInsecure%5C%22%3Afalse%2C%5C%22exemptFromBackgroundUpdates%5C%22%3Afalse%2C%5C%22skipUpdateNotifications%5C%22%3Afalse%2C%5C%22about%5C%22%3A%5C%22A%20Material%203%20YouTube%20Music%20client%20%26%20local%20music%20player%20for%20Android%5C%22%7D%22%2C%22overrideSource%22%3A%22GitHub%22%7D"><img src="assets/badge_obtainium.png" alt="Get it on Obtainium" height="50"></a>
-
-> [!WARNING]
-> OuterTune は上記のプラットフォームでのみ配布しています。Play Store や当プロジェクトを騙る偽サイトには掲載していません。偽バージョンやクローンアプリを発見した場合は、速やかに削除することをお勧めします。
 
 ## 上流との差分
 
@@ -33,6 +31,7 @@ Android向け Material 3 YouTube Music クライアント & ローカル音楽�
 - 13色のプリセットから選択できるカスタムアクセントカラーオプションを追加（Material You ダイナミックテーマとは排他）
 - フォルダー画面を修正：バック操作後に検索バーを復元、デフォルトのソートをトラック番号昇順に修正、ソート変更後にリストが更新されない問題を修正
 - スライダースタイルを選択可能に追加（デフォルト：アニメーション付きスクイグリー）
+- YouTube Music の再生を妨げる「Source error 2004」を解消
 - Kotlin・KSP・NewPipeExtractor・Ktor・AGP・Gradle を更新
 
 ## 機能
@@ -57,9 +56,6 @@ OuterTune は [InnerTune](https://github.com/z-huang/InnerTune) を強化した�
 > [!NOTE]
 > Android 8（Oreo）以降をサポートしています。Android 7.x（Nougat）でも動作する可能性はありますが、正式サポート対象外です。
 
-> [!NOTE]
-> FAQ やガイドは[wiki](https://github.com/OuterTune/OuterTune/wiki/Frequently-Asked-Questions-(FAQ))をご覧ください。
-
 ## スクリーンショット
 
 [![メインプレイヤー画面](https://github.com/yuuichi-s/OuterTune/raw/dev/assets/main-interface.jpg)](https://github.com/yuuichi-s/OuterTune/raw/dev/assets/main-interface.jpg)
@@ -79,9 +75,9 @@ OuterTune は [InnerTune](https://github.com/z-huang/InnerTune) を強化した�
 
 ### 翻訳の投稿
 
-OuterTune の翻訳には Weblate を使用しています。詳細や翻訳の投稿は[Weblate ページ](https://hosted.weblate.org/projects/outertune/)をご覧ください。
+OuterTune の翻訳には Weblate を使用しています。詳細や翻訳の投稿は[Weblate ページ](https://hosted.weblate.org/projects/yuuichi-s-outertune/)をご覧ください。
 
-[![翻訳ステータス](https://hosted.weblate.org/widget/outertune/multi-auto.svg)](https://hosted.weblate.org/projects/outertune/)
+[![翻訳ステータス](https://hosted.weblate.org/widget/yuuichi-s-outertune/multi-auto.svg)](https://hosted.weblate.org/projects/yuuichi-s-outertune/)
 
 世界中の方々に OuterTune をお届けするためにご協力いただきありがとうございます。
 
@@ -98,8 +94,6 @@ OuterTune の翻訳には Weblate を使用しています。詳細や翻訳の�
 ローカル音楽プレイヤーの理想的な体験のインスピレーションをくれた [Musicolet](https://play.google.com/store/apps/details?id=in.krosbits.musicolet)。
 
 精神的サポートと伝説の歌詞パーサーを提供してくれた [Gramophone](https://github.com/FoedusProgramme/Gramophone)。
-
-[![Star History Chart](https://api.star-history.com/svg?repos=outertune/outertune&type=Date)](https://www.star-history.com/#outertune/outertune&Date)
 
 ## 免責事項
 

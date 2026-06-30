@@ -14,8 +14,6 @@ A Material 3 YouTube Music client & local music player for Android
 >
 > - No APK releases are planned at this time.
 
-
-
 ## Differences from Upstream
 
 Changes applied on top of [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune):
@@ -31,6 +29,7 @@ Changes applied on top of [OuterTune/OuterTune](https://github.com/OuterTune/Out
 - Added a custom accent color option with a palette of 13 presets, mutually exclusive with dynamic (Material You) theming
 - Fixed Folders screen: restores the search bar on back navigation; corrected default sort to track number ascending; fixed list not refreshing on sort change
 - Added selectable slider styles with an animated squiggly line as the default
+- Fixed "Source error 2004" that blocked YouTube Music playback
 - Updated Kotlin, KSP, NewPipeExtractor, Ktor, AGP, and Gradle
 
 ## Features
@@ -39,11 +38,11 @@ OuterTune is a supercharged fork of [InnerTune](https://github.com/z-huang/Inner
 
 - YouTube Music client features
   * Song downloading (offline playback)
-  * Seamless playback: no ADs & background playback
+  * Seamless playback: no ads & background playback
   * Account synchronization
-    + Full playlist sync from the app to the remote account is temporally unavailable
+    + Full playlist sync from the app to the remote account is temporarily unavailable
 - Local audio file playback (ex. MP3, OGG, FLAC, etc.)
-  * Play local and Youtube Music songs at the same time
+  * Play local and YouTube Music songs at the same time
   * Uses a custom tag extractor instead of MediaStore's broken metadata extractor! (e.g tags delimited with \ now show up properly)
 - Sleek Material3 design
 - Multiple queues
@@ -54,9 +53,6 @@ OuterTune is a supercharged fork of [InnerTune](https://github.com/z-huang/Inner
 
 > [!NOTE]
 > Android 8 (Oreo) and higher is supported. While the app may work on Android 7.x (Nougat), we do not officially support this version
-
-> [!NOTE]
-> Read our FAQ and guides on our [wiki](https://github.com/OuterTune/OuterTune/wiki/Frequently-Asked-Questions-(FAQ))
 
 ## Screenshots
 
@@ -77,9 +73,9 @@ Just wish to build the app yourself, please see the [building and contribution n
 
 ### Submitting Translations
 
-We use Weblate to translate OuterTune. For more details or to submit translations, visit our [Weblate page](https://hosted.weblate.org/projects/outertune/).
+We use Weblate to translate OuterTune. For more details or to submit translations, visit our [Weblate page](https://hosted.weblate.org/projects/yuuichi-s-outertune/).
 
-[![Translation status](https://hosted.weblate.org/widget/outertune/multi-auto.svg)](https://hosted.weblate.org/projects/outertune/)
+[![Translation status](https://hosted.weblate.org/widget/yuuichi-s-outertune/multi-auto.svg)](https://hosted.weblate.org/projects/yuuichi-s-outertune/)
 
 Thank you very much for helping to make OuterTune accessible to many people worldwide.
 
@@ -98,8 +94,6 @@ would have been possible without it.
 experience done right.
 
 [Gramophone](https://github.com/FoedusProgramme/Gramophone) for emotional support, and a legendary lyrics parser
-
-[![Star History Chart](https://api.star-history.com/svg?repos=outertune/outertune&type=Date)](https://www.star-history.com/#outertune/outertune&Date)
 
 ## Disclaimer
 
