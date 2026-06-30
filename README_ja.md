@@ -9,12 +9,20 @@
 Android向け Material 3 YouTube Music クライアント & ローカル音楽プレイヤー
 
 > [!NOTE]
-> これは [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune) の**個人メンテナンス用フォーク**です。
+> これは [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune) の個人メンテナンス用フォークです。
 >
 > 上流がYouTube Music機能の開発を停止したため、個人利用を目的として維持しています。
 >
 > - APKの配布は現在予定していません。
-
+>
+> 利用したい場合は、ご自分でビルドできます。多くの方には `core` ビルドをおすすめします。
+>
+> ```bash
+> # core debug build
+> ./gradlew assembleCoreDebug
+> ```
+>
+> 詳しい手順は [CONTRIBUTING.md](https://github.com/yuuichi-s/OuterTune/blob/dev/CONTRIBUTING.md) をご覧ください。
 
 ## 上流との差分
 
