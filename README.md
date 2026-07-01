@@ -6,13 +6,16 @@
 [![Latest release](https://img.shields.io/github/v/release/yuuichi-s/OuterTune?include_prereleases)](https://github.com/yuuichi-s/OuterTune/releases)
 [![License](https://img.shields.io/github/license/yuuichi-s/OuterTune)](https://www.gnu.org/licenses/gpl-3.0)
 
+[English](README.md) | [日本語](README_ja.md)
+
 A Material 3 YouTube Music client & local music player for Android
 
 > [!NOTE]
-> This is a personal maintenance fork of [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune),
-> kept alive for personal use since the upstream stopped developing its YouTube Music features.
+> This is a maintenance fork based on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune).
 >
-> - No APK releases are planned at this time.
+> Since upstream development of the YouTube Music features has stopped, this fork continues fixing issues and improving the app so it remains usable today.
+>
+> - No distribution channel is available at this time, but one may be provided in the future.
 >
 > If you would like to use it, you can build the app yourself. For most people, we recommend the `core` build:
 >
@@ -23,23 +26,39 @@ A Material 3 YouTube Music client & local music player for Android
 >
 > For step-by-step instructions, see [CONTRIBUTING.md](https://github.com/yuuichi-s/OuterTune/blob/dev/CONTRIBUTING.md).
 
-## Differences from Upstream
+## What This Fork Improves
 
-Changes applied on top of [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune):
+This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune) with a focus on YouTube Music playback stability, lyrics, navigation, and local music playback.
 
-- Fixed several YouTube Music bugs (empty album tracks, playlist crash, search result parsing); improved YTM thumbnail resolution
-- Improved lyrics fetching accuracy and latency (LrcLib + caption tracks); added lyrics toggle button to now-playing action bar
-- Fixed bottom navigation: tapping a tab goes directly to the tab root; re-tapping the active tab scrolls to top and resets the search bar; search bar state is preserved per route
-- Added "keep audio focus" player setting
-- Restored tablet UI; fixed player double overlay; made dialogs scrollable
-- Local tag extraction via TagLib (all flavors); ffMetadataEx kept for the FFmpeg audio decoder (full flavor); improved local music linking and gapless playback
-- Fixed the album song count shown on the album screen
-- Replaced the manual high contrast toggle with automatic detection of the system contrast setting (Android 14+)
-- Added a custom accent color option with a palette of 13 presets, mutually exclusive with dynamic (Material You) theming
-- Fixed Folders screen: restores the search bar on back navigation; corrected default sort to track number ascending; fixed list not refreshing on sort change
-- Added selectable slider styles with an animated squiggly line as the default
-- Fixed "Source error 2004" that blocked YouTube Music playback
-- Updated Kotlin, KSP, NewPipeExtractor, Ktor, AGP, and Gradle
+- Fixes YouTube Music playback and display issues
+  - Fixed albums with missing tracks, crashes while opening playlists, and failed search result parsing
+  - Fixed the "Source error 2004" issue that could block YouTube Music playback
+  - Improved YouTube Music thumbnail resolution
+
+- Improves lyrics
+  - Uses LrcLib and caption tracks to improve lyrics matching and loading speed
+  - Adds a lyrics toggle button to the now-playing action bar
+
+- Improves app navigation
+  - Adjusted bottom navigation so tab switching and re-tapping the active tab behave more naturally
+  - Preserves the search bar state for each route
+  - Fixed the Folders screen search bar restoration, default sorting, and list refresh behavior
+
+- Improves local music playback
+  - Improved tag reading for local music files
+  - Improved local song linking and gapless playback
+  - Fixed the album song count shown on album screens
+
+- Improves display and settings
+  - Restored the tablet UI
+  - Fixed overlapping player UI and made dialogs scrollable
+  - Automatically detects the system contrast setting on Android 14 and later
+  - Added custom accent colors
+  - Added selectable slider styles, with an animated squiggly style as the default
+  - Added a "keep audio focus" player setting
+
+- Updates internal libraries and build tooling
+  - Updated Kotlin, KSP, NewPipeExtractor, Ktor, Android Gradle Plugin, Gradle, and related tooling
 
 ## Features
 

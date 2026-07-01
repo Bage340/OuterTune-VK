@@ -6,14 +6,16 @@
 [![Latest release](https://img.shields.io/github/v/release/yuuichi-s/OuterTune?include_prereleases)](https://github.com/yuuichi-s/OuterTune/releases)
 [![License](https://img.shields.io/github/license/yuuichi-s/OuterTune)](https://www.gnu.org/licenses/gpl-3.0)
 
+[English](README.md) | [日本語](README_ja.md)
+
 Android向け Material 3 YouTube Music クライアント & ローカル音楽プレイヤー
 
 > [!NOTE]
-> これは [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune) の個人メンテナンス用フォークです。
+> これは [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune) をベースにしたメンテナンスフォークです。
 >
-> 上流がYouTube Music機能の開発を停止したため、個人利用を目的として維持しています。
+> 上流での YouTube Music 関連機能の開発が止まっているため、現在も使いやすく動作するように不具合修正や改善を続けています。
 >
-> - APKの配布は現在予定していません。
+> - 現時点では配布手段を用意していませんが、今後用意する可能性があります。
 >
 > 利用したい場合は、ご自分でビルドできます。多くの方には `core` ビルドをおすすめします。
 >
@@ -24,23 +26,39 @@ Android向け Material 3 YouTube Music クライアント & ローカル音楽�
 >
 > 詳しい手順は [CONTRIBUTING.md](https://github.com/yuuichi-s/OuterTune/blob/dev/CONTRIBUTING.md) をご覧ください。
 
-## 上流との差分
+## このフォークで改善していること
 
-[OuterTune/OuterTune](https://github.com/OuterTune/OuterTune) をベースに以下の変更を加えています：
+このフォークでは、[OuterTune/OuterTune](https://github.com/OuterTune/OuterTune) をベースに、YouTube Music の再生安定性、歌詞表示、操作性、ローカル音楽再生まわりを中心に改善しています。
 
-- YouTube Music の複数バグを修正（アルバムトラック未表示、プレイリストクラッシュ、検索結果パースエラー）；YTM サムネイルの解像度を改善
-- 歌詞取得の精度向上と表示遅延の改善（LrcLib + キャプショントラック使用）；再生中の操作バーに歌詞切替ボタンを追加
-- ボトムナビゲーションを修正：タブタップでルートに直接移動、アクティブタブの再タップで先頭スクロール＆検索バーリセット、ルートごとに検索バーの状態を保持
-- オーディオフォーカスを維持するプレイヤー設定を追加
-- タブレットUIを復元、プレイヤーの二重オーバーレイを修正、ダイアログをスクロール可能に変更
-- ローカルのタグ抽出を TagLib に統一（全フレーバー）、ffMetadataEx は full の FFmpeg オーディオデコーダー用に維持、ローカル楽曲リンクとギャップレス再生を改善
-- アルバム画面に表示される楽曲数を修正
-- 手動のハイコントラスト切替を廃止し、システムのコントラスト設定を自動検出するように変更（Android 14+）
-- 13色のプリセットから選択できるカスタムアクセントカラーオプションを追加（Material You ダイナミックテーマとは排他）
-- フォルダー画面を修正：バック操作後に検索バーを復元、デフォルトのソートをトラック番号昇順に修正、ソート変更後にリストが更新されない問題を修正
-- スライダースタイルを選択可能に追加（デフォルト：アニメーション付きスクイグリー）
-- YouTube Music の再生を妨げる「Source error 2004」を解消
-- Kotlin・KSP・NewPipeExtractor・Ktor・AGP・Gradle を更新
+- YouTube Music の再生・表示に関する不具合を修正
+  - アルバムの楽曲が表示されない問題、プレイリスト表示時のクラッシュ、検索結果の取得失敗などを修正
+  - YouTube Music の再生を妨げる「Source error 2004」を解消
+  - サムネイル画像の解像度を改善
+
+- 歌詞表示を改善
+  - LrcLib とキャプショントラックを利用し、歌詞取得の精度と表示速度を改善
+  - 再生画面の操作バーに歌詞切替ボタンを追加
+
+- アプリの操作性を改善
+  - ボトムナビゲーションの挙動を調整し、タブ移動や再タップ時の動作を自然に変更
+  - 検索バーの状態を画面ごとに保持
+  - フォルダー画面の検索バー復元、並び順、リスト更新の問題を修正
+
+- ローカル音楽再生を改善
+  - ローカル楽曲のタグ読み取りを改善
+  - ローカル楽曲のリンク処理とギャップレス再生を改善
+  - アルバム画面に表示される楽曲数の誤りを修正
+
+- 表示・設定まわりを改善
+  - タブレット向けUIを復元
+  - プレイヤー表示の重なりや、ダイアログのスクロール問題を修正
+  - Android 14 以降ではシステムのコントラスト設定を自動検出
+  - カスタムアクセントカラーを追加
+  - スライダースタイルを選択可能にし、アニメーション付きスクイグリーをデフォルトに設定
+  - 「オーディオフォーカスを維持」するプレイヤー設定を追加
+
+- 内部ライブラリやビルド環境を更新
+  - Kotlin、KSP、NewPipeExtractor、Ktor、Android Gradle Plugin、Gradle などを更新
 
 ## 機能
 
