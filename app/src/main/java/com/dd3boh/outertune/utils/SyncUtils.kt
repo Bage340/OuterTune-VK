@@ -598,7 +598,7 @@ class SyncUtils @Inject constructor(
         try {
             if (SYNC_DEBUG) Log.i(TAG, "Recent activity synchronization started")
             YouTube.libraryRecentActivity().onSuccess { page ->
-                val recentActivity = page.items.take(9).drop(1)
+                val recentActivity = page.items.drop(1)
 
                 runBlocking {
                     launch(Dispatchers.IO) {
