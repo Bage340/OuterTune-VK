@@ -127,6 +127,7 @@ import com.dd3boh.outertune.constants.PLAYER_DEBUG
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.QueuePeekHeight
 import com.dd3boh.outertune.constants.DEFAULT_SLIDER_STYLE
+import com.dd3boh.outertune.constants.DEFAULT_SWIPE_TO_SKIP
 import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
 import com.dd3boh.outertune.constants.SliderStyleKey
@@ -269,7 +270,7 @@ fun PortraitPlayer(
             val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
             val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
-            val swipeToSkip by rememberPreference(SwipeToSkipKey, defaultValue = false)
+            val swipeToSkip by rememberPreference(SwipeToSkipKey, defaultValue = DEFAULT_SWIPE_TO_SKIP)
             val previousMediaMetadata = if (swipeToSkip && playerConnection.player.hasPreviousMediaItem()) {
                 val previousIndex = playerConnection.player.previousMediaItemIndex
                 playerConnection.player.getMediaItemAt(previousIndex).metadata
@@ -399,7 +400,7 @@ fun LandscapePlayer(
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
-    val swipeToSkip by rememberPreference(SwipeToSkipKey, defaultValue = false)
+    val swipeToSkip by rememberPreference(SwipeToSkipKey, defaultValue = DEFAULT_SWIPE_TO_SKIP)
     val previousMediaMetadata = if (swipeToSkip && playerConnection.player.hasPreviousMediaItem()) {
         val previousIndex = playerConnection.player.previousMediaItemIndex
         playerConnection.player.getMediaItemAt(previousIndex).metadata
