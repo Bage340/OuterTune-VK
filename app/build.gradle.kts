@@ -230,6 +230,7 @@ dependencies {
     implementation(libs.adaptive)
     implementation(libs.material3)
     implementation(libs.palette)
+    implementation(libs.material.color.utilities)
 
     // viewmodel
     implementation(libs.viewmodel)
@@ -258,7 +259,6 @@ dependencies {
     implementation(project(":innertube"))
     implementation(project(":kugou"))
     implementation(project(":lrclib"))
-    implementation(project(":material-color-utilities"))
 
     // misc
     implementation(libs.aboutlibraries.compose.m3)

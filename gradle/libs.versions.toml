@@ -2,13 +2,13 @@
 aboutLibraries = "12.2.4"
 adaptive = "1.2.0"
 androidGradlePlugin = "9.2.1"
-annotation = "1.9.1"
 kotlin = "2.3.20"
 coil = "3.3.0"
 compose = "1.10.2"
 lazycolumnscrollbar = "2.2.0"
 lifecycle = "2.10.0"
 material3 = "1.4.0"
+materialkolor = "4.1.1"
 media3 = "1.8.0"
 room = "2.8.4"
 hilt = "2.57.2"
@@ -17,8 +17,6 @@ ksp = "2.3.9"
 taglib = "1.0.6"
 
 [libraries]
-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
-error-prone-core = { module = "com.google.errorprone:error_prone_core", version = "2.46.0" }
 guava = { group = "com.google.guava", name = "guava", version = "33.5.0-android" }
 coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version = "1.10.2" }
 concurrent-futures = { group = "androidx.concurrent", name = "concurrent-futures-ktx", version = "1.3.0" }
@@ -49,6 +47,7 @@ shimmer = { group = "com.valentinilk.shimmer", name = "compose-shimmer", version
 adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 palette = { group = "androidx.palette", name = "palette", version = "1.0.0" }
+material-color-utilities = { group = "com.materialkolor", name = "material-color-utilities", version.ref = "materialkolor" }
 
 # viewmodel
 viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }

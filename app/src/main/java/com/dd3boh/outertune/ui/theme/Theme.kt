@@ -41,10 +41,10 @@ import coil3.toUri
 import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.utils.LocalArtworkPath
 import com.dd3boh.outertune.utils.coilCoroutine
-import com.google.material.color.dynamiccolor.DynamicScheme
-import com.google.material.color.hct.Hct
-import com.google.material.color.scheme.SchemeTonalSpot
-import com.google.material.color.score.Score
+import com.materialkolor.scheme.DynamicScheme
+import com.materialkolor.hct.Hct
+import com.materialkolor.scheme.SchemeTonalSpot
+import com.materialkolor.score.Score
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
