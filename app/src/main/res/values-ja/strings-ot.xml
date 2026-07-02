@@ -178,7 +178,7 @@
     <string name="oss_licenses_title">オープンソースライセンス</string>
     <string name="tablet_ui_title_description">現在の画面サイズに関係なく、大きな画面に最適化された横向きのインターフェースを有効にします</string>
     <string name="grp_behavior">動作</string>
-    <string name="attribution_title">帰属</string>
+    <string name="attribution_title">クレジット表記</string>
     <string name="m3u_ytm_lookup">アプリのデータベースに見つからない曲をYouTube Musicで検索する</string>
     <string name="disable_lm_confirm">端末内メディアを無効にしますか？ライブラリ内のコンテンツに影響はありません。</string>
     <string name="clear_song_cache_confirm">曲のキャッシュを削除しますか？</string>
@@ -227,7 +227,7 @@
     <string name="device_info_title">端末の情報</string>
     <string name="help_bug_report_action">バグ報告を送信 (GitHub)</string>
     <string name="help_support_forum">ヘルプとサポート (GitHub)</string>
-    <string name="wiki">ウィキ</string>
+    <string name="wiki">Wiki</string>
     <string name="help_contact_email_inquiries">その他お問い合わせ (タップでメアドをコピー)</string>
     <string name="scanner_sensitivity_L0">YouTubeで検索が有効になっている場合はYouTubeから提供される最初の結果を取得し、そうでない場合はタイトルが一致するものを取得します</string>
     <string name="err_invalid_ytm_song">曲の再生に失敗。YouTube Musicで利用可能なコンテンツのみ再生できます</string>
