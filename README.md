@@ -34,6 +34,7 @@ This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune
   - Fixed albums with missing tracks, crashes while opening playlists, and failed search result parsing
   - Fixed the "Source error 2004" issue that could block YouTube Music playback
   - Improved YouTube Music thumbnail resolution
+  - Fixed a crash that could occur when opening playlists or albums while their data was being updated
 
 - Improves lyrics
   - Uses LrcLib and caption tracks to improve lyrics matching and loading speed
@@ -56,6 +57,7 @@ This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune
   - Added custom accent colors
   - Added selectable slider styles, with an animated squiggly style as the default
   - Added a "keep audio focus" player setting
+  - Added a home screen grid showing your recent YouTube Music activity when signed in
 
 - Updates internal libraries and build tooling
   - Updated Kotlin, KSP, NewPipeExtractor, Ktor, Android Gradle Plugin, Gradle, and related tooling
