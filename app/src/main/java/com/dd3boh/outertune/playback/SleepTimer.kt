@@ -30,17 +30,32 @@ class SleepTimer(
     private val _fadeFactor = MutableStateFlow(1f)
     val fadeFactor: StateFlow<Float> = _fadeFactor.asStateFlow()
 
+    /** Action taken when the minute-based countdown reaches zero. Defaults to pausing playback. */
+    var onCountdownFinish: () -> Unit = { player.pause() }
+
     fun start(minute: Int) {
         sleepTimerJob?.cancel()
         sleepTimerJob = null
+        _fadeFactor.value = 1f
+        pauseWhenSongEnd = false
+        triggerTime = -1L
         if (minute == -1) {
             pauseWhenSongEnd = true
         } else {
-            triggerTime = System.currentTimeMillis() + minute.minutes.inWholeMilliseconds
+            val endTime = System.currentTimeMillis() + minute.minutes.inWholeMilliseconds
+            triggerTime = endTime
             sleepTimerJob = scope.launch {
-                delay(minute.minutes)
-                player.pause()
+                val untilFade = endTime - FADE_DURATION_MS - System.currentTimeMillis()
+                if (untilFade > 0) delay(untilFade)
+                while (true) {
+                    val remaining = endTime - System.currentTimeMillis()
+                    if (remaining <= 0) break
+                    _fadeFactor.value = fadeFactorFor(remaining)
+                    delay(FADE_TICK_MS)
+                }
+                onCountdownFinish()
                 triggerTime = -1L
+                _fadeFactor.value = 1f
             }
         }
     }
@@ -50,6 +65,13 @@ class SleepTimer(
         sleepTimerJob = null
         pauseWhenSongEnd = false
         triggerTime = -1L
+        _fadeFactor.value = 1f
+    }
+
+    /** Volume multiplier that fades linearly to zero over the final [FADE_DURATION_MS]. */
+    private fun fadeFactorFor(remainingMs: Long): Float {
+        if (remainingMs >= FADE_DURATION_MS) return 1f
+        return remainingMs.toFloat() / FADE_DURATION_MS
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -64,5 +86,10 @@ class SleepTimer(
             pauseWhenSongEnd = false
             player.pause()
         }
+    }
+
+    companion object {
+        private const val FADE_DURATION_MS = 30_000L
+        private const val FADE_TICK_MS = 50L
     }
 }
