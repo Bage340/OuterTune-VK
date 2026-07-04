@@ -249,7 +249,7 @@ class MusicService : MediaLibraryService(),
                 // listeners
                 addListener(this@MusicService)
                 sleepTimer = SleepTimer(scope, this)
-                sleepTimer.onCountdownFinish = { this@MusicService.pauseAllPlayersAndStopSelf() }
+                sleepTimer.onFinish = { this@MusicService.pauseAllPlayersAndStopSelf() }
                 addListener(sleepTimer)
                 addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
 
