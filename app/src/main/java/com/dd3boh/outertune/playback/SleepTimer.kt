@@ -9,6 +9,9 @@ import androidx.media3.common.Player
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.minutes
 
@@ -23,6 +26,9 @@ class SleepTimer(
         private set
     val isActive: Boolean
         get() = triggerTime != -1L || pauseWhenSongEnd
+
+    private val _fadeFactor = MutableStateFlow(1f)
+    val fadeFactor: StateFlow<Float> = _fadeFactor.asStateFlow()
 
     fun start(minute: Int) {
         sleepTimerJob?.cancel()

@@ -308,8 +308,8 @@ class MusicService : MediaLibraryService(),
                 initQueue()
             }
 
-            combine(playerVolume, normalizeFactor) { playerVolume, normalizeFactor ->
-                playerVolume * normalizeFactor
+            combine(playerVolume, normalizeFactor, sleepTimer.fadeFactor) { playerVolume, normalizeFactor, fadeFactor ->
+                playerVolume * normalizeFactor * fadeFactor
             }.collectLatest(scope) {
                 withContext(Dispatchers.Main) {
                     player.volume = it
