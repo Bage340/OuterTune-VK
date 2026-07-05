@@ -20,13 +20,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LibraryAdd
@@ -87,6 +87,10 @@ import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ShowLyricsKey
+import com.dd3boh.outertune.constants.SleepTimerDefaultMinutesKey
+import com.dd3boh.outertune.constants.SleepTimerDefaults
+import com.dd3boh.outertune.constants.SleepTimerFadeDurationKey
+import com.dd3boh.outertune.constants.SleepTimerFadeKey
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
@@ -105,8 +109,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -196,8 +198,15 @@ fun PlayerMenu(
         mutableStateOf(false)
     }
 
+    val defaultSleepMinutes by rememberPreference(SleepTimerDefaultMinutesKey, defaultValue = SleepTimerDefaults.DEFAULT_MINUTES)
+    val sleepTimerFade by rememberPreference(SleepTimerFadeKey, defaultValue = SleepTimerDefaults.FADE_ENABLED)
+    val sleepTimerFadeDuration by rememberPreference(
+        SleepTimerFadeDurationKey,
+        defaultValue = SleepTimerDefaults.FADE_DURATION_SECONDS
+    )
+
     var sleepTimerValue by remember {
-        mutableFloatStateOf(30f)
+        mutableFloatStateOf(defaultSleepMinutes.toFloat())
     }
 
     if (showSleepTimerDialog) {
@@ -213,7 +222,12 @@ fun PlayerMenu(
                 TextButton(
                     onClick = {
                         showSleepTimerDialog = false
-                        playerConnection.service.sleepTimer.start(sleepTimerValue.roundToInt())
+                        playerConnection.service.startSleepTimer(
+                            sleepTimerValue.roundToInt()
+                                .coerceIn(SleepTimerDefaults.MINUTES_RANGE.first, SleepTimerDefaults.MINUTES_RANGE.last),
+                            sleepTimerFade,
+                            sleepTimerFadeDuration
+                        )
                     }
                 ) {
                     Text(stringResource(android.R.string.ok))
@@ -227,146 +241,22 @@ fun PlayerMenu(
                 }
             },
             text = {
-                val focusRequester = remember {
-                    FocusRequester()
-                }
-
-                var showDialog by remember {
-                    mutableStateOf(false)
-                }
-
-                LaunchedEffect(showDialog) {
-                    if (showDialog) {
-                        delay(300)
-                        focusRequester.requestFocus()
-                    }
-                }
-
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val pluralString = pluralStringResource(
-                        R.plurals.minute,
-                        sleepTimerValue.roundToInt(),
-                        sleepTimerValue.roundToInt()
+                    SleepTimerDurationPicker(
+                        minutes = sleepTimerValue,
+                        onMinutesChange = { sleepTimerValue = it },
+                        showEndTime = true,
                     )
 
-                    val endTime = System.currentTimeMillis() + (sleepTimerValue.roundToInt() * 60 * 1000).toLong()
-                    val calendarNow = Calendar.getInstance()
-                    val calendarEnd = Calendar.getInstance().apply { timeInMillis = endTime }
-
-                    // show date if it will span to next day
-                    val endTimeString =
-                        if (calendarNow.get(Calendar.DAY_OF_YEAR) == calendarEnd.get(Calendar.DAY_OF_YEAR) &&
-                            calendarNow.get(Calendar.YEAR) == calendarEnd.get(Calendar.YEAR)
+                    Box(modifier = Modifier.padding(top = 8.dp)) {
+                        OutlinedButton(
+                            onClick = {
+                                showSleepTimerDialog = false
+                                playerConnection.service.startSleepTimer(-1, sleepTimerFade, sleepTimerFadeDuration)
+                            },
+                            modifier = Modifier.height(40.dp)
                         ) {
-                            SimpleDateFormat.getTimeInstance(SimpleDateFormat.SHORT, Locale.getDefault())
-                                .format(Date(endTime))
-                        } else {
-                            SimpleDateFormat.getDateTimeInstance(
-                                SimpleDateFormat.SHORT,
-                                SimpleDateFormat.SHORT,
-                                Locale.getDefault()
-                            ).format(Date(endTime))
-                        }
-
-                    Text(
-                        text = "$pluralString\n$endTimeString",
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp)
-                            .clip(shape = RoundedCornerShape(8.dp))
-                            .clickable {
-                                showDialog = true
-                            }
-                    )
-
-                    // manual input
-                    if (showDialog) {
-                        val initialText = TextFieldValue(
-                            text = sleepTimerValue.roundToInt().toString(),
-                            selection = TextRange(0, sleepTimerValue.roundToInt().toString().length),
-                        )
-
-                        val (textFieldValue, onTextFieldValueChange) = remember {
-                            mutableStateOf(initialText)
-                        }
-
-                        TextField(
-                            value = textFieldValue,
-                            onValueChange = onTextFieldValueChange,
-                            placeholder = { Text(pluralString) },
-                            singleLine = true,
-                            leadingIcon = { Icon(Icons.Rounded.MoreTime, null) },
-                            colors = OutlinedTextFieldDefaults.colors(),
-                            keyboardOptions = KeyboardOptions(
-                                imeAction = ImeAction.Done,
-                                keyboardType = KeyboardType.Number
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    val text = textFieldValue.text.toFloatOrNull()
-                                    if (text != null) {
-                                        sleepTimerValue = textFieldValue.text.toFloatOrNull() ?: sleepTimerValue
-                                    }
-                                }
-                            ),
-                            modifier = Modifier
-                                .focusRequester(focusRequester)
-                        )
-                    }
-
-                    Slider(
-                        value = sleepTimerValue,
-                        onValueChange = { sleepTimerValue = it },
-                        valueRange = 1f..120f,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Preset time options
-                        val timeIntervals = listOf(15L, 30L, 45L, 60L)
-
-                        // Create time chips for all intervals
-                        val timeChips = timeIntervals.map { interval ->
-                            val (timeString, duration) = getNextInterval(interval)
-                            TimeChip(
-                                duration = duration,
-                                composable = {
-                                    OutlinedButton(
-                                        onClick = { sleepTimerValue = duration },
-                                        modifier = Modifier.height(40.dp)
-                                    ) {
-                                        Text(timeString)
-                                    }
-                                }
-                            )
-                        }.sortedBy { it.duration } + remember {
-                            TimeChip(
-                                duration = Float.MAX_VALUE,
-                                composable = {
-                                    OutlinedButton(
-                                        onClick = {
-                                            showSleepTimerDialog = false
-                                            playerConnection.service.sleepTimer.start(-1)
-                                        },
-                                        modifier = Modifier.height(40.dp)
-                                    ) {
-                                        Text(stringResource(R.string.end_of_song))
-                                    }
-                                }
-                            )
-                        }
-
-                        timeChips.forEach { timeChip ->
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 4.dp)
-                            ) {
-                                timeChip.composable()
-                            }
+                            Text(stringResource(R.string.end_of_song))
                         }
                     }
                 }
@@ -528,8 +418,12 @@ fun PlayerMenu(
             sleepTimerTimeLeft = sleepTimerTimeLeft,
             enabled = sleepTimerEnabled
         ) {
-            if (sleepTimerEnabled) playerConnection.service.sleepTimer.clear()
-            else showSleepTimerDialog = true
+            if (sleepTimerEnabled) {
+                playerConnection.service.sleepTimer.clear()
+            } else {
+                sleepTimerValue = defaultSleepMinutes.toFloat()
+                showSleepTimerDialog = true
+            }
         }
         GridMenuItem(
             icon = Icons.Rounded.Equalizer,
@@ -728,39 +622,162 @@ fun <T> ValueAdjuster(
     }
 }
 
-data class TimeChip(
-    val duration: Float,
-    val composable: @Composable () -> Unit
-) : Comparable<TimeChip> {
-    override fun compareTo(other: TimeChip): Int {
-        return duration.compareTo(other.duration)
+@Composable
+fun SleepTimerDurationPicker(
+    minutes: Float,
+    onMinutesChange: (Float) -> Unit,
+    showEndTime: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val focusRequester = remember { FocusRequester() }
+    var showInput by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showInput) {
+        if (showInput) {
+            delay(300)
+            focusRequester.requestFocus()
+        }
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+    ) {
+        val minutesInt = minutes.roundToInt()
+        val pluralString = pluralStringResource(R.plurals.minute, minutesInt, minutesInt)
+
+        val displayText = if (showEndTime) {
+            val endTime = System.currentTimeMillis() + (minutesInt * 60 * 1000).toLong()
+            val calendarNow = Calendar.getInstance()
+            val calendarEnd = Calendar.getInstance().apply { timeInMillis = endTime }
+            // show date if it will span to next day
+            val endTimeString =
+                if (calendarNow.get(Calendar.DAY_OF_YEAR) == calendarEnd.get(Calendar.DAY_OF_YEAR) &&
+                    calendarNow.get(Calendar.YEAR) == calendarEnd.get(Calendar.YEAR)
+                ) {
+                    SimpleDateFormat.getTimeInstance(SimpleDateFormat.SHORT, Locale.getDefault())
+                        .format(Date(endTime))
+                } else {
+                    SimpleDateFormat.getDateTimeInstance(
+                        SimpleDateFormat.SHORT,
+                        SimpleDateFormat.SHORT,
+                        Locale.getDefault()
+                    ).format(Date(endTime))
+                }
+            "$pluralString\n$endTimeString"
+        } else {
+            pluralString
+        }
+
+        Text(
+            text = displayText,
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp)
+                .clip(shape = RoundedCornerShape(8.dp))
+                .clickable { showInput = true }
+        )
+
+        // manual input
+        if (showInput) {
+            val initialText = TextFieldValue(
+                text = minutesInt.toString(),
+                selection = TextRange(0, minutesInt.toString().length),
+            )
+
+            val (textFieldValue, onTextFieldValueChange) = remember {
+                mutableStateOf(initialText)
+            }
+
+            TextField(
+                value = textFieldValue,
+                onValueChange = {
+                    onTextFieldValueChange(it)
+                    it.text.toFloatOrNull()?.let { value ->
+                        onMinutesChange(
+                            value.coerceIn(
+                                SleepTimerDefaults.MINUTES_RANGE.first.toFloat(),
+                                SleepTimerDefaults.MINUTES_RANGE.last.toFloat()
+                            )
+                        )
+                    }
+                },
+                placeholder = { Text(pluralString) },
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Rounded.MoreTime, null) },
+                colors = OutlinedTextFieldDefaults.colors(),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done,
+                    keyboardType = KeyboardType.Number
+                ),
+                modifier = Modifier.focusRequester(focusRequester)
+            )
+        }
+
+        Slider(
+            value = minutes,
+            onValueChange = onMinutesChange,
+            valueRange = SleepTimerDefaults.MINUTES_RANGE.first.toFloat()..SleepTimerDefaults.MINUTES_RANGE.last.toFloat(),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        FlowRow(
+            horizontalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SleepTimerDefaults.PRESET_MINUTES.forEach { preset ->
+                Box(modifier = Modifier.padding(horizontal = 4.dp)) {
+                    OutlinedButton(
+                        onClick = { onMinutesChange(preset.toFloat()) },
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Text(stringResource(R.string.sleep_timer_minutes_short, preset))
+                    }
+                }
+            }
+        }
     }
 }
 
-fun getNextInterval(targetMin: Long): Pair<String, Float> {
-    require(targetMin in 1..60) { "Interval must be between 1 and 60 minutes" }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SleepTimerDefaultTimeDialog(
+    initialMinutes: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit,
+) {
+    var minutes by remember { mutableFloatStateOf(initialMinutes.toFloat()) }
 
-    val now = LocalDateTime.now()
-    val intervalMinutes = targetMin - now.minute
-
-    val targetTime: LocalDateTime = if (intervalMinutes > 0) {
-        // Within this hour
-        now.plusMinutes(intervalMinutes)
-    } else if (intervalMinutes < 0) {
-        // Next hour
-        now.plusHours(1).plusMinutes(targetMin - now.minute)
-//        now.plusMinutes((60 - now.minute) + targetMin)        // other way to calculate targetTime
-    } else {
-        // Equal to 0
-        now.plusHours(1)
-    }
-
-    // Format the time
-    val timeString = SimpleDateFormat.getTimeInstance(SimpleDateFormat.SHORT, Locale.getDefault())
-        .format(Date(targetTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
-
-    // Calculate minutes between now and target
-    val minutesBetween = ChronoUnit.MINUTES.between(now, targetTime).toFloat()
-
-    return Pair(timeString, minutesBetween)
+    AlertDialog(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        onDismissRequest = onDismiss,
+        icon = { Icon(imageVector = Icons.Rounded.Bedtime, contentDescription = null) },
+        title = { Text(stringResource(R.string.sleep_timer_default_time)) },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(
+                    minutes.roundToInt()
+                        .coerceIn(SleepTimerDefaults.MINUTES_RANGE.first, SleepTimerDefaults.MINUTES_RANGE.last)
+                )
+            }) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+        text = {
+            SleepTimerDurationPicker(
+                minutes = minutes,
+                onMinutesChange = { minutes = it },
+                showEndTime = false,
+            )
+        }
+    )
 }

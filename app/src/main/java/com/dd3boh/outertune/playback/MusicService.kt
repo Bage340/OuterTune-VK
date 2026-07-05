@@ -66,16 +66,16 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionToken
 import com.dd3boh.outertune.MainActivity
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.constants.SERVICE_DEBUG
 import com.dd3boh.outertune.constants.AudioDecoderKey
-import com.dd3boh.outertune.constants.DEFAULT_AUDIO_DECODER
 import com.dd3boh.outertune.constants.AudioGaplessOffloadKey
 import com.dd3boh.outertune.constants.AudioNormalizationKey
 import com.dd3boh.outertune.constants.AudioOffloadKey
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
 import com.dd3boh.outertune.constants.AutoLoadMoreKey
+import com.dd3boh.outertune.constants.DEFAULT_AUDIO_DECODER
 import com.dd3boh.outertune.constants.ENABLE_FFMETADATAEX
+import com.dd3boh.outertune.constants.IgnoreAudioFocusKey
 import com.dd3boh.outertune.constants.KeepAliveKey
 import com.dd3boh.outertune.constants.MAX_PLAYER_CONSECUTIVE_ERR
 import com.dd3boh.outertune.constants.MaxQueuesKey
@@ -88,7 +88,7 @@ import com.dd3boh.outertune.constants.PauseRemoteListenHistoryKey
 import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.PlayerVolumeKey
 import com.dd3boh.outertune.constants.RepeatModeKey
-import com.dd3boh.outertune.constants.IgnoreAudioFocusKey
+import com.dd3boh.outertune.constants.SERVICE_DEBUG
 import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
 import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
@@ -249,6 +249,7 @@ class MusicService : MediaLibraryService(),
                 // listeners
                 addListener(this@MusicService)
                 sleepTimer = SleepTimer(scope, this)
+                sleepTimer.onFinish = { this@MusicService.pauseAllPlayersAndStopSelf() }
                 addListener(sleepTimer)
                 addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
 
@@ -308,8 +309,8 @@ class MusicService : MediaLibraryService(),
                 initQueue()
             }
 
-            combine(playerVolume, normalizeFactor) { playerVolume, normalizeFactor ->
-                playerVolume * normalizeFactor
+            combine(playerVolume, normalizeFactor, sleepTimer.fadeFactor) { playerVolume, normalizeFactor, fadeFactor ->
+                playerVolume * normalizeFactor * fadeFactor
             }.collectLatest(scope) {
                 withContext(Dispatchers.Main) {
                     player.volume = it
@@ -1104,6 +1105,12 @@ class MusicService : MediaLibraryService(),
         if (player.isPlaying || !dataStore.get(KeepAliveKey, false)) {
             super.onUpdateNotification(session, startInForegroundRequired)
         }
+    }
+
+    fun startSleepTimer(minute: Int, fadeEnabled: Boolean, fadeDurationSeconds: Int) {
+        sleepTimer.fadeEnabled = fadeEnabled
+        sleepTimer.fadeDurationMs = fadeDurationSeconds * 1000L
+        sleepTimer.start(minute)
     }
 
     override fun onDestroy() {

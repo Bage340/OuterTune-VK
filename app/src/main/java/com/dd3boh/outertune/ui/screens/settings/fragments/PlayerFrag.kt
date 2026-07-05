@@ -1,14 +1,17 @@
 package com.dd3boh.outertune.ui.screens.settings.fragments
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.VolumeDown
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.ClearAll
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Headset
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.Timelapse
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioNormalizationKey
@@ -30,12 +34,17 @@ import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
 import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
+import com.dd3boh.outertune.constants.SleepTimerDefaultMinutesKey
+import com.dd3boh.outertune.constants.SleepTimerDefaults
+import com.dd3boh.outertune.constants.SleepTimerFadeDurationKey
+import com.dd3boh.outertune.constants.SleepTimerFadeKey
 import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
 import com.dd3boh.outertune.constants.minPlaybackDurKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.dialog.CounterDialog
+import com.dd3boh.outertune.ui.menu.SleepTimerDefaultTimeDialog
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import androidx.compose.ui.tooling.preview.Preview
@@ -184,6 +193,75 @@ fun PlaybackBehaviourFrag() {
             },
             onCancel = {
                 showMinPlaybackDur = false
+            }
+        )
+    }
+}
+
+@Composable
+fun SleepTimerFrag() {
+    val (fade, onFadeChange) = rememberPreference(SleepTimerFadeKey, defaultValue = SleepTimerDefaults.FADE_ENABLED)
+    val (fadeDuration, onFadeDurationChange) = rememberPreference(
+        SleepTimerFadeDurationKey,
+        defaultValue = SleepTimerDefaults.FADE_DURATION_SECONDS
+    )
+    val (defaultMinutes, onDefaultMinutesChange) = rememberPreference(
+        SleepTimerDefaultMinutesKey,
+        defaultValue = SleepTimerDefaults.DEFAULT_MINUTES
+    )
+
+    var showFadeDurationDialog by remember { mutableStateOf(false) }
+    var showDefaultTimeDialog by remember { mutableStateOf(false) }
+
+    SwitchPreference(
+        title = { Text(stringResource(R.string.sleep_timer_fade)) },
+        icon = { Icon(Icons.AutoMirrored.Rounded.VolumeDown, null) },
+        checked = fade,
+        onCheckedChange = onFadeChange
+    )
+    PreferenceEntry(
+        title = { Text(stringResource(R.string.sleep_timer_fade_duration)) },
+        description = stringResource(R.string.sleep_timer_fade_duration_desc),
+        icon = { Icon(Icons.Rounded.Timelapse, null) },
+        isEnabled = fade,
+        onClick = { showFadeDurationDialog = true }
+    )
+    PreferenceEntry(
+        title = { Text(stringResource(R.string.sleep_timer_default_time)) },
+        description = pluralStringResource(R.plurals.minute, defaultMinutes, defaultMinutes),
+        icon = { Icon(Icons.Rounded.Bedtime, null) },
+        onClick = { showDefaultTimeDialog = true }
+    )
+
+    /**
+     * ---------------------------
+     * Dialogs
+     * ---------------------------
+     */
+
+    if (showFadeDurationDialog) {
+        CounterDialog(
+            title = stringResource(R.string.sleep_timer_fade_duration),
+            description = stringResource(R.string.sleep_timer_fade_duration_desc),
+            initialValue = fadeDuration,
+            upperBound = SleepTimerDefaults.FADE_DURATION_RANGE.last,
+            lowerBound = SleepTimerDefaults.FADE_DURATION_RANGE.first,
+            unitDisplay = " " + stringResource(R.string.sleep_timer_second_unit),
+            onDismiss = { showFadeDurationDialog = false },
+            onConfirm = {
+                showFadeDurationDialog = false
+                onFadeDurationChange(it)
+            },
+            onCancel = { showFadeDurationDialog = false }
+        )
+    }
+    if (showDefaultTimeDialog) {
+        SleepTimerDefaultTimeDialog(
+            initialMinutes = defaultMinutes,
+            onDismiss = { showDefaultTimeDialog = false },
+            onConfirm = {
+                showDefaultTimeDialog = false
+                onDefaultMinutesChange(it)
             }
         )
     }

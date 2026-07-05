@@ -99,6 +99,12 @@
     <string name="keep_alive_description">OuterTuneがバックグラウンドで終了されないよう、永続的なフォアグラウンドサービスを使用します</string>
     <string name="min_playback_duration">最小の再生時間</string>
     <string name="min_playback_duration_description">曲を「再生済み」と判断するための、最低限の再生時間</string>
+    <string name="sleep_timer_fade">フェードアウト</string>
+    <string name="sleep_timer_fade_duration">フェード時間</string>
+    <string name="sleep_timer_fade_duration_desc">停止前に音量を下げ始める秒数</string>
+    <string name="sleep_timer_default_time">デフォルトスリープ時間</string>
+    <string name="sleep_timer_minutes_short">%d 分</string>
+    <string name="sleep_timer_second_unit">秒</string>
     <string name="scanner_progress_syncing">同期中…</string>
     <string name="scanner_scan_fail">スキャンが失敗しました</string>
     <string name="scanner_ytm_link_fail">YouTube アーティストのリンク ジョブが失敗しました</string>

@@ -76,6 +76,10 @@ val RepeatModeKey = intPreferencesKey("repeatMode")
 val LockQueueKey = booleanPreferencesKey("lockQueue")
 val minPlaybackDurKey = intPreferencesKey("minPlaybackDur")
 
+val SleepTimerFadeKey = booleanPreferencesKey("sleepTimerFade")
+val SleepTimerFadeDurationKey = intPreferencesKey("sleepTimerFadeDuration")
+val SleepTimerDefaultMinutesKey = intPreferencesKey("sleepTimerDefaultMinutes")
+
 
 /**
  * Lyrics

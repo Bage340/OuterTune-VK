@@ -411,21 +411,6 @@ fun CounterDialog(
                 ) {
                     IconButton(
                         onClick = {
-                            if (tempValue.intValue < upperBound) {
-                                tempValue.intValue += 1
-                            }
-                        },
-                    ) {
-                        Text(
-                            text = "+",
-//                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
-
-
-                    IconButton(
-                        onClick = {
                             if (tempValue.intValue > lowerBound) {
                                 tempValue.intValue -= 1
                             }
@@ -434,6 +419,21 @@ fun CounterDialog(
                         Text(
                             text = "—",
                             fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+
+
+                    IconButton(
+                        onClick = {
+                            if (tempValue.intValue < upperBound) {
+                                tempValue.intValue += 1
+                            }
+                        },
+                    ) {
+                        Text(
+                            text = "+",
+//                            fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleLarge
                         )
                     }
