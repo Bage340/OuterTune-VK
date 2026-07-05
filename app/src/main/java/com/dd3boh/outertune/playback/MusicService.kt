@@ -1107,6 +1107,12 @@ class MusicService : MediaLibraryService(),
         }
     }
 
+    fun startSleepTimer(minute: Int, fadeEnabled: Boolean, fadeDurationSeconds: Int) {
+        sleepTimer.fadeEnabled = fadeEnabled
+        sleepTimer.fadeDurationMs = fadeDurationSeconds * 1000L
+        sleepTimer.start(minute)
+    }
+
     override fun onDestroy() {
         if (SERVICE_DEBUG) Log.i(TAG, "Terminating MusicService.")
         deInitQueue()

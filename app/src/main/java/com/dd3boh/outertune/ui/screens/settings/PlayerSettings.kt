@@ -52,6 +52,7 @@ import com.dd3boh.outertune.ui.screens.settings.fragments.AudioEffectsFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.AudioQualityFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.PlaybackBehaviourFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.PlayerGeneralFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.SleepTimerFrag
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.rememberPreference
 import androidx.compose.foundation.layout.WindowInsets
@@ -119,6 +120,16 @@ fun PlayerSettings(
             modifier = Modifier.fillMaxWidth()
         ) {
             PlaybackBehaviourFrag()
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PreferenceGroupTitle(
+            title = stringResource(R.string.sleep_timer)
+        )
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            SleepTimerFrag()
         }
 
         SettingsClickToReveal(stringResource(R.string.advanced)) {

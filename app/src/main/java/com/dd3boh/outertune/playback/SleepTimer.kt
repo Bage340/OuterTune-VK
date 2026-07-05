@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import com.dd3boh.outertune.constants.SleepTimerDefaults
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,6 +29,12 @@ class SleepTimer(
     val isActive: Boolean
         get() = triggerTime != -1L || pauseWhenSongEnd
 
+    /** Whether the volume fades out before the timer stops playback. */
+    var fadeEnabled: Boolean = true
+
+    /** Length of the fade-out, in milliseconds. */
+    var fadeDurationMs: Long = SleepTimerDefaults.FADE_DURATION_SECONDS * 1000L
+
     private val _fadeFactor = MutableStateFlow(1f)
     val fadeFactor: StateFlow<Float> = _fadeFactor.asStateFlow()
 
@@ -42,22 +49,24 @@ class SleepTimer(
         triggerTime = -1L
         if (minute == -1) {
             pauseWhenSongEnd = true
-            sleepTimerJob = scope.launch {
-                // This job only updates fade volume. Timer completion is handled by
-                // player callbacks when playback ends or the current media item changes.
-                while (true) {
-                    val duration = player.duration
-                    val remaining = if (duration == C.TIME_UNSET || duration <= 0L) {
-                        Long.MAX_VALUE
-                    } else {
-                        duration - player.currentPosition
-                    }
-                    if (remaining <= FADE_DURATION_MS) {
-                        _fadeFactor.value = fadeFactorFor(remaining)
-                        delay(FADE_TICK_MS)
-                    } else {
-                        _fadeFactor.value = 1f
-                        delay(FADE_POLL_MS)
+            if (fadeEnabled) {
+                sleepTimerJob = scope.launch {
+                    // This job only updates fade volume. Timer completion is handled by
+                    // player callbacks when playback ends or the current media item changes.
+                    while (true) {
+                        val duration = player.duration
+                        val remaining = if (duration == C.TIME_UNSET || duration <= 0L) {
+                            Long.MAX_VALUE
+                        } else {
+                            duration - player.currentPosition
+                        }
+                        if (remaining <= fadeDurationMs) {
+                            _fadeFactor.value = fadeFactorFor(remaining)
+                            delay(FADE_TICK_MS)
+                        } else {
+                            _fadeFactor.value = 1f
+                            delay(FADE_POLL_MS)
+                        }
                     }
                 }
             }
@@ -65,13 +74,18 @@ class SleepTimer(
             val endTime = System.currentTimeMillis() + minute.minutes.inWholeMilliseconds
             triggerTime = endTime
             sleepTimerJob = scope.launch {
-                val untilFade = endTime - FADE_DURATION_MS - System.currentTimeMillis()
-                if (untilFade > 0) delay(untilFade)
-                while (true) {
-                    val remaining = endTime - System.currentTimeMillis()
-                    if (remaining <= 0) break
-                    _fadeFactor.value = fadeFactorFor(remaining)
-                    delay(FADE_TICK_MS)
+                if (fadeEnabled) {
+                    val untilFade = endTime - fadeDurationMs - System.currentTimeMillis()
+                    if (untilFade > 0) delay(untilFade)
+                    while (true) {
+                        val remaining = endTime - System.currentTimeMillis()
+                        if (remaining <= 0) break
+                        _fadeFactor.value = fadeFactorFor(remaining)
+                        delay(FADE_TICK_MS)
+                    }
+                } else {
+                    val untilEnd = endTime - System.currentTimeMillis()
+                    if (untilEnd > 0) delay(untilEnd)
                 }
                 onFinish()
                 triggerTime = -1L
@@ -89,8 +103,8 @@ class SleepTimer(
     }
 
     private fun fadeFactorFor(remainingMs: Long): Float {
-        if (remainingMs >= FADE_DURATION_MS) return 1f
-        return (remainingMs.toFloat() / FADE_DURATION_MS).coerceIn(0f, 1f)
+        if (remainingMs >= fadeDurationMs) return 1f
+        return (remainingMs.toFloat() / fadeDurationMs).coerceIn(0f, 1f)
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -111,7 +125,6 @@ class SleepTimer(
     }
 
     companion object {
-        private const val FADE_DURATION_MS = 30_000L
         private const val FADE_TICK_MS = 50L
         private const val FADE_POLL_MS = 1_000L
     }
