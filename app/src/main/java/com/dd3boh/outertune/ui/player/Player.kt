@@ -56,6 +56,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lyrics as LyricsOutlined
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
@@ -132,6 +133,7 @@ import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
 import com.dd3boh.outertune.constants.SliderStyleKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
+import com.dd3boh.outertune.constants.SleepTimerShowOnPlayerKey
 import com.dd3boh.outertune.constants.SwipeToSkipKey
 import com.dd3boh.outertune.extensions.isPowerSaver
 import com.dd3boh.outertune.extensions.metadata
@@ -150,6 +152,7 @@ import com.dd3boh.outertune.ui.component.collapsedAnchor
 import com.dd3boh.outertune.ui.component.dismissedAnchor
 import com.dd3boh.outertune.ui.component.rememberBottomSheetState
 import com.dd3boh.outertune.ui.menu.PlayerMenu
+import com.dd3boh.outertune.ui.menu.SleepTimerDialog
 import com.dd3boh.outertune.ui.theme.extractGradientColors
 import com.dd3boh.outertune.ui.utils.SnapLayoutInfoProvider
 import com.dd3boh.outertune.utils.coilCoroutine
@@ -566,7 +569,82 @@ fun ActionButtons(
 
     var showLyrics by rememberPreference(ShowLyricsKey, defaultValue = false)
 
+    val showSleepTimerButton by rememberPreference(SleepTimerShowOnPlayerKey, defaultValue = true)
+
+    val sleepTimerActive = remember(
+        playerConnection.service.sleepTimer.triggerTime,
+        playerConnection.service.sleepTimer.pauseWhenSongEnd
+    ) {
+        playerConnection.service.sleepTimer.isActive
+    }
+
+    var sleepTimerTimeLeft by remember {
+        mutableLongStateOf(0L)
+    }
+
+    LaunchedEffect(sleepTimerActive) {
+        if (sleepTimerActive) {
+            while (isActive) {
+                sleepTimerTimeLeft = if (playerConnection.service.sleepTimer.pauseWhenSongEnd) {
+                    playerConnection.player.duration - playerConnection.player.currentPosition
+                } else {
+                    playerConnection.service.sleepTimer.triggerTime - System.currentTimeMillis()
+                }
+                delay(1000L)
+            }
+        }
+    }
+
+    var showSleepTimerDialog by remember {
+        mutableStateOf(false)
+    }
+
+    if (showSleepTimerDialog) {
+        SleepTimerDialog(onDismiss = { showSleepTimerDialog = false })
+    }
+
     Spacer(modifier = Modifier.width(10.dp))
+
+    if (showSleepTimerButton) {
+        if (sleepTimerActive) {
+            Box(
+                modifier = Modifier
+                    .offset(y = 5.dp)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable { showSleepTimerDialog = true }
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = makeTimeString(sleepTimerTimeLeft),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .offset(y = 5.dp)
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.primary)
+            ) {
+                ResizableIconButton(
+                    icon = Icons.Rounded.Bedtime,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(24.dp),
+                    onClick = { showSleepTimerDialog = true }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(7.dp))
+    }
 
     Box(
         modifier = Modifier

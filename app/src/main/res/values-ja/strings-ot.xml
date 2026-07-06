@@ -105,6 +105,9 @@
     <string name="sleep_timer_default_time">デフォルトスリープ時間</string>
     <string name="sleep_timer_minutes_short">%d 分</string>
     <string name="sleep_timer_second_unit">秒</string>
+    <string name="sleep_timer_stop">タイマー停止</string>
+    <string name="sleep_timer_show_on_player">プレーヤー画面に表示</string>
+    <string name="sleep_timer_show_on_player_desc">プレーヤー画面にスリープタイマーボタンを表示する</string>
     <string name="scanner_progress_syncing">同期中…</string>
     <string name="scanner_scan_fail">スキャンが失敗しました</string>
     <string name="scanner_ytm_link_fail">YouTube アーティストのリンク ジョブが失敗しました</string>

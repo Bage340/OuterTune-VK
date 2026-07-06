@@ -79,6 +79,7 @@ val minPlaybackDurKey = intPreferencesKey("minPlaybackDur")
 val SleepTimerFadeKey = booleanPreferencesKey("sleepTimerFade")
 val SleepTimerFadeDurationKey = intPreferencesKey("sleepTimerFadeDuration")
 val SleepTimerDefaultMinutesKey = intPreferencesKey("sleepTimerDefaultMinutes")
+val SleepTimerShowOnPlayerKey = booleanPreferencesKey("sleepTimerShowOnPlayer")
 
 
 /**
