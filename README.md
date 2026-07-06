@@ -59,6 +59,10 @@ This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune
   - Added a "keep audio focus" player setting
   - Added a home screen grid showing your recent YouTube Music activity when signed in
 
+- Adds playback and download options
+  - Added a sleep timer that fades out and fully stops playback
+  - Added a Wi-Fi-only download toggle
+
 - Updates internal libraries and build tooling
   - Updated Kotlin, KSP, NewPipeExtractor, Ktor, Android Gradle Plugin, Gradle, and related tooling
 

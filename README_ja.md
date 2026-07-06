@@ -59,6 +59,10 @@ Android向け Material 3 YouTube Music クライアント & ローカル音楽�
   - 「オーディオフォーカスを維持」するプレイヤー設定を追加
   - サインイン時、ホーム画面に YouTube Music の最近のアクティビティをカード表示で追加
 
+- 再生・ダウンロードの機能を追加
+  - フェードアウトして再生を完全に停止する睡眠タイマーを追加
+  - Wi-Fi 接続時のみダウンロードするトグルを追加
+
 - 内部ライブラリやビルド環境を更新
   - Kotlin、KSP、NewPipeExtractor、Ktor、Android Gradle Plugin、Gradle などを更新
 
