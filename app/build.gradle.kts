@@ -29,8 +29,8 @@ android {
         applicationId = "com.dd3boh.outertune"
         minSdk = 24
         targetSdk = 36
-        versionCode = 79
-        versionName = "0.10.9"
+        versionCode = 80
+        versionName = "0.10.10"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // expose the TagLib library version (from the version catalog) for the About screen
