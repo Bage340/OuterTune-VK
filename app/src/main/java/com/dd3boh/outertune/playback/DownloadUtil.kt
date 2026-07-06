@@ -18,10 +18,13 @@ import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
+import androidx.media3.exoplayer.scheduler.Requirements
+import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.constants.AudioQualityKey
 import com.dd3boh.outertune.constants.DOWNLOAD_DEBUG
 import com.dd3boh.outertune.constants.DownloadExtraPathKey
+import com.dd3boh.outertune.constants.DownloadOnWifiOnlyKey
 import com.dd3boh.outertune.constants.DownloadPathKey
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.db.entities.FormatEntity
@@ -140,6 +143,7 @@ class DownloadUtil @Inject constructor(
     val downloadManager: DownloadManager =
         DownloadManager(context, databaseProvider, downloadCache, dataSourceFactory, Executor(Runnable::run)).apply {
             maxParallelDownloads = 3
+            requirements = downloadRequirements(context.dataStore.get(DownloadOnWifiOnlyKey, true))
             addListener(
                 ExoDownloadService.TerminalStateNotificationHelper(
                     context = context,
@@ -161,15 +165,41 @@ class DownloadUtil @Inject constructor(
     fun getDownload(songId: String): Flow<LocalDateTime?> = downloads.map { it[songId] }
 
     fun download(songs: List<MediaMetadata>) {
+        if (songs.any { downloads.value[it.id] == null }) notifyIfWaitingForWifi()
         songs.forEach { song -> downloadSong(song.id, song.title) }
     }
 
     fun download(song: MediaMetadata) {
+        if (downloads.value[song.id] == null) notifyIfWaitingForWifi()
         downloadSong(song.id, song.title)
     }
 
     fun download(song: SongEntity) {
+        if (downloads.value[song.id] == null) notifyIfWaitingForWifi()
         downloadSong(song.id, song.title)
+    }
+
+    /**
+     * Update the network requirement for downloads. Takes effect immediately, including for
+     * downloads that are already queued or in progress.
+     */
+    fun setDownloadRequirements(wifiOnly: Boolean) {
+        DownloadService.sendSetRequirements(
+            context,
+            ExoDownloadService::class.java,
+            downloadRequirements(wifiOnly),
+            false
+        )
+    }
+
+    /**
+     * Show a hint when a download is requested on a metered network while Wi-Fi only is enabled,
+     * since the download is queued silently and only starts once Wi-Fi is available.
+     */
+    private fun notifyIfWaitingForWifi() {
+        if (context.dataStore.get(DownloadOnWifiOnlyKey, true) && connectivityManager.isActiveNetworkMetered) {
+            Toast.makeText(context, R.string.download_waiting_for_wifi, LENGTH_SHORT).show()
+        }
     }
 
     private fun downloadSong(id: String, title: String) {
@@ -425,6 +455,9 @@ class DownloadUtil @Inject constructor(
     companion object {
         val STATE_DOWNLOADING: LocalDateTime = Instant.ofEpochMilli(1).atZone(ZoneOffset.UTC).toLocalDateTime()
         val STATE_INVALID: LocalDateTime = Instant.ofEpochMilli(0).atZone(ZoneOffset.UTC).toLocalDateTime()
+
+        fun downloadRequirements(wifiOnly: Boolean): Requirements =
+            Requirements(if (wifiOnly) Requirements.NETWORK_UNMETERED else Requirements.NETWORK)
     }
 
 
