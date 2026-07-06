@@ -197,7 +197,7 @@
     <string name="lyrics_karaoke_description">単語ごとの歌詞同期を有効にする。対応する歌詞データが必要です。</string>
     <string name="oobe_downloads_subtitle">ダウンロードした曲を保存するフォルダを選択します。</string>
     <string name="oobe_complete_title">準備完了です！</string>
-    <string name="scan_paths_description">曲をスキャンしたい端末内の保存領域のフォルダを選択</string>
+    <string name="scan_paths_description">曲をスキャンしたい端末内のストレージのフォルダを選択</string>
     <string name="download_on_wifi_only_title">Wi-Fi接続時のみダウンロード</string>
     <string name="download_on_wifi_only_description">モバイルデータ通信ではダウンロードしません。モバイルデータ通信中に追加した曲は、Wi-Fi接続後に自動でダウンロードを開始します</string>
     <string name="download_waiting_for_wifi">Wi-Fi接続後にダウンロードします</string>
@@ -205,8 +205,8 @@
     <string name="clear_image_cache_confirm">画像のキャッシュを削除しますか？ 既存のアルバムのサムネイルはすべて削除されます。</string>
     <string name="dl_extra_path_title">追加のインポート場所を設定…</string>
     <string name="dl_extra_path_description">これらのフォルダの曲は、以前に再生したか再生リストに追加した場合にのみアプリに表示されます</string>
-    <string name="dl_migrate_title">ダウンロードファイルを外部の保存領域に移行…</string>
-    <string name="dl_migrate_description">アプリの内部の保存領域から、端末の外部の保存領域にダウンロードファイルを移動</string>
+    <string name="dl_migrate_title">ダウンロードファイルを外部のストレージに移行…</string>
+    <string name="dl_migrate_description">アプリの内部のストレージから、端末の外部のストレージにダウンロードファイルを移動</string>
     <string name="dl_main_path_description">ダウンロードの保存場所を選択</string>
     <string name="oobe_local_music_support">端末内の幅広い音楽ファイルに対応</string>
     <string name="oobe_local_music_support_description">音楽ファイルを再生 (例: MP3、OGG、FLAC など)</string>
@@ -232,12 +232,12 @@
     <string name="oobe_local_media_subtitle">音楽ファイルがあるフォルダを選択し、インポートする曲をスキャンします。</string>
     <string name="import_success_songs">インポートに成功しました</string>
     <string name="scanner_rejected_dir">無効な選択です。スキャンフォルダはダウンロードフォルダのサブディレクトリ、またはダウンロードフォルダ自体には指定できません</string>
-    <string name="dl_oobe_tooltip">曲は、アプリ用の端末内の保存領域にダウンロードされます。外部の保存領域にダウンロードするには、最初にフォルダを選択してください。設定でフォルダを追加、変更、削除したり、端末内のダウンロードファイルを外部のダウンロードファイルへと移動したりできます。</string>
+    <string name="dl_oobe_tooltip">曲は、アプリ用の端末内のストレージにダウンロードされます。外部のストレージにダウンロードするには、最初にフォルダを選択してください。設定でフォルダを追加、変更、削除したり、端末内のダウンロードファイルを外部のダウンロードファイルへと移動したりできます。</string>
     <string name="oobe_ytm_integration_description">お気に入りの曲にスムーズにアクセス</string>
-    <string name="dl_storage_tooltip">端末内のダウンロードファイルは、アプリ用の保存領域に保存され、ルート権限がないとアクセスできません。\n\n外部のダウンロードファイルは、端末の外部の保存領域に保存され（例：/sdcard または microSD カード）、ファイルエクスプローラーで直接アクセスまたは編集できます。外部ダウンロードフォルダについては、Outertune がそのフォルダ内のファイルを変更または削除する可能性があるため、曲のダウンロード専用に空のフォルダを選択することを推奨します。\n\n追加インポートフォルダは読み取り専用で、追加の曲を読み込むために使用されます。Outertune は、このフォルダ内のファイルを変更または削除しません。これらのフォルダは詳細設定セクションで選択できます。\n\nダウンロードファイルを消去すると、内部の曲のみが削除されます。外部のダウンロードと追加でインポートした曲は、曲のメニューから、またはファイルエクスプローラーから手動で削除する必要があります。\n\nダウンロードフォルダの再スキャン：外部ダウンロードフォルダと追加インポートフォルダ内の曲のダウンロードは自動更新されません。 ファイルエクスプローラーを使用してファイルを手動で追加、削除、または変更した場合は、アプリのデータベースを更新するためにダウンロードフォルダを再スキャンする必要がある場合があります。このオプションは「詳細設定」セクションで利用できます。</string>
-    <string name="app_info_title">アプリの情報</string>
-    <string name="device_info_title">端末の情報</string>
-    <string name="help_bug_report_action">バグ報告を送信 (GitHub)</string>
+    <string name="dl_storage_tooltip">端末内のダウンロードファイルは、アプリ用のストレージに保存され、ルート権限がないとアクセスできません。\n\n外部のダウンロードファイルは、端末の外部のストレージに保存され（例：/sdcard または microSD カード）、ファイルエクスプローラーで直接アクセスまたは編集できます。外部ダウンロードフォルダについては、Outertune がそのフォルダ内のファイルを変更または削除する可能性があるため、曲のダウンロード専用に空のフォルダを選択することを推奨します。\n\n追加インポートフォルダは読み取り専用で、追加の曲を読み込むために使用されます。Outertune は、このフォルダ内のファイルを変更または削除しません。これらのフォルダは詳細設定セクションで選択できます。\n\nダウンロードファイルを消去すると、内部の曲のみが削除されます。外部のダウンロードと追加でインポートした曲は、曲のメニューから、またはファイルエクスプローラーから手動で削除する必要があります。\n\nダウンロードフォルダの再スキャン：外部ダウンロードフォルダと追加インポートフォルダ内の曲のダウンロードは自動更新されません。 ファイルエクスプローラーを使用してファイルを手動で追加、削除、または変更した場合は、アプリのデータベースを更新するためにダウンロードフォルダを再スキャンする必要がある場合があります。このオプションは「詳細設定」セクションで利用できます。</string>
+    <string name="app_info_title">アプリ情報</string>
+    <string name="device_info_title">端末情報</string>
+    <string name="help_bug_report_action">バグ報告 (GitHub)</string>
     <string name="help_support_forum">ヘルプとサポート (GitHub)</string>
     <string name="wiki">Wiki</string>
     <string name="help_contact_email_inquiries">その他お問い合わせ (タップでメアドをコピー)</string>
