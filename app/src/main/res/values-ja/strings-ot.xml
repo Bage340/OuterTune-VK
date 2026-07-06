@@ -198,6 +198,9 @@
     <string name="oobe_downloads_subtitle">ダウンロードした曲を保存するフォルダを選択します。</string>
     <string name="oobe_complete_title">準備完了です！</string>
     <string name="scan_paths_description">曲をスキャンしたい端末内の保存領域のフォルダを選択</string>
+    <string name="download_on_wifi_only_title">Wi-Fi接続時のみダウンロード</string>
+    <string name="download_on_wifi_only_description">モバイルデータ通信ではダウンロードしません。モバイルデータ通信中に追加した曲は、Wi-Fi接続後に自動でダウンロードを開始します</string>
+    <string name="download_waiting_for_wifi">Wi-Fi接続後にダウンロードします</string>
     <string name="clear_downloads_confirm">すべてのダウンロードメディアを削除しますか？メインのダウンロードフォルダ内のダウンロードのみが削除されます。</string>
     <string name="clear_image_cache_confirm">画像のキャッシュを削除しますか？ 既存のアルバムのサムネイルはすべて削除されます。</string>
     <string name="dl_extra_path_title">追加のインポート場所を設定…</string>
