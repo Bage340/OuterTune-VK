@@ -198,70 +198,8 @@ fun PlayerMenu(
         mutableStateOf(false)
     }
 
-    val defaultSleepMinutes by rememberPreference(SleepTimerDefaultMinutesKey, defaultValue = SleepTimerDefaults.DEFAULT_MINUTES)
-    val sleepTimerFade by rememberPreference(SleepTimerFadeKey, defaultValue = SleepTimerDefaults.FADE_ENABLED)
-    val sleepTimerFadeDuration by rememberPreference(
-        SleepTimerFadeDurationKey,
-        defaultValue = SleepTimerDefaults.FADE_DURATION_SECONDS
-    )
-
-    var sleepTimerValue by remember {
-        mutableFloatStateOf(defaultSleepMinutes.toFloat())
-    }
-
     if (showSleepTimerDialog) {
-        AlertDialog(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-            onDismissRequest = { showSleepTimerDialog = false },
-            icon = { Icon(imageVector = Icons.Rounded.Timer, contentDescription = null) },
-            title = { Text(stringResource(R.string.sleep_timer)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showSleepTimerDialog = false
-                        playerConnection.service.startSleepTimer(
-                            sleepTimerValue.roundToInt()
-                                .coerceIn(SleepTimerDefaults.MINUTES_RANGE.first, SleepTimerDefaults.MINUTES_RANGE.last),
-                            sleepTimerFade,
-                            sleepTimerFadeDuration
-                        )
-                    }
-                ) {
-                    Text(stringResource(android.R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showSleepTimerDialog = false }
-                ) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-            },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    SleepTimerDurationPicker(
-                        minutes = sleepTimerValue,
-                        onMinutesChange = { sleepTimerValue = it },
-                        showEndTime = true,
-                    )
-
-                    Box(modifier = Modifier.padding(top = 8.dp)) {
-                        OutlinedButton(
-                            onClick = {
-                                showSleepTimerDialog = false
-                                playerConnection.service.startSleepTimer(-1, sleepTimerFade, sleepTimerFadeDuration)
-                            },
-                            modifier = Modifier.height(40.dp)
-                        ) {
-                            Text(stringResource(R.string.end_of_song))
-                        }
-                    }
-                }
-            }
-        )
+        SleepTimerDialog(onDismiss = { showSleepTimerDialog = false })
     }
 
     var showDetailsDialog by rememberSaveable {
@@ -418,12 +356,7 @@ fun PlayerMenu(
             sleepTimerTimeLeft = sleepTimerTimeLeft,
             enabled = sleepTimerEnabled
         ) {
-            if (sleepTimerEnabled) {
-                playerConnection.service.sleepTimer.clear()
-            } else {
-                sleepTimerValue = defaultSleepMinutes.toFloat()
-                showSleepTimerDialog = true
-            }
+            showSleepTimerDialog = true
         }
         GridMenuItem(
             icon = Icons.Rounded.Equalizer,
@@ -503,6 +436,98 @@ fun PlayerMenu(
         )
     }
 
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SleepTimerDialog(
+    onDismiss: () -> Unit,
+) {
+    val playerConnection = LocalPlayerConnection.current ?: return
+
+    val defaultSleepMinutes by rememberPreference(
+        SleepTimerDefaultMinutesKey,
+        defaultValue = SleepTimerDefaults.DEFAULT_MINUTES
+    )
+    val sleepTimerFade by rememberPreference(SleepTimerFadeKey, defaultValue = SleepTimerDefaults.FADE_ENABLED)
+    val sleepTimerFadeDuration by rememberPreference(
+        SleepTimerFadeDurationKey,
+        defaultValue = SleepTimerDefaults.FADE_DURATION_SECONDS
+    )
+
+    val sleepTimerActive = remember(
+        playerConnection.service.sleepTimer.triggerTime,
+        playerConnection.service.sleepTimer.pauseWhenSongEnd
+    ) {
+        playerConnection.service.sleepTimer.isActive
+    }
+
+    var sleepTimerValue by remember {
+        mutableFloatStateOf(defaultSleepMinutes.toFloat())
+    }
+
+    AlertDialog(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        onDismissRequest = onDismiss,
+        icon = { Icon(imageVector = Icons.Rounded.Timer, contentDescription = null) },
+        title = { Text(stringResource(R.string.sleep_timer)) },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDismiss()
+                    playerConnection.service.startSleepTimer(
+                        sleepTimerValue.roundToInt()
+                            .coerceIn(SleepTimerDefaults.MINUTES_RANGE.first, SleepTimerDefaults.MINUTES_RANGE.last),
+                        sleepTimerFade,
+                        sleepTimerFadeDuration
+                    )
+                }
+            ) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (sleepTimerActive) {
+                    TextButton(
+                        onClick = {
+                            onDismiss()
+                            playerConnection.service.sleepTimer.clear()
+                        }
+                    ) {
+                        Text(stringResource(R.string.sleep_timer_stop))
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            }
+        },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                SleepTimerDurationPicker(
+                    minutes = sleepTimerValue,
+                    onMinutesChange = { sleepTimerValue = it },
+                    showEndTime = true,
+                )
+
+                Box(modifier = Modifier.padding(top = 8.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            onDismiss()
+                            playerConnection.service.startSleepTimer(-1, sleepTimerFade, sleepTimerFadeDuration)
+                        },
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Text(stringResource(R.string.end_of_song))
+                    }
+                }
+            }
+        }
+    )
 }
 
 @Composable

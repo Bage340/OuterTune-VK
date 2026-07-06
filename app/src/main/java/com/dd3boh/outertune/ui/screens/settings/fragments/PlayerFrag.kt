@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.Headset
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Timelapse
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ import com.dd3boh.outertune.constants.SleepTimerDefaultMinutesKey
 import com.dd3boh.outertune.constants.SleepTimerDefaults
 import com.dd3boh.outertune.constants.SleepTimerFadeDurationKey
 import com.dd3boh.outertune.constants.SleepTimerFadeKey
+import com.dd3boh.outertune.constants.SleepTimerShowOnPlayerKey
 import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
 import com.dd3boh.outertune.constants.minPlaybackDurKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
@@ -209,10 +211,18 @@ fun SleepTimerFrag() {
         SleepTimerDefaultMinutesKey,
         defaultValue = SleepTimerDefaults.DEFAULT_MINUTES
     )
+    val (showOnPlayer, onShowOnPlayerChange) = rememberPreference(SleepTimerShowOnPlayerKey, defaultValue = true)
 
     var showFadeDurationDialog by remember { mutableStateOf(false) }
     var showDefaultTimeDialog by remember { mutableStateOf(false) }
 
+    SwitchPreference(
+        title = { Text(stringResource(R.string.sleep_timer_show_on_player)) },
+        description = stringResource(R.string.sleep_timer_show_on_player_desc),
+        icon = { Icon(Icons.Rounded.Visibility, null) },
+        checked = showOnPlayer,
+        onCheckedChange = onShowOnPlayerChange
+    )
     SwitchPreference(
         title = { Text(stringResource(R.string.sleep_timer_fade)) },
         icon = { Icon(Icons.AutoMirrored.Rounded.VolumeDown, null) },
