@@ -38,6 +38,8 @@ import com.dd3boh.outertune.constants.LocalAlbumSortDescendingKey
 import com.dd3boh.outertune.constants.LocalAlbumSortTypeKey
 import com.dd3boh.outertune.constants.LocalArtistSortDescendingKey
 import com.dd3boh.outertune.constants.LocalArtistSortTypeKey
+import com.dd3boh.outertune.constants.LocalPlaylistSortDescendingKey
+import com.dd3boh.outertune.constants.LocalPlaylistSortTypeKey
 import com.dd3boh.outertune.constants.LocalSongSortDescendingKey
 import com.dd3boh.outertune.constants.LocalSongSortTypeKey
 import com.dd3boh.outertune.constants.PlaylistFilter
@@ -127,8 +129,10 @@ class LibrarySongsViewModel @Inject constructor(
 @HiltViewModel
 class LocalLibraryViewModel @Inject constructor(
     @ApplicationContext context: Context,
-    database: MusicDatabase,
+    private val database: MusicDatabase,
 ) : ViewModel() {
+    val filteredSongs = mutableStateListOf<Song>()
+
     val localSongs: StateFlow<List<Song>?> = combine(
         database.allLocalSongsFlow(),
         context.dataStore.data
@@ -160,6 +164,28 @@ class LocalLibraryViewModel @Inject constructor(
             database.artists(ArtistFilter.LIBRARY, sortType, descending, localOnly = true)
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    val localPlaylists: StateFlow<List<Playlist>?> = context.dataStore.data
+        .map {
+            it[LocalPlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE) to (it[LocalPlaylistSortDescendingKey] ?: true)
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { (sortType, descending) ->
+            database.playlists(PlaylistFilter.LIBRARY, sortType, descending, variant = 0, localSongsOnly = true)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    fun search(query: String) {
+        if (query.isBlank()) {
+            filteredSongs.clear()
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = database.searchSongsAllLocal(query).first()
+            filteredSongs.clear()
+            filteredSongs.addAll(result)
+        }
+    }
 
     private fun sortLocalSongs(
         songs: List<Song>,

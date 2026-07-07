@@ -106,7 +106,7 @@ interface PlaylistsDao {
      * 1 -> local playlists (WHERE p.isLocal AND p.bookmarkedAt IS NOT NULL)
      * 2 -> editable playlists (WHERE p.isEditable AND p.bookmarkedAt IS NOT NULL)
      */
-    fun playlists(filter: PlaylistFilter, sortType: PlaylistSortType, descending: Boolean, variant: Int = 0): Flow<List<Playlist>> {
+    fun playlists(filter: PlaylistFilter, sortType: PlaylistSortType, descending: Boolean, variant: Int = 0, localSongsOnly: Boolean = false): Flow<List<Playlist>> {
         val orderBy = when (sortType) {
             PlaylistSortType.CREATE_DATE -> "p.rowId ASC"
             PlaylistSortType.NAME -> "p.name COLLATE NOCASE ASC"
@@ -116,6 +116,10 @@ interface PlaylistsDao {
         val having = when (filter) {
             PlaylistFilter.DOWNLOADED -> "HAVING SUM(CASE WHEN s.dateDownload IS NOT NULL THEN 1 ELSE 0 END) > 0"
             else -> ""
+        }.let { base ->
+            if (!localSongsOnly) base
+            else if (base.isEmpty()) "HAVING SUM(CASE WHEN s.isLocal = 0 THEN 1 ELSE 0 END) = 0"
+            else "$base AND SUM(CASE WHEN s.isLocal = 0 THEN 1 ELSE 0 END) = 0"
         }
 
         val where = when (variant) {
