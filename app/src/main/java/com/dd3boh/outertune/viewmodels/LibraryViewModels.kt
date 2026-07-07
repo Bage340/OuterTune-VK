@@ -30,9 +30,18 @@ import com.dd3boh.outertune.constants.ArtistSongSortTypeKey
 import com.dd3boh.outertune.constants.ArtistSortDescendingKey
 import com.dd3boh.outertune.constants.ArtistSortType
 import com.dd3boh.outertune.constants.ArtistSortTypeKey
+import com.dd3boh.outertune.constants.FolderSongSortType
 import com.dd3boh.outertune.constants.LibrarySortDescendingKey
 import com.dd3boh.outertune.constants.LibrarySortType
 import com.dd3boh.outertune.constants.LibrarySortTypeKey
+import com.dd3boh.outertune.constants.LocalAlbumSortDescendingKey
+import com.dd3boh.outertune.constants.LocalAlbumSortTypeKey
+import com.dd3boh.outertune.constants.LocalArtistSortDescendingKey
+import com.dd3boh.outertune.constants.LocalArtistSortTypeKey
+import com.dd3boh.outertune.constants.LocalPlaylistSortDescendingKey
+import com.dd3boh.outertune.constants.LocalPlaylistSortTypeKey
+import com.dd3boh.outertune.constants.LocalSongSortDescendingKey
+import com.dd3boh.outertune.constants.LocalSongSortTypeKey
 import com.dd3boh.outertune.constants.PlaylistFilter
 import com.dd3boh.outertune.constants.PlaylistFilterKey
 import com.dd3boh.outertune.constants.PlaylistSortDescendingKey
@@ -55,6 +64,7 @@ import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.getDirectoryTree
 import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
+import com.dd3boh.outertune.utils.numberToAlpha
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.refreshLocal
 import com.zionhuang.innertube.YouTube
@@ -74,6 +84,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import javax.inject.Inject
 
 @HiltViewModel
@@ -112,6 +123,102 @@ class LibrarySongsViewModel @Inject constructor(
                     SongFilter.DOWNLOADED -> database.downloadSongs(sortType, descending)
                 }
             }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+    }
+}
+
+@HiltViewModel
+class LocalLibraryViewModel @Inject constructor(
+    @ApplicationContext context: Context,
+    private val database: MusicDatabase,
+) : ViewModel() {
+    val filteredSongs = mutableStateListOf<Song>()
+
+    val localSongs: StateFlow<List<Song>?> = combine(
+        database.allLocalSongsFlow(),
+        context.dataStore.data
+            .map {
+                it[LocalSongSortTypeKey].toEnum(FolderSongSortType.TRACK_NUMBER) to
+                        (it[LocalSongSortDescendingKey] == true)
+            }
+            .distinctUntilChanged()
+    ) { songs, (sortType, descending) ->
+        sortLocalSongs(songs, sortType, descending)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    val localAlbums: StateFlow<List<Album>?> = context.dataStore.data
+        .map {
+            it[LocalAlbumSortTypeKey].toEnum(AlbumSortType.CREATE_DATE) to (it[LocalAlbumSortDescendingKey] ?: true)
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { (sortType, descending) ->
+            database.albums(AlbumFilter.LIBRARY, sortType, descending, localOnly = true)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    val localArtists: StateFlow<List<Artist>?> = context.dataStore.data
+        .map {
+            it[LocalArtistSortTypeKey].toEnum(ArtistSortType.CREATE_DATE) to (it[LocalArtistSortDescendingKey] ?: true)
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { (sortType, descending) ->
+            combine(
+                database.artists(ArtistFilter.LIBRARY, sortType, descending, localOnly = true),
+                database.localArtistThumbnails(),
+            ) { artists, thumbnails ->
+                val thumbnailByArtist = thumbnails
+                    .filter { it.thumbnailUrl != null }
+                    .associate { it.artistId to it.thumbnailUrl }
+                artists.map { artist ->
+                    val fallback = thumbnailByArtist[artist.id]
+                    if (artist.artist.isLocal && artist.artist.thumbnailUrl == null && fallback != null) {
+                        artist.copy(artist = artist.artist.copy(thumbnailUrl = fallback))
+                    } else {
+                        artist
+                    }
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    val localPlaylists: StateFlow<List<Playlist>?> = context.dataStore.data
+        .map {
+            it[LocalPlaylistSortTypeKey].toEnum(PlaylistSortType.CREATE_DATE) to (it[LocalPlaylistSortDescendingKey] ?: true)
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { (sortType, descending) ->
+            database.playlists(PlaylistFilter.LIBRARY, sortType, descending, variant = 0, localSongsOnly = true)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    fun search(query: String) {
+        if (query.isBlank()) {
+            filteredSongs.clear()
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = database.searchSongsAllLocal(query).first()
+            filteredSongs.clear()
+            filteredSongs.addAll(result)
+        }
+    }
+
+    private fun sortLocalSongs(
+        songs: List<Song>,
+        sortType: FolderSongSortType,
+        descending: Boolean,
+    ): List<Song> {
+        val sorted = songs.sortedBy {
+            when (sortType) {
+                FolderSongSortType.CREATE_DATE -> numberToAlpha(it.song.inLibrary?.toEpochSecond(ZoneOffset.UTC) ?: -1L)
+                FolderSongSortType.MODIFIED_DATE -> numberToAlpha(it.song.getDateModifiedLong() ?: -1L)
+                FolderSongSortType.RELEASE_DATE -> numberToAlpha(it.song.getDateLong() ?: -1L)
+                FolderSongSortType.NAME -> it.song.title.lowercase()
+                FolderSongSortType.ARTIST -> it.artists.joinToString { artist -> artist.name }.lowercase()
+                FolderSongSortType.PLAY_COUNT -> numberToAlpha((it.playCount?.sumOf { pc -> pc.count })?.toLong() ?: 0L)
+                FolderSongSortType.TRACK_NUMBER -> numberToAlpha(it.song.trackNumber?.toLong() ?: Long.MAX_VALUE)
+            }
+        }
+        return if (descending) sorted.reversed() else sorted
     }
 }
 

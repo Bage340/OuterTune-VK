@@ -15,6 +15,7 @@ import com.dd3boh.outertune.constants.ArtistSongSortType
 import com.dd3boh.outertune.constants.ArtistSortType
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.db.entities.ArtistEntity
+import com.dd3boh.outertune.db.entities.LocalArtistThumbnail
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.extensions.reversed
@@ -144,9 +145,9 @@ interface ArtistsDao {
         } + if (localOnly == null) {
             ""
         } else if (localOnly) {
-            "artist.isLocal = 1"
+            " AND artist.isLocal = 1"
         } else {
-            "artist.isLocal = 0"
+            " AND artist.isLocal = 0"
         }
 
         val having = when (filter) {
@@ -193,6 +194,24 @@ interface ArtistsDao {
         ORDER BY artist.name ASC
     """)
     fun localArtistsByName(): List<Artist>
+
+    /**
+     * Representative artwork path for each local artist, preferring a local album cover and falling
+     * back to a local song's embedded artwork. MIN() keeps the choice stable across rescans.
+     */
+    @Query("""
+        SELECT sam.artistId AS artistId,
+               COALESCE(
+                   MIN(CASE WHEN album.isLocal = 1 THEN album.thumbnailUrl END),
+                   MIN(CASE WHEN song.isLocal = 1 THEN song.thumbnailUrl END)
+               ) AS thumbnailUrl
+        FROM song_artist_map sam
+            JOIN song ON sam.songId = song.id
+            LEFT JOIN album ON song.albumId = album.id
+        WHERE song.isLocal = 1
+        GROUP BY sam.artistId
+    """)
+    fun localArtistThumbnails(): Flow<List<LocalArtistThumbnail>>
     // endregion
 
     // region Artist Songs Sort

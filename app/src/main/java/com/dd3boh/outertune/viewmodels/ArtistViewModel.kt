@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dd3boh.outertune.constants.ArtistSongSortType
 import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.utils.reportException
 import com.zionhuang.innertube.YouTube
@@ -26,7 +27,7 @@ class ArtistViewModel @Inject constructor(
     var artistPage by mutableStateOf<ArtistPage?>(null)
     val libraryArtist = database.artist(artistId)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
-    val librarySongs = database.artistSongsPreview(artistId)
+    val librarySongs = database.artistSongs(artistId, ArtistSongSortType.CREATE_DATE, descending = true)
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     val libraryAlbums = database.artistAlbumsPreview(artistId)
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())

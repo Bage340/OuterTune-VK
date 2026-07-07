@@ -26,6 +26,7 @@ import coil3.compose.AsyncImage
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.db.entities.Artist
 import com.dd3boh.outertune.ui.utils.getNSongsString
+import com.dd3boh.outertune.utils.getThumbnailModel
 
 @Composable
 fun ArtistListItem(
@@ -65,7 +66,7 @@ fun ArtistListItem(
     badges = badges,
     thumbnailContent = {
         AsyncImage(
-            model = artist.artist.thumbnailUrl,
+            model = artist.artist.thumbnailUrl?.let { getThumbnailModel(it) },
             contentDescription = null,
             modifier = Modifier
                 .size(ListThumbnailSize)
@@ -114,7 +115,7 @@ fun ArtistGridItem(
     badges = badges,
     thumbnailContent = {
         AsyncImage(
-            model = artist.artist.thumbnailUrl,
+            model = artist.artist.thumbnailUrl?.let { getThumbnailModel(it) },
             contentDescription = null,
             contentScale = ContentScale.Companion.Crop,
             modifier = Modifier

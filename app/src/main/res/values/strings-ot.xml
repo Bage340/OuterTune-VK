@@ -9,6 +9,7 @@ while also allowing users to translate our app as well. New, specific strings to
 
 <!-- Bottom navigation -->
     <string name="folders">Folders</string>
+    <string name="local_files">Local</string>
     <string name="library">Library</string>
 
 <!-- Home -->

@@ -176,6 +176,17 @@ val PlaylistViewTypeKey = stringPreferencesKey("playlistViewType")
 val LibraryFilterKey = stringPreferencesKey("libraryFilter")
 val LibraryViewTypeKey = stringPreferencesKey("libraryViewType")
 
+val LocalFilterKey = stringPreferencesKey("localFilter")
+val LocalViewTypeKey = stringPreferencesKey("localViewType")
+val LocalSongSortTypeKey = stringPreferencesKey("localSongSortType")
+val LocalSongSortDescendingKey = booleanPreferencesKey("localSongSortDescending")
+val LocalAlbumSortTypeKey = stringPreferencesKey("localAlbumSortType")
+val LocalAlbumSortDescendingKey = booleanPreferencesKey("localAlbumSortDescending")
+val LocalArtistSortTypeKey = stringPreferencesKey("localArtistSortType")
+val LocalArtistSortDescendingKey = booleanPreferencesKey("localArtistSortDescending")
+val LocalPlaylistSortTypeKey = stringPreferencesKey("localPlaylistSortType")
+val LocalPlaylistSortDescendingKey = booleanPreferencesKey("localPlaylistSortDescending")
+
 val PlaylistEditLockKey = booleanPreferencesKey("playlistEditLock")
 
 val SearchSourceKey = stringPreferencesKey("searchSource")
