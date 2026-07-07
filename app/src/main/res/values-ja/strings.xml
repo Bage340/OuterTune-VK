@@ -226,7 +226,7 @@
     <string name="ignore_audio_focus">オーディオフォーカスを維持</string>
     <string name="ignore_audio_focus_desc">他のアプリがオーディオフォーカスを取得しても再生を継続します。通話中も一時停止しません。</string>
     <string name="equalizer">イコライザー</string>
-    <string name="storage">保存領域</string>
+    <string name="storage">ストレージ</string>
     <string name="cache">キャッシュ</string>
     <string name="image_cache">画像のキャッシュ</string>
     <string name="song_cache">曲のキャッシュ</string>
