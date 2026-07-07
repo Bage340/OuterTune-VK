@@ -208,7 +208,7 @@ fun SearchBarContainer(
             WindowInsets.safeDrawing.union(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Start))
         }
         else {
-            WindowInsets()
+            WindowInsets.systemBars.only(WindowInsetsSides.Top)
         }
         SearchBar(
             query = query,
@@ -355,7 +355,7 @@ fun SearchBarContainer(
         val iconRowInset = if (!context.tabMode()) {
             WindowInsets.safeDrawing.union(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Start))
         } else {
-            WindowInsets()
+            WindowInsets.systemBars.only(WindowInsetsSides.Top)
         }
         TopIconBar(
             scrollBehavior = scrollBehavior,
