@@ -161,7 +161,22 @@ class LocalLibraryViewModel @Inject constructor(
         }
         .distinctUntilChanged()
         .flatMapLatest { (sortType, descending) ->
-            database.artists(ArtistFilter.LIBRARY, sortType, descending, localOnly = true)
+            combine(
+                database.artists(ArtistFilter.LIBRARY, sortType, descending, localOnly = true),
+                database.localArtistThumbnails(),
+            ) { artists, thumbnails ->
+                val thumbnailByArtist = thumbnails
+                    .filter { it.thumbnailUrl != null }
+                    .associate { it.artistId to it.thumbnailUrl }
+                artists.map { artist ->
+                    val fallback = thumbnailByArtist[artist.id]
+                    if (artist.artist.isLocal && artist.artist.thumbnailUrl == null && fallback != null) {
+                        artist.copy(artist = artist.artist.copy(thumbnailUrl = fallback))
+                    } else {
+                        artist
+                    }
+                }
+            }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
