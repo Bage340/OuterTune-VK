@@ -39,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,17 +51,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.dd3boh.outertune.LocalMenuState
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.LocalSnackbarHostState
 import com.dd3boh.outertune.MainActivity
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.AlbumSortType
+import com.dd3boh.outertune.constants.ArtistSortType
+import com.dd3boh.outertune.constants.CONTENT_TYPE_ALBUM
+import com.dd3boh.outertune.constants.CONTENT_TYPE_ARTIST
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
 import com.dd3boh.outertune.constants.CONTENT_TYPE_SONG
 import com.dd3boh.outertune.constants.FolderSongSortType
 import com.dd3boh.outertune.constants.GridThumbnailHeight
 import com.dd3boh.outertune.constants.LibraryViewType
 import com.dd3boh.outertune.constants.ListThumbnailSize
+import com.dd3boh.outertune.constants.LocalAlbumSortDescendingKey
+import com.dd3boh.outertune.constants.LocalAlbumSortTypeKey
+import com.dd3boh.outertune.constants.LocalArtistSortDescendingKey
+import com.dd3boh.outertune.constants.LocalArtistSortTypeKey
 import com.dd3boh.outertune.constants.LocalFilter
 import com.dd3boh.outertune.constants.LocalFilterKey
 import com.dd3boh.outertune.constants.LocalLibraryEnableKey
@@ -74,6 +84,10 @@ import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.EmptyPlaceholder
 import com.dd3boh.outertune.ui.component.LazyColumnScrollbar
 import com.dd3boh.outertune.ui.component.LazyVerticalGridScrollbar
+import com.dd3boh.outertune.ui.component.LibraryAlbumGridItem
+import com.dd3boh.outertune.ui.component.LibraryAlbumListItem
+import com.dd3boh.outertune.ui.component.LibraryArtistGridItem
+import com.dd3boh.outertune.ui.component.LibraryArtistListItem
 import com.dd3boh.outertune.ui.component.ScrollToTopManager
 import com.dd3boh.outertune.ui.component.SortHeader
 import com.dd3boh.outertune.ui.component.button.IconButton
@@ -93,17 +107,25 @@ fun LocalScreen(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val menuState = LocalMenuState.current
+    val coroutineScope = rememberCoroutineScope()
     val playerConnection = LocalPlayerConnection.current ?: return
     val snackbarHostState = LocalSnackbarHostState.current
 
     var filter by rememberEnumPreference(LocalFilterKey, LocalFilter.SONGS)
     var viewType by rememberEnumPreference(LocalViewTypeKey, LibraryViewType.GRID)
-    val (sortType, onSortTypeChange) = rememberEnumPreference(LocalSongSortTypeKey, FolderSongSortType.TRACK_NUMBER)
-    val (sortDescending, onSortDescendingChange) = rememberPreference(LocalSongSortDescendingKey, false)
+    val (songSortType, onSongSortTypeChange) = rememberEnumPreference(LocalSongSortTypeKey, FolderSongSortType.TRACK_NUMBER)
+    val (songSortDescending, onSongSortDescendingChange) = rememberPreference(LocalSongSortDescendingKey, false)
+    val (albumSortType, onAlbumSortTypeChange) = rememberEnumPreference(LocalAlbumSortTypeKey, AlbumSortType.CREATE_DATE)
+    val (albumSortDescending, onAlbumSortDescendingChange) = rememberPreference(LocalAlbumSortDescendingKey, true)
+    val (artistSortType, onArtistSortTypeChange) = rememberEnumPreference(LocalArtistSortTypeKey, ArtistSortType.CREATE_DATE)
+    val (artistSortDescending, onArtistSortDescendingChange) = rememberPreference(LocalArtistSortDescendingKey, true)
     val localLibEnable by rememberPreference(LocalLibraryEnableKey, defaultValue = true)
     val swipeEnabled by rememberPreference(SwipeToQueueKey, true)
 
     val songs by viewModel.localSongs.collectAsState()
+    val albums by viewModel.localAlbums.collectAsState()
+    val artists by viewModel.localArtists.collectAsState()
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
@@ -169,10 +191,10 @@ fun LocalScreen(
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
             SortHeader(
-                sortType = sortType,
-                sortDescending = sortDescending,
-                onSortTypeChange = onSortTypeChange,
-                onSortDescendingChange = onSortDescendingChange,
+                sortType = songSortType,
+                sortDescending = songSortDescending,
+                onSortTypeChange = onSongSortTypeChange,
+                onSortDescendingChange = onSongSortDescendingChange,
                 sortTypeText = { sortType ->
                     when (sortType) {
                         FolderSongSortType.CREATE_DATE -> R.string.sort_by_create_date
@@ -191,6 +213,71 @@ fun LocalScreen(
             songs?.let { songs ->
                 Text(
                     text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+    }
+
+    val albumHeaderContent = @Composable {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            SortHeader(
+                sortType = albumSortType,
+                sortDescending = albumSortDescending,
+                onSortTypeChange = onAlbumSortTypeChange,
+                onSortDescendingChange = onAlbumSortDescendingChange,
+                sortTypeText = { sortType ->
+                    when (sortType) {
+                        AlbumSortType.CREATE_DATE -> R.string.sort_by_create_date
+                        AlbumSortType.NAME -> R.string.sort_by_name
+                        AlbumSortType.ARTIST -> R.string.sort_by_artist
+                        AlbumSortType.YEAR -> R.string.sort_by_year
+                        AlbumSortType.SONG_COUNT -> R.string.sort_by_song_count
+                        AlbumSortType.LENGTH -> R.string.sort_by_length
+                    }
+                }
+            )
+
+            Spacer(Modifier.weight(1f))
+
+            albums?.let { albums ->
+                Text(
+                    text = pluralStringResource(R.plurals.n_album, albums.size, albums.size),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+    }
+
+    val artistHeaderContent = @Composable {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            SortHeader(
+                sortType = artistSortType,
+                sortDescending = artistSortDescending,
+                onSortTypeChange = onArtistSortTypeChange,
+                onSortDescendingChange = onArtistSortDescendingChange,
+                sortTypeText = { sortType ->
+                    when (sortType) {
+                        ArtistSortType.CREATE_DATE -> R.string.sort_by_create_date
+                        ArtistSortType.NAME -> R.string.sort_by_name
+                        ArtistSortType.SONG_COUNT -> R.string.sort_by_song_count
+                    }
+                }
+            )
+
+            Spacer(Modifier.weight(1f))
+
+            artists?.let { artists ->
+                Text(
+                    text = pluralStringResource(R.plurals.n_artist, artists.size, artists.size),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -272,7 +359,76 @@ fun LocalScreen(
                             }
                         }
 
-                        else -> {
+                        LocalFilter.ALBUMS -> {
+                            item(
+                                key = "header",
+                                contentType = CONTENT_TYPE_HEADER
+                            ) {
+                                albumHeaderContent()
+                            }
+
+                            albums?.let { albums ->
+                                if (albums.isEmpty()) {
+                                    item {
+                                        EmptyPlaceholder(
+                                            icon = Icons.Rounded.Album,
+                                            text = stringResource(R.string.library_album_empty),
+                                            modifier = Modifier.animateItem()
+                                        )
+                                    }
+                                }
+                                itemsIndexed(
+                                    items = albums,
+                                    key = { _, item -> item.id },
+                                    contentType = { _, _ -> CONTENT_TYPE_ALBUM }
+                                ) { _, album ->
+                                    LibraryAlbumListItem(
+                                        navController = navController,
+                                        menuState = menuState,
+                                        album = album,
+                                        isActive = album.id == mediaMetadata?.album?.id,
+                                        isPlaying = isPlaying,
+                                        modifier = Modifier.animateItem()
+                                    )
+                                }
+                            }
+                        }
+
+                        LocalFilter.ARTISTS -> {
+                            item(
+                                key = "header",
+                                contentType = CONTENT_TYPE_HEADER
+                            ) {
+                                artistHeaderContent()
+                            }
+
+                            artists?.let { artists ->
+                                if (artists.isEmpty()) {
+                                    item {
+                                        EmptyPlaceholder(
+                                            icon = Icons.Rounded.Person,
+                                            text = stringResource(R.string.library_artist_empty),
+                                            modifier = Modifier.animateItem()
+                                        )
+                                    }
+                                }
+                                itemsIndexed(
+                                    items = artists,
+                                    key = { _, item -> item.id },
+                                    contentType = { _, _ -> CONTENT_TYPE_ARTIST }
+                                ) { _, artist ->
+                                    LibraryArtistListItem(
+                                        navController = navController,
+                                        menuState = menuState,
+                                        coroutineScope = coroutineScope,
+                                        modifier = Modifier.animateItem(),
+                                        artist = artist
+                                    )
+                                }
+                            }
+                        }
+
+                        LocalFilter.PLAYLISTS -> {
                             item {
                                 LocalPlaceholder(filter)
                             }
@@ -349,7 +505,79 @@ fun LocalScreen(
                             }
                         }
 
-                        else -> {
+                        LocalFilter.ALBUMS -> {
+                            item(
+                                key = "header",
+                                span = { GridItemSpan(maxLineSpan) },
+                                contentType = CONTENT_TYPE_HEADER
+                            ) {
+                                albumHeaderContent()
+                            }
+
+                            albums?.let { albums ->
+                                if (albums.isEmpty()) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        EmptyPlaceholder(
+                                            icon = Icons.Rounded.Album,
+                                            text = stringResource(R.string.library_album_empty),
+                                            modifier = Modifier.animateItem()
+                                        )
+                                    }
+                                }
+                                itemsIndexed(
+                                    items = albums,
+                                    key = { _, item -> item.id },
+                                    contentType = { _, _ -> CONTENT_TYPE_ALBUM }
+                                ) { _, album ->
+                                    LibraryAlbumGridItem(
+                                        navController = navController,
+                                        menuState = menuState,
+                                        coroutineScope = coroutineScope,
+                                        album = album,
+                                        isActive = album.id == mediaMetadata?.album?.id,
+                                        isPlaying = isPlaying,
+                                        modifier = Modifier.animateItem()
+                                    )
+                                }
+                            }
+                        }
+
+                        LocalFilter.ARTISTS -> {
+                            item(
+                                key = "header",
+                                span = { GridItemSpan(maxLineSpan) },
+                                contentType = CONTENT_TYPE_HEADER
+                            ) {
+                                artistHeaderContent()
+                            }
+
+                            artists?.let { artists ->
+                                if (artists.isEmpty()) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        EmptyPlaceholder(
+                                            icon = Icons.Rounded.Person,
+                                            text = stringResource(R.string.library_artist_empty),
+                                            modifier = Modifier.animateItem()
+                                        )
+                                    }
+                                }
+                                itemsIndexed(
+                                    items = artists,
+                                    key = { _, item -> item.id },
+                                    contentType = { _, _ -> CONTENT_TYPE_ARTIST }
+                                ) { _, artist ->
+                                    LibraryArtistGridItem(
+                                        navController = navController,
+                                        menuState = menuState,
+                                        coroutineScope = coroutineScope,
+                                        modifier = Modifier.animateItem(),
+                                        artist = artist
+                                    )
+                                }
+                            }
+                        }
+
+                        LocalFilter.PLAYLISTS -> {
                             item(span = { GridItemSpan(maxLineSpan) }) {
                                 LocalPlaceholder(filter)
                             }

@@ -134,7 +134,7 @@ interface AlbumsDao : ArtistsDao {
     @RawQuery(observedEntities = [AlbumEntity::class])
     fun _getAlbum(query: SupportSQLiteQuery): Flow<List<Album>>
 
-    fun albums(filter: AlbumFilter, sortType: AlbumSortType, descending: Boolean): Flow<List<Album>> {
+    fun albums(filter: AlbumFilter, sortType: AlbumSortType, descending: Boolean, localOnly: Boolean? = null): Flow<List<Album>> {
         val orderBy = when (sortType) {
             AlbumSortType.CREATE_DATE -> "album.rowId ASC"
             AlbumSortType.NAME -> "album.title COLLATE NOCASE ASC"
@@ -153,6 +153,12 @@ interface AlbumsDao : ArtistsDao {
             AlbumFilter.DOWNLOADED -> "song.dateDownload IS NOT NULL"
             AlbumFilter.LIBRARY -> "song.inLibrary IS NOT NULL"
             AlbumFilter.LIKED -> "album.bookmarkedAt IS NOT NULL"
+        } + if (localOnly == null) {
+            ""
+        } else if (localOnly) {
+            " AND album.isLocal = 1"
+        } else {
+            " AND album.isLocal = 0"
         }
 
         val query = SimpleSQLiteQuery("""

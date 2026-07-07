@@ -34,6 +34,10 @@ import com.dd3boh.outertune.constants.FolderSongSortType
 import com.dd3boh.outertune.constants.LibrarySortDescendingKey
 import com.dd3boh.outertune.constants.LibrarySortType
 import com.dd3boh.outertune.constants.LibrarySortTypeKey
+import com.dd3boh.outertune.constants.LocalAlbumSortDescendingKey
+import com.dd3boh.outertune.constants.LocalAlbumSortTypeKey
+import com.dd3boh.outertune.constants.LocalArtistSortDescendingKey
+import com.dd3boh.outertune.constants.LocalArtistSortTypeKey
 import com.dd3boh.outertune.constants.LocalSongSortDescendingKey
 import com.dd3boh.outertune.constants.LocalSongSortTypeKey
 import com.dd3boh.outertune.constants.PlaylistFilter
@@ -136,6 +140,26 @@ class LocalLibraryViewModel @Inject constructor(
     ) { songs, (sortType, descending) ->
         sortLocalSongs(songs, sortType, descending)
     }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    val localAlbums: StateFlow<List<Album>?> = context.dataStore.data
+        .map {
+            it[LocalAlbumSortTypeKey].toEnum(AlbumSortType.CREATE_DATE) to (it[LocalAlbumSortDescendingKey] ?: true)
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { (sortType, descending) ->
+            database.albums(AlbumFilter.LIBRARY, sortType, descending, localOnly = true)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    val localArtists: StateFlow<List<Artist>?> = context.dataStore.data
+        .map {
+            it[LocalArtistSortTypeKey].toEnum(ArtistSortType.CREATE_DATE) to (it[LocalArtistSortDescendingKey] ?: true)
+        }
+        .distinctUntilChanged()
+        .flatMapLatest { (sortType, descending) ->
+            database.artists(ArtistFilter.LIBRARY, sortType, descending, localOnly = true)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     private fun sortLocalSongs(
         songs: List<Song>,

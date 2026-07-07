@@ -144,9 +144,9 @@ interface ArtistsDao {
         } + if (localOnly == null) {
             ""
         } else if (localOnly) {
-            "artist.isLocal = 1"
+            " AND artist.isLocal = 1"
         } else {
-            "artist.isLocal = 0"
+            " AND artist.isLocal = 0"
         }
 
         val having = when (filter) {

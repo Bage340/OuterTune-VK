@@ -180,6 +180,10 @@ val LocalFilterKey = stringPreferencesKey("localFilter")
 val LocalViewTypeKey = stringPreferencesKey("localViewType")
 val LocalSongSortTypeKey = stringPreferencesKey("localSongSortType")
 val LocalSongSortDescendingKey = booleanPreferencesKey("localSongSortDescending")
+val LocalAlbumSortTypeKey = stringPreferencesKey("localAlbumSortType")
+val LocalAlbumSortDescendingKey = booleanPreferencesKey("localAlbumSortDescending")
+val LocalArtistSortTypeKey = stringPreferencesKey("localArtistSortType")
+val LocalArtistSortDescendingKey = booleanPreferencesKey("localArtistSortDescending")
 
 val PlaylistEditLockKey = booleanPreferencesKey("playlistEditLock")
 
