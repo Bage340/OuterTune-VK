@@ -6,22 +6,35 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,9 +56,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.core.net.toUri
@@ -54,15 +72,20 @@ import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.AppBarHeight
 import com.dd3boh.outertune.constants.DEFAULT_ENABLED_TABS
 import com.dd3boh.outertune.constants.EnabledTabsKey
+import com.dd3boh.outertune.constants.LocalLibraryEnableKey
 import com.dd3boh.outertune.constants.PauseSearchHistoryKey
 import com.dd3boh.outertune.constants.SearchSource
 import com.dd3boh.outertune.constants.SearchSourceKey
 import com.dd3boh.outertune.constants.UpdateAvailableKey
 import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.extensions.tabMode
+import com.dd3boh.outertune.ui.component.InputFieldHeight
 import com.dd3boh.outertune.ui.component.SearchBar
+import com.dd3boh.outertune.ui.component.SearchBarHorizontalPadding
+import com.dd3boh.outertune.ui.component.SearchBarVerticalPadding
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.screens.Screens
 import com.dd3boh.outertune.utils.dataStore
@@ -71,6 +94,8 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.urlEncode
 import com.dd3boh.outertune.youtubeNavigator
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,11 +108,13 @@ fun SearchBarContainer(
     val coroutineScope = rememberCoroutineScope()
     val database = LocalDatabase.current
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val playerConnection = LocalPlayerConnection.current
 
     val enabledTabs by rememberPreference(EnabledTabsKey, defaultValue = DEFAULT_ENABLED_TABS)
     var searchSource by rememberEnumPreference(SearchSourceKey, SearchSource.ONLINE)
     val updateAvailable by rememberPreference(UpdateAvailableKey, defaultValue = false)
+    val localLibEnable by rememberPreference(LocalLibraryEnableKey, defaultValue = true)
 
     val navigationItems = remember { Screens.getScreens(enabledTabs) }
     val searchBarFocusRequester = remember { FocusRequester() }
@@ -141,9 +168,17 @@ fun SearchBarContainer(
     }
 
 
-    val shouldShowSearchBar = remember(searchActive, navBackStackEntry) {
-        (searchActive || navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } ||
-                navBackStackEntry?.destination?.route?.startsWith("search/") == true)
+    val isTabRoute = navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }
+    val isSearchRoute = navBackStackEntry?.destination?.route?.startsWith("search/") == true
+    val showSearchBar = searchActive || isSearchRoute
+    val showIconRow = isTabRoute && !searchActive && !isSearchRoute
+
+    LaunchedEffect(searchActive) {
+        if (searchActive) {
+            delay(100)
+            searchBarFocusRequester.requestFocus()
+            keyboardController?.show()
+        }
     }
 
     val savedHeightOffsets = remember { mutableMapOf<String, Float>() }
@@ -165,7 +200,7 @@ fun SearchBarContainer(
     }
 
     AnimatedVisibility(
-        visible = shouldShowSearchBar,
+        visible = showSearchBar,
         enter = fadeIn(),
         exit = fadeOut()
     ) {
@@ -173,7 +208,7 @@ fun SearchBarContainer(
             WindowInsets.safeDrawing.union(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Start))
         }
         else {
-            WindowInsets()
+            WindowInsets.systemBars.only(WindowInsetsSides.Top)
         }
         SearchBar(
             query = query,
@@ -309,6 +344,109 @@ fun SearchBarContainer(
                     )
                 }
             }
+        }
+    }
+
+    AnimatedVisibility(
+        visible = showIconRow,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        val iconRowInset = if (!context.tabMode()) {
+            WindowInsets.safeDrawing.union(LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Start))
+        } else {
+            WindowInsets.systemBars.only(WindowInsetsSides.Top)
+        }
+        TopIconBar(
+            scrollBehavior = scrollBehavior,
+            windowInsets = iconRowInset,
+            localLibEnable = localLibEnable,
+            onHistoryClick = { navController.navigate("history") },
+            onStatsClick = { navController.navigate("stats") },
+            onScannerClick = { navController.navigate("settings/local") },
+            onSettingsClick = { navController.navigate("settings") },
+            onAccountClick = { navController.navigate("account") },
+            onSearchClick = { onSearchActiveChange(true) },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopIconBar(
+    scrollBehavior: TopAppBarScrollBehavior,
+    windowInsets: WindowInsets,
+    localLibEnable: Boolean,
+    onHistoryClick: () -> Unit,
+    onStatsClick: () -> Unit,
+    onScannerClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onAccountClick: () -> Unit,
+    onSearchClick: () -> Unit,
+) {
+    val heightOffsetLimit = with(LocalDensity.current) {
+        -(AppBarHeight.toPx() + WindowInsets.systemBars.getTop(this))
+    }
+    SideEffect {
+        if (scrollBehavior.state.heightOffsetLimit != heightOffsetLimit) {
+            scrollBehavior.state.heightOffsetLimit = heightOffsetLimit
+        }
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .offset {
+                IntOffset(x = 0, y = scrollBehavior.state.heightOffset.roundToInt())
+            }
+            .fillMaxWidth()
+            .windowInsetsPadding(windowInsets)
+            .padding(horizontal = SearchBarHorizontalPadding, vertical = SearchBarVerticalPadding)
+            .height(InputFieldHeight)
+    ) {
+        Image(
+            painter = painterResource(R.drawable.app_logo),
+            contentDescription = null,
+            modifier = Modifier.size(36.dp)
+        )
+        Spacer(Modifier.weight(1f))
+        IconButton(onClick = onSearchClick) {
+            Icon(
+                imageVector = Icons.Rounded.Search,
+                contentDescription = stringResource(R.string.search)
+            )
+        }
+        IconButton(onClick = onHistoryClick) {
+            Icon(
+                imageVector = Icons.Rounded.History,
+                contentDescription = stringResource(R.string.history)
+            )
+        }
+        IconButton(onClick = onStatsClick) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.TrendingUp,
+                contentDescription = stringResource(R.string.stats)
+            )
+        }
+        if (localLibEnable) {
+            IconButton(onClick = onScannerClick) {
+                Icon(
+                    imageVector = Icons.Rounded.SdCard,
+                    contentDescription = stringResource(R.string.scanner_local_title)
+                )
+            }
+        }
+        IconButton(onClick = onSettingsClick) {
+            Icon(
+                imageVector = Icons.Rounded.Settings,
+                contentDescription = stringResource(R.string.settings)
+            )
+        }
+        IconButton(onClick = onAccountClick) {
+            Icon(
+                imageVector = Icons.Rounded.Person,
+                contentDescription = stringResource(R.string.account)
+            )
         }
     }
 }
