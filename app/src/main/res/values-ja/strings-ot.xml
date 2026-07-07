@@ -53,6 +53,7 @@
     <string name="scanner_auto_start">ローカルメディアと楽曲ダウンロードフォルダを更新しています…</string>
     <string name="scanner_progress_scanning">スキャン中…</string>
     <string name="folders">フォルダ</string>
+    <string name="local_files">ローカル</string>
     <string name="recent_activity">最近のアクティビティ</string>
     <string name="remote_history">リモート</string>
     <string name="delete_lyric_confirm">\"%s\"の保存された歌詞を本当に削除しますか？</string>

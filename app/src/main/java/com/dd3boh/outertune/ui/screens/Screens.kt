@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.dd3boh.outertune.R
@@ -32,6 +33,7 @@ sealed class Screens(
     data object Home : Screens(R.string.home, Icons.Rounded.Home, "home")
     data object Songs : Screens(R.string.songs, Icons.Rounded.MusicNote, "songs")
     data object Folders : Screens(R.string.folders, Icons.Rounded.Folder, "folders")
+    data object LocalFiles : Screens(R.string.local_files, Icons.Rounded.SdCard, "local_files")
     data object Artists : Screens(R.string.artists, Icons.Rounded.Person, "artists")
     data object Albums : Screens(R.string.albums, Icons.Rounded.Album, "albums")
     data object Playlists : Screens(R.string.playlists, Icons.AutoMirrored.Rounded.QueueMusic, "playlists")
@@ -51,6 +53,7 @@ sealed class Screens(
          * H: Home
          * S: Songs
          * F: Folders
+         * O: Local Files
          * A: Artists
          * B: Albums
          * L: Playlists
@@ -65,6 +68,7 @@ sealed class Screens(
             Home to 'H',
             Songs to 'S',
             Folders to 'F',
+            LocalFiles to 'O',
             Artists to 'A',
             Albums to 'B',
             Playlists to 'L',

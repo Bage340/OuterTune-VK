@@ -35,7 +35,7 @@ enum class LyricsPosition {
     LEFT, CENTER, RIGHT
 }
 
-const val DEFAULT_ENABLED_TABS = "HSFM"
+const val DEFAULT_ENABLED_TABS = "HSFOM"
 const val DEFAULT_ENABLED_FILTERS = "ARP"
 const val DEFAULT_SWIPE_TO_SKIP = true
 
@@ -231,6 +231,10 @@ enum class AlbumFilter {
 
 enum class PlaylistFilter {
     LIBRARY, DOWNLOADED
+}
+
+enum class LocalFilter {
+    SONGS, ALBUMS, ARTISTS, PLAYLISTS
 }
 
 enum class SearchSource {

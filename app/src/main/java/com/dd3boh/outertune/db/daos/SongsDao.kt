@@ -149,6 +149,10 @@ interface SongsDao {
     fun allLocalSongs(): List<Song>
 
     @Transaction
+    @Query("SELECT * FROM song WHERE isLocal = 1 AND inLibrary IS NOT NULL")
+    fun allLocalSongsFlow(): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT * FROM song WHERE isLocal = 1")
     fun allLocalDbSongs(): List<Song>
 
