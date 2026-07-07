@@ -131,6 +131,17 @@ interface AlbumsDao : ArtistsDao {
     fun artistAlbumsPreview(artistId: String, previewSize: Int = 6): Flow<List<Album>>
 
     @Transaction
+    @Query("""
+        SELECT album.*, count(song.dateDownload) downloadCount
+        FROM album_artist_map
+            JOIN album ON album_artist_map.albumId = album.id
+            JOIN song ON album_artist_map.albumId = song.albumId
+        WHERE artistId = :artistId
+        GROUP BY album.id
+    """)
+    fun artistAlbums(artistId: String): Flow<List<Album>>
+
+    @Transaction
     @RawQuery(observedEntities = [AlbumEntity::class])
     fun _getAlbum(query: SupportSQLiteQuery): Flow<List<Album>>
 
