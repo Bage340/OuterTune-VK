@@ -271,7 +271,7 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="download_on_wifi_only_description">Don\'t download over mobile data. Songs queued while on mobile data start downloading automatically once Wi-Fi is available</string>
     <string name="download_waiting_for_wifi">Will download once connected to Wi-Fi</string>
     <string name="clear_downloads_confirm">Are you sure you want to remove all downloads? Only downloads in the main download folder will be removed.</string>
-    <string name="clear_image_cache_confirm">Are you sure you want to clear image cache? All exiting album thumbnails will be removed.</string>
+    <string name="clear_image_cache_confirm">Are you sure you want to clear image cache? All existing album thumbnails will be removed.</string>
     <string name="clear_song_cache_confirm">Are you sure you want to clear song cache?</string>
     <string name="dl_calculate_size">Tap to calculate download size</string>
     <string name="dl_extra_path_title">Configure extra import locations…</string>
