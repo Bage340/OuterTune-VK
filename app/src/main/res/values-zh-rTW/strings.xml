@@ -174,6 +174,9 @@
     <string name="appearance">外觀</string>
     <string name="theme">主題</string>
     <string name="enable_dynamic_theme">使用動態主題</string>
+    <string name="custom_accent_color">自訂強調色</string>
+    <string name="custom_accent_color_description">在整個應用程式中使用您選擇的固定顏色作為強調色</string>
+    <string name="accent_color">強調色</string>
     <string name="dark_theme">深色主題</string>
     <string name="dark_theme_on">開</string>
     <string name="dark_theme_off">關</string>
@@ -196,6 +199,7 @@
     <string name="small">小</string>
     <string name="big">大</string>
     <string name="content">內容</string>
+    <string name="action_login">登入</string>
     <string name="login">登入</string>
     <string name="not_logged_in">尚未登入</string>
     <string name="content_language">預設內容語言</string>
@@ -220,6 +224,8 @@
     <string name="auto_skip_next_on_error">發生錯誤時自動跳到下一首</string>
     <string name="auto_skip_next_on_error_desc">讓你享受音樂不中斷</string>
     <string name="stop_music_on_task_clear">將音樂在清除任務時停止</string>
+    <string name="ignore_audio_focus">保持音訊焦點</string>
+    <string name="ignore_audio_focus_desc">當其他應用程式取得音訊焦點時仍繼續播放。音樂不會因其他音訊來源暫停，包括電話來電。</string>
     <string name="equalizer">等化器</string>
     <string name="storage">儲存</string>
     <string name="cache">快取</string>
@@ -242,6 +248,8 @@
     <string name="pause_search_history">暫停搜尋記錄</string>
     <string name="clear_search_history">清除搜尋記錄</string>
     <string name="clear_search_history_confirm">您確定要清除所有搜尋記錄嗎？</string>
+    <string name="use_login_for_browse">使用登入狀態瀏覽內容</string>
+    <string name="use_login_for_browse_desc">這可能會影響您看到的內容，例如使用 Premium 帳戶登入時會顯示僅限 Premium 的專輯</string>
     <string name="disable_screenshot">禁用截圖</string>
     <string name="disable_screenshot_desc">當此選項開啟時，您無法截圖，也無法在「最近使用」中看到此應用程式的畫面。</string>
     <string name="enable_lrclib">使用 LrcLib 提供歌詞</string>
