@@ -102,6 +102,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -129,6 +130,7 @@ import com.dd3boh.outertune.constants.PLAYER_DEBUG
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
+import com.dd3boh.outertune.constants.ShowQueueTitleKey
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.supportsWideScreen
@@ -137,6 +139,7 @@ import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.extensions.toggleRepeatMode
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.MultiQueueObject
+import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.ui.component.BottomSheet
 import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.EmptyPlaceholder
@@ -182,24 +185,37 @@ fun QueueSheet(
         modifier = modifier,
         collapsedContent = {
             if (PLAYER_DEBUG) Log.v("QueueSheet", "Q-2")
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.Top,
+            val showQueueTitle by rememberPreference(ShowQueueTitleKey, defaultValue = true)
+            val queueTitle = if (showQueueTitle) currentQueueTitle(LocalPlayerConnection.current) else null
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(
                         WindowInsets.systemBars
                             .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
                     )
+                    .clickable {
+                        state.expandSoft()
+                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    }
             ) {
-                IconButton(onClick = {
-                    state.expandSoft()
-                    haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                }) {
-                    Icon(
-                        imageVector = Icons.Rounded.ExpandLess,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        contentDescription = null,
+                Icon(
+                    imageVector = Icons.Rounded.ExpandLess,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    contentDescription = null,
+                )
+                if (!queueTitle.isNullOrBlank()) {
+                    Text(
+                        text = queueTitle,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -212,6 +228,20 @@ fun QueueSheet(
             navController = navController
         )
     }
+}
+
+/**
+ * Title of the queue currently loaded in the player, or null when nothing is loaded.
+ */
+@Composable
+private fun currentQueueTitle(playerConnection: PlayerConnection?): String? {
+    playerConnection ?: return null
+    val queueBoard by playerConnection.queueBoard.collectAsState()
+    // `masterIndex` is not observable; queue switches update the player timeline, and renames
+    // edit the `masterQueues` list that `getCurrentQueue()` reads below.
+    val queueWindows by playerConnection.queueWindows.collectAsState()
+    if (queueWindows.isEmpty()) return null
+    return queueBoard.getCurrentQueue()?.title
 }
 
 @Composable
