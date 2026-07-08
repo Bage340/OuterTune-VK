@@ -142,6 +142,7 @@
     <string name="action_skip">スキップ</string>
     <string name="info">情報</string>
     <string name="player_background_style">プレーヤーの背景スタイル</string>
+    <string name="show_queue_title">プレーヤーにキュー名表示</string>
     <string name="oobe_use_backup">バックアップがある</string>
     <string name="token_adv_login_description">これは高度なログイン方法です。ウェブポータルの代わりに、ここでログイントークンを直接入力または更新することもできます。たとえば、これにより複数の端末でのログインが高速化されます</string>
     <string name="scanner_variant_rescan">ライブラリ全体を再スキャンし、すべての曲のメタデータを再読み込み</string>

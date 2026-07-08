@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.ColorLens
 import androidx.compose.material.icons.rounded.Contrast
@@ -53,6 +54,7 @@ import com.dd3boh.outertune.constants.DynamicThemeKey
 import com.dd3boh.outertune.constants.PlayerBackgroundStyle
 import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PureBlackKey
+import com.dd3boh.outertune.constants.ShowQueueTitleKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.SwitchPreference
@@ -208,6 +210,7 @@ fun ColumnScope.ThemePlayerFrag() {
     val availableBackgroundStyles = PlayerBackgroundStyle.entries.filter {
         it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     }
+    val (showQueueTitle, onShowQueueTitleChange) = rememberPreference(ShowQueueTitleKey, defaultValue = true)
 
     EnumListPreference(
         title = { Text(stringResource(R.string.player_background_style)) },
@@ -222,6 +225,12 @@ fun ColumnScope.ThemePlayerFrag() {
             }
         },
         values = availableBackgroundStyles
+    )
+    SwitchPreference(
+        title = { Text(stringResource(R.string.show_queue_title)) },
+        icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
+        checked = showQueueTitle,
+        onCheckedChange = onShowQueueTitleChange
     )
 }
 
