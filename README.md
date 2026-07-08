@@ -35,6 +35,7 @@ This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune
   - Fixed the "Source error 2004" issue that could block YouTube Music playback
   - Improved YouTube Music thumbnail resolution
   - Fixed a crash that could occur when opening playlists or albums while their data was being updated
+  - Fixed m3u playlist import crashes and improved YouTube song matching
 
 - Improves lyrics
   - Uses LrcLib and caption tracks to improve lyrics matching and loading speed
@@ -44,11 +45,13 @@ This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune
   - Adjusted bottom navigation so tab switching and re-tapping the active tab behave more naturally
   - Preserves the search bar state for each route
   - Fixed the Folders screen search bar restoration, default sorting, and list refresh behavior
+  - Replaced the persistent search bar on tab screens with a top icon row (search, history, stats, settings, and more)
 
 - Improves local music playback
   - Improved tag reading for local music files
   - Improved local song linking and gapless playback
   - Fixed the album song count shown on album screens
+  - Added a Local tab for browsing on-device songs, albums, artists, and playlists with filters and search
 
 - Improves display and settings
   - Restored the tablet UI
@@ -58,6 +61,7 @@ This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune
   - Added selectable slider styles, with an animated squiggly style as the default
   - Added a "keep audio focus" player setting
   - Added a home screen grid showing your recent YouTube Music activity when signed in
+  - Added the current queue's name to the player's queue handle
 
 - Adds playback and download options
   - Added a sleep timer that fades out and fully stops playback
