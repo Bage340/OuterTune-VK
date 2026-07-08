@@ -288,4 +288,9 @@
     <string name="use_login_for_browse">Utiliser le compte connecté pour parcourir le contenu</string>
     <string name="use_login_for_browse_desc">Ceci peut influencer le contenu que vous voyez et affiche par exemple les albums Premium si vous êtes connecté avec un compte Premium</string>
     <string name="action_login">Se connecter</string>
+    <string name="custom_accent_color">Couleur d\'accentuation personnalisée</string>
+    <string name="custom_accent_color_description">Utiliser une couleur fixe de votre choix comme couleur d\'accentuation dans toute l\'application</string>
+    <string name="accent_color">Couleur d\'accentuation</string>
+    <string name="ignore_audio_focus">Conserver le focus audio</string>
+    <string name="ignore_audio_focus_desc">Continuer la lecture lorsqu\'une autre application prend le focus audio. La musique ne sera pas mise en pause par d\'autres sources audio, y compris les appels téléphoniques.</string>
 </resources>

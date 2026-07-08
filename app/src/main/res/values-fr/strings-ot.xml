@@ -266,4 +266,22 @@
     <string name="scanner_strict_file_paths_description">Désactive toute correspondance intelligente des métadonnées. Cela peut poser problème si des fichiers sont déplacés de votre stockage local, mais autorise le même titre dans différents dossiers</string>
     <string name="scanner_type_tooltip">L\'analyseur système est plus rapide, mais il peut extraire certaines métadonnées de manière incorrecte par rapport à d\'autres extracteurs. Veuillez noter que le changement d\'analyseur ne recharge pas automatiquement les métadonnées des titres existants.</string>
     <string name="restore_lm_tooltip">Lors d\'une nouvelle installation de l\'application, il se peut que les chemins de téléchargement personnalisés et d\'analyse des médias locaux ne fonctionnent pas. Pour résoudre ce problème, supprimez-les puis ajoutez-les à nouveau.</string>
+    <string name="local_files">Local</string>
+    <string name="show_queue_title">Afficher le nom de la file d\'attente dans le lecteur</string>
+    <string name="slider_style_title">Style du curseur</string>
+    <string name="slider_style_squiggly">Ondulé</string>
+    <string name="slider_style_default">Par défaut</string>
+    <string name="slider_style_slim">Fin</string>
+    <string name="sleep_timer_fade">Fondu de sortie</string>
+    <string name="sleep_timer_fade_duration">Durée du fondu</string>
+    <string name="sleep_timer_fade_duration_desc">Secondes pendant lesquelles baisser le volume avant l\'arrêt</string>
+    <string name="sleep_timer_default_time">Durée par défaut de la minuterie</string>
+    <string name="sleep_timer_minutes_short">%d min</string>
+    <string name="sleep_timer_second_unit">s</string>
+    <string name="sleep_timer_stop">Arrêter la minuterie</string>
+    <string name="sleep_timer_show_on_player">Bouton sur l\'écran du lecteur</string>
+    <string name="sleep_timer_show_on_player_desc">Afficher un bouton de minuterie de sommeil sur l\'écran du lecteur</string>
+    <string name="download_on_wifi_only_title">Télécharger uniquement en Wi-Fi</string>
+    <string name="download_on_wifi_only_description">Ne pas télécharger via les données mobiles. Les titres mis en attente pendant l\'utilisation des données mobiles commenceront à se télécharger automatiquement dès que le Wi-Fi sera disponible</string>
+    <string name="download_waiting_for_wifi">Le téléchargement commencera une fois connecté au Wi-Fi</string>
 </resources>
