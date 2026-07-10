@@ -82,8 +82,9 @@ class PlayerConnection(
 
     /**
      * Resolve the display lyrics for a song from its DB row and, when applicable, its local
-     * lyric file. See Phase 1 note's state table for the priority order. Parsing runs off the
-     * main thread since LRC parsing can be non-trivial for long synced lyrics.
+     * lyric file. Local lyrics win when the local source is preferred; otherwise the stored
+     * remote lyrics win and the local file is used only when the row says LYRICS_NOT_FOUND.
+     * Parsing runs off the main thread since LRC parsing can be non-trivial for long synced lyrics.
      */
     private suspend fun resolveLyrics(
         mediaMetadata: MediaMetadata,

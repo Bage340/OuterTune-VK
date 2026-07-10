@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dd3boh.outertune.constants.LYRIC_FETCH_TIMEOUT
 import com.dd3boh.outertune.db.MusicDatabase
+import com.dd3boh.outertune.lyrics.LyricsFetchRole
 import com.dd3boh.outertune.lyrics.LyricsHelper
 import com.dd3boh.outertune.lyrics.LyricsResult
 import com.dd3boh.outertune.models.MediaMetadata
@@ -54,8 +55,9 @@ class LyricsMenuViewModel @Inject constructor(
 
     fun refetchLyrics(mediaMetadata: MediaMetadata, onDone: (SemanticLyrics?) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
-            database.deleteLyricById(mediaMetadata.id)
             withTimeoutOrNull(LYRIC_FETCH_TIMEOUT) {
+                // Keep the existing row until its replacement is ready so cancellation does not discard usable lyrics.
+                lyricsHelper.fetchAndStoreRemote(mediaMetadata, LyricsFetchRole.MANUAL, forceRefresh = true)
                 val lyrics = lyricsHelper.getLyrics(mediaMetadata)
                 onDone(lyrics)
             }

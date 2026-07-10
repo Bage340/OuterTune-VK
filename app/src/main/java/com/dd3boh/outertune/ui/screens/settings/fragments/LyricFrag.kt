@@ -7,6 +7,7 @@
  */
 package com.dd3boh.outertune.ui.screens.settings.fragments
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.EnableKugouKey
@@ -52,8 +54,6 @@ import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.dialog.CounterDialog
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
-import androidx.compose.foundation.layout.Column
-import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ColumnScope.LyricFormatFrag() {
@@ -169,7 +169,6 @@ fun ColumnScope.LyricSourceFrag() {
         checked = preferLocalLyric,
         onCheckedChange = onPreferLocalLyric
     )
-    // pre-fetch lyrics for upcoming queued songs
     SwitchPreference(
         title = { Text(stringResource(R.string.lyrics_prefetch_title)) },
         description = stringResource(R.string.lyrics_prefetch_description),
