@@ -83,12 +83,15 @@ import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleLike
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleRepeatMode
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleShuffle
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleStartRadio
+import com.dd3boh.outertune.constants.EnableLyricsPrefetchKey
+import com.dd3boh.outertune.constants.LyricsPrefetchCountKey
 import com.dd3boh.outertune.constants.PauseListenHistoryKey
 import com.dd3boh.outertune.constants.PauseRemoteListenHistoryKey
 import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.PlayerVolumeKey
 import com.dd3boh.outertune.constants.RepeatModeKey
 import com.dd3boh.outertune.constants.SERVICE_DEBUG
+import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
 import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
@@ -133,16 +136,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -226,6 +233,8 @@ class MusicService : MediaLibraryService(),
     private var isAudioEffectSessionOpened = false
 
     var consecutivePlaybackErr = 0
+
+    private var lyricsPrefetchJob: Job? = null
 
     override fun onCreate() {
         if (SERVICE_DEBUG) Log.i(TAG, "Starting MusicService")
@@ -355,6 +364,19 @@ class MusicService : MediaLibraryService(),
                     1f
                 }
             }
+
+            // fetch lyrics for the current song once, shared by every UI collector via the DB row.
+            // While lyrics display is enabled, follow song changes; a fetch in flight is cancelled
+            // when the song changes or lyrics display is turned off.
+            dataStore.data.map { it[ShowLyricsKey] ?: false }.distinctUntilChanged()
+                .flatMapLatest { showLyrics ->
+                    if (showLyrics) currentMediaMetadata.distinctUntilChangedBy { it?.id } else flowOf(null)
+                }
+                .collectLatest(offloadScope) { mediaMetadata ->
+                    if (mediaMetadata != null && database.lyrics(mediaMetadata.id).first() == null) {
+                        lyricsHelper.fetchAndStoreRemote(mediaMetadata)
+                    }
+                }
 
 
             // network connectivity
@@ -919,6 +941,32 @@ class MusicService : MediaLibraryService(),
         Toast.makeText(this@MusicService, getString(R.string.err_stop_on_error), Toast.LENGTH_LONG).show()
     }
 
+    /**
+     * Pre-fetch lyrics for the next few queued songs so they're ready by the time playback reaches them.
+     * Cancels any pre-fetch still in flight for the previous song change.
+     */
+    private fun prefetchUpcomingLyrics() {
+        lyricsPrefetchJob?.cancel()
+
+        val currentIndex = player.currentMediaItemIndex
+        if (currentIndex == C.INDEX_UNSET) return
+        val upcoming = ((currentIndex + 1) until player.mediaItemCount)
+            .mapNotNull { player.getMediaItemAt(it).metadata }
+        if (upcoming.isEmpty()) return
+
+        lyricsPrefetchJob = offloadScope.launch {
+            if (!dataStore.get(EnableLyricsPrefetchKey, true) || !isNetworkConnected.value) return@launch
+
+            val count = dataStore.get(LyricsPrefetchCountKey, 3)
+            upcoming.take(count).forEach { mediaMetadata ->
+                if (!isActive) return@forEach
+                if (database.lyrics(mediaMetadata.id).first() == null) {
+                    lyricsHelper.fetchAndStoreRemote(mediaMetadata)
+                }
+            }
+        }
+    }
+
 
 // Player overrides
 
@@ -961,6 +1009,8 @@ class MusicService : MediaLibraryService(),
         if (consecutivePlaybackErr > 0) {
             consecutivePlaybackErr--
         }
+
+        prefetchUpcomingLyrics()
 
         if (player.isPlaying && reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
             player.prepare()

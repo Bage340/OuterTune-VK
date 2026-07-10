@@ -14,7 +14,9 @@ import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.akanework.gramophone.logic.utils.LrcUtils
 import org.akanework.gramophone.logic.utils.SemanticLyrics
 import org.akanework.gramophone.logic.utils.parseLrc
@@ -42,23 +44,15 @@ class LyricsHelper @Inject constructor(
      * If no database is provided, the database source is disabled
      */
     suspend fun getLyrics(mediaMetadata: MediaMetadata): SemanticLyrics? {
-        val trim = context.dataStore.get(LyricTrimKey, defaultValue = false)
-        val multiline = context.dataStore.get(MultilineLrcKey, defaultValue = true)
+        val parserOptions = getParserOptions()
+        val prefLocal = isLocalPreferred()
 
-        val prefLocal = context.dataStore.get(LyricSourcePrefKey, true)
-
-        val cached = cache.get(mediaMetadata.id)?.firstOrNull()
-        if (cached != null) {
-            return parseLrc(cached.lyrics, trim, multiline)
-        }
         val dbLyrics = database.lyrics(mediaMetadata.id).let { it.first()?.lyrics }
         if (dbLyrics != null && !prefLocal) {
-            return parseLrc(dbLyrics, trim, multiline)
+            return if (dbLyrics == LYRICS_NOT_FOUND) null else parseLrc(dbLyrics, parserOptions.trim, parserOptions.multiLine)
         }
 
-        val localLyrics: SemanticLyrics? =
-            getLocalLyrics(mediaMetadata, LrcUtils.LrcParserOptions(trim, multiline, "Unable to parse lyrics"))
-        val remoteLyrics: String?
+        val localLyrics: SemanticLyrics? = getLocalLyrics(mediaMetadata, parserOptions)
 
         // fallback to secondary provider when primary is unavailable
         if (prefLocal) {
@@ -66,55 +60,53 @@ class LyricsHelper @Inject constructor(
                 return localLyrics
             }
             if (dbLyrics != null) {
-                return parseLrc(dbLyrics, trim, multiline)
+                return if (dbLyrics == LYRICS_NOT_FOUND) null else parseLrc(dbLyrics, parserOptions.trim, parserOptions.multiLine)
             }
-
-            // "lazy eval" the remote lyrics cuz it is laughably slow
-            remoteLyrics = getRemoteLyrics(mediaMetadata)
-            if (remoteLyrics != null) {
-                database.query {
-                    upsert(
-                        LyricsEntity(
-                            id = mediaMetadata.id,
-                            lyrics = remoteLyrics
-                        )
-                    )
-                }
-                return parseLrc(remoteLyrics, trim, multiline)
-            }
-        } else {
-            remoteLyrics = getRemoteLyrics(mediaMetadata)
-            if (remoteLyrics != null) {
-                database.query {
-                    upsert(
-                        LyricsEntity(
-                            id = mediaMetadata.id,
-                            lyrics = remoteLyrics
-                        )
-                    )
-                }
-                return parseLrc(remoteLyrics, trim, multiline)
-            } else if (localLyrics != null) {
-                return localLyrics
-            }
-
         }
 
-        database.query {
-            upsert(
-                LyricsEntity(
-                    id = mediaMetadata.id,
-                    lyrics = LYRICS_NOT_FOUND
-                )
-            )
+        // "lazy eval" the remote lyrics cuz it is laughably slow
+        fetchAndStoreRemote(mediaMetadata)
+
+        val fetched = database.lyrics(mediaMetadata.id).let { it.first()?.lyrics }
+        if (fetched != null && fetched != LYRICS_NOT_FOUND) {
+            return parseLrc(fetched, parserOptions.trim, parserOptions.multiLine)
         }
-        return null
+        return if (!prefLocal) localLyrics else null
     }
 
     /**
-     * Lookup lyrics from remote providers
+     * Resolve lyrics from remote providers and upsert the result (lyrics + provider name,
+     * or LYRICS_NOT_FOUND when no provider had a match) into the database.
      */
-    private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): String? {
+    suspend fun fetchAndStoreRemote(mediaMetadata: MediaMetadata) {
+        val result = getRemoteLyrics(mediaMetadata)
+        val entity = if (result != null) {
+            LyricsEntity(id = mediaMetadata.id, lyrics = result.second, provider = result.first)
+        } else {
+            LyricsEntity(id = mediaMetadata.id, lyrics = LYRICS_NOT_FOUND, provider = null)
+        }
+        withContext(Dispatchers.IO) {
+            database.upsert(entity)
+        }
+    }
+
+    /**
+     * Read the lyric parsing preferences (trim / multiline) shared by all resolution paths
+     */
+    suspend fun getParserOptions(): LrcUtils.LrcParserOptions {
+        val trim = context.dataStore.get(LyricTrimKey, defaultValue = false)
+        val multiline = context.dataStore.get(MultilineLrcKey, defaultValue = true)
+        return LrcUtils.LrcParserOptions(trim, multiline, "Unable to parse lyrics")
+    }
+
+    suspend fun isLocalPreferred(): Boolean = context.dataStore.get(LyricSourcePrefKey, true)
+
+    /**
+     * Lookup lyrics from remote providers
+     *
+     * @return provider name to lyrics text, or null if no enabled provider had a match
+     */
+    private suspend fun getRemoteLyrics(mediaMetadata: MediaMetadata): Pair<String, String>? {
         val artistName = mediaMetadata.artists
             .filter { it.id != null }
             .joinToString { it.name.removeSuffix(" - Topic") }
@@ -131,7 +123,7 @@ class LyricsHelper @Inject constructor(
                 ).onSuccess { lyrics ->
                     val elapsed = System.currentTimeMillis() - t0
                     Log.d(TAG, "${provider.name} SUCCESS in ${elapsed}ms")
-                    return lyrics
+                    return provider.name to lyrics
                 }.onFailure {
                     val elapsed = System.currentTimeMillis() - t0
                     Log.d(TAG, "${provider.name} FAILURE in ${elapsed}ms: ${it.message}")
@@ -148,7 +140,7 @@ class LyricsHelper @Inject constructor(
     /**
      * Lookup lyrics from local disk (.lrc) file
      */
-    private fun getLocalLyrics(
+    fun getLocalLyrics(
         mediaMetadata: MediaMetadata,
         parserOptions: LrcUtils.LrcParserOptions
     ): SemanticLyrics? {

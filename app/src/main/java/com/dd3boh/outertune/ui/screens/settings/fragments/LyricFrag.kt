@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.EnableKugouKey
 import com.dd3boh.outertune.constants.EnableLrcLibKey
+import com.dd3boh.outertune.constants.EnableLyricsPrefetchKey
 import com.dd3boh.outertune.constants.LyricClickable
 import com.dd3boh.outertune.constants.LyricFontSizeKey
 import com.dd3boh.outertune.constants.LyricKaraokeEnable
@@ -40,6 +41,7 @@ import com.dd3boh.outertune.constants.LyricSourcePrefKey
 import com.dd3boh.outertune.constants.LyricTrimKey
 import com.dd3boh.outertune.constants.LyricUpdateSpeed
 import com.dd3boh.outertune.constants.LyricsPosition
+import com.dd3boh.outertune.constants.LyricsPrefetchCountKey
 import com.dd3boh.outertune.constants.LyricsTextPositionKey
 import com.dd3boh.outertune.constants.MultilineLrcKey
 import com.dd3boh.outertune.constants.Speed
@@ -140,6 +142,12 @@ fun ColumnScope.LyricSourceFrag() {
     val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
     val (enableLrcLib, onEnableLrcLibChange) = rememberPreference(key = EnableLrcLibKey, defaultValue = true)
     val (preferLocalLyric, onPreferLocalLyric) = rememberPreference(LyricSourcePrefKey, defaultValue = true)
+    val (enablePrefetch, onEnablePrefetchChange) = rememberPreference(EnableLyricsPrefetchKey, defaultValue = true)
+    val (prefetchCount, onPrefetchCountChange) = rememberPreference(LyricsPrefetchCountKey, defaultValue = 3)
+
+    var showPrefetchCountDialog by remember {
+        mutableStateOf(false)
+    }
 
     SwitchPreference(
         title = { Text(stringResource(R.string.enable_lrclib)) },
@@ -161,6 +169,38 @@ fun ColumnScope.LyricSourceFrag() {
         checked = preferLocalLyric,
         onCheckedChange = onPreferLocalLyric
     )
+    // pre-fetch lyrics for upcoming queued songs
+    SwitchPreference(
+        title = { Text(stringResource(R.string.lyrics_prefetch_title)) },
+        description = stringResource(R.string.lyrics_prefetch_description),
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = enablePrefetch,
+        onCheckedChange = onEnablePrefetchChange
+    )
+    PreferenceEntry(
+        title = { Text(stringResource(R.string.lyrics_prefetch_count_title)) },
+        description = prefetchCount.toString(),
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        isEnabled = enablePrefetch,
+        onClick = { showPrefetchCountDialog = true }
+    )
+
+    if (showPrefetchCountDialog) {
+        CounterDialog(
+            title = stringResource(R.string.lyrics_prefetch_count_title),
+            initialValue = prefetchCount,
+            upperBound = 10,
+            lowerBound = 1,
+            unitDisplay = "",
+            onDismiss = { showPrefetchCountDialog = false },
+            onConfirm = {
+                onPrefetchCountChange(it)
+                showPrefetchCountDialog = false
+            },
+            onReset = { onPrefetchCountChange(3) },
+            onCancel = { showPrefetchCountDialog = false }
+        )
+    }
 }
 
 @Composable

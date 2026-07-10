@@ -192,6 +192,9 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="lyrics_multiline_description">Treat all the lines between sync points as one lyric text</string>
     <string name="lyrics_prefer_local">Prefer local lyric files</string>
     <string name="lyrics_prefer_local_description">Prioritize resolving local lyric files before using all cloud providers. Turn this off to prioritize cloud providers</string>
+    <string name="lyrics_prefetch_title">Pre-fetch upcoming lyrics</string>
+    <string name="lyrics_prefetch_description">Fetch lyrics for the next songs in the queue in advance</string>
+    <string name="lyrics_prefetch_count_title">Number of songs to pre-fetch</string>
     <string name="lyrics_settings_title">Lyrics</string>
     <string name="lyrics_synced_clickable">Clickable lyrics</string>
     <string name="lyrics_trim_title">Remove spaces around lyrics</string>
