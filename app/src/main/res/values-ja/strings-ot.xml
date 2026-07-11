@@ -61,6 +61,9 @@
     <string name="flat_subfolders_description">無効にすると、ディスク上のファイル構造が保持されます</string>
     <string name="flat_subfolders_title">サブフォルダを展開して表示する</string>
     <string name="lyrics_prefer_local_description">すべてのクラウド提供元を使用する前に、端末内の歌詞ファイルの解決を優先します。クラウドからの提供を優先するには、これをオフにします</string>
+    <string name="lyrics_prefetch_title">次の歌詞を事前に取得</string>
+    <string name="lyrics_prefetch_description">キュー内の次の曲の歌詞をあらかじめ取得します</string>
+    <string name="lyrics_prefetch_count_title">事前に取得する曲数</string>
     <string name="lyrics_settings_title">歌詞</string>
     <string name="m3u_import_playlist_failed">インポートに失敗しました</string>
     <string name="local_library_enable_title">端末内メディアを有効にする</string>
