@@ -288,4 +288,11 @@
     <string name="use_login_for_browse">Utilice el inicio de sesión para ver el contenido</string>
     <string name="use_login_for_browse_desc">Esto puede influir en el contenido que ve y, por ejemplo, muestra álbumes exclusivos si ha iniciado sesión con una cuenta Premium</string>
     <string name="action_login">Acceder</string>
+    <string name="custom_accent_color">Color de acento personalizado</string>
+    <string name="custom_accent_color_description">Usar un color fijo de tu elección como color de acento en toda la aplicación</string>
+    <string name="accent_color">Color de acento</string>
+    <string name="ignore_audio_focus">Mantener el foco de audio</string>
+    <string name="ignore_audio_focus_desc">Continuar la reproducción cuando otra aplicación tome el foco de audio. La música no se pausará por otras fuentes de audio, incluidas las llamadas telefónicas.</string>
+    <string name="enable_betterlyrics">Activar el proveedor de letras BetterLyrics</string>
+    <string name="enable_simpmusic">Activar el proveedor de letras SimpMusic</string>
 </resources>

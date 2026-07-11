@@ -270,4 +270,11 @@
     <string name="disable_screenshot_desc">이 설정을 켜면, 스크린샷이 비활성화되고 최근 앱에서 보이는 앱 화면이 숨겨집니다.</string>
     <string name="enable_discord_rpc">활동 상태 공유</string>
     <string name="action_login">로그인</string>
+    <string name="custom_accent_color">사용자 지정 강조 색상</string>
+    <string name="custom_accent_color_description">앱 전체의 강조 색상으로 원하는 고정 색상을 사용합니다</string>
+    <string name="accent_color">강조 색상</string>
+    <string name="ignore_audio_focus">오디오 포커스 유지</string>
+    <string name="ignore_audio_focus_desc">다른 앱이 오디오 포커스를 가져가도 계속 재생합니다. 전화 통화를 포함한 다른 오디오 소스가 재생되어도 음악이 일시중지되지 않습니다.</string>
+    <string name="enable_betterlyrics">BetterLyrics 가사 제공자 사용</string>
+    <string name="enable_simpmusic">SimpMusic 가사 제공자 사용</string>
 </resources>

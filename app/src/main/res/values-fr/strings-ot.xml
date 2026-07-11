@@ -284,4 +284,7 @@
     <string name="download_on_wifi_only_title">Télécharger uniquement en Wi-Fi</string>
     <string name="download_on_wifi_only_description">Ne pas télécharger via les données mobiles. Les titres mis en attente pendant l\'utilisation des données mobiles commenceront à se télécharger automatiquement dès que le Wi-Fi sera disponible</string>
     <string name="download_waiting_for_wifi">Le téléchargement commencera une fois connecté au Wi-Fi</string>
+    <string name="lyrics_prefetch_title">Précharger les paroles à venir</string>
+    <string name="lyrics_prefetch_description">Récupérer à l\'avance les paroles des prochains titres de la file d\'attente</string>
+    <string name="lyrics_prefetch_count_title">Nombre de titres dont les paroles doivent être préchargées</string>
 </resources>
