@@ -21,13 +21,17 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.common.Timeline
 import com.dd3boh.outertune.db.MusicDatabase
+import com.dd3boh.outertune.db.entities.LyricsEntity
+import com.dd3boh.outertune.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.dd3boh.outertune.db.entities.LyricsEntity.Companion.uninitializedLyric
 import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.getCurrentQueueIndex
 import com.dd3boh.outertune.extensions.getQueueWindows
 import com.dd3boh.outertune.extensions.metadata
+import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.utils.reportException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,8 +41,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.akanework.gramophone.logic.utils.LrcUtils
 import org.akanework.gramophone.logic.utils.SemanticLyrics
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -63,11 +70,38 @@ class PlayerConnection(
     val currentSong = mediaMetadata.flatMapLatest {
         database.song(it?.id)
     }
-    val currentLyrics: Flow<SemanticLyrics> = mediaMetadata.flatMapLatest { mediaMetadata ->
+    // Fetching is Service-driven (see MusicService); this only watches the DB row so every
+    // collector shares one query and one parse instead of triggering its own fetch.
+    val currentLyrics: Flow<SemanticLyrics?> = mediaMetadata.flatMapLatest { mediaMetadata ->
         if (mediaMetadata != null) {
-            return@flatMapLatest flowOf(service.lyricsHelper.getLyrics(mediaMetadata) ?: uninitializedLyric)
+            database.lyrics(mediaMetadata.id).map { dbLyrics -> resolveLyrics(mediaMetadata, dbLyrics) }
         } else {
-            return@flatMapLatest flowOf()
+            flowOf(null)
+        }
+    }.stateIn(scope, SharingStarted.Lazily, null)
+
+    /**
+     * Resolve the display lyrics for a song from its DB row and, when applicable, its local
+     * lyric file. Local lyrics win when the local source is preferred; otherwise the stored
+     * remote lyrics win and the local file is used only when the row says LYRICS_NOT_FOUND.
+     * Parsing runs off the main thread since LRC parsing can be non-trivial for long synced lyrics.
+     */
+    private suspend fun resolveLyrics(
+        mediaMetadata: MediaMetadata,
+        dbLyrics: LyricsEntity?
+    ): SemanticLyrics? = withContext(Dispatchers.Default) {
+        val lyricsHelper = service.lyricsHelper
+        val parserOptions = lyricsHelper.getParserOptions()
+        val prefLocal = lyricsHelper.isLocalPreferred()
+        val localLyrics = if (prefLocal || dbLyrics?.lyrics == LYRICS_NOT_FOUND) {
+            lyricsHelper.getLocalLyrics(mediaMetadata, parserOptions)
+        } else null
+
+        when {
+            prefLocal && localLyrics != null -> localLyrics
+            dbLyrics == null -> null
+            dbLyrics.lyrics == LYRICS_NOT_FOUND -> localLyrics ?: uninitializedLyric
+            else -> LrcUtils.parseLyrics(dbLyrics.lyrics, null, parserOptions, null)
         }
     }
 

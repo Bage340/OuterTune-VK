@@ -95,6 +95,8 @@ val LyricFontSizeKey = intPreferencesKey("lyricFontSize")
 val LyricClickable = booleanPreferencesKey("lyricClickable")
 val LyricKaraokeEnable = booleanPreferencesKey("lyricKaraokeEnable")
 val LyricUpdateSpeed = stringPreferencesKey("lyricUpdateSpeed")
+val EnableLyricsPrefetchKey = booleanPreferencesKey("enableLyricsPrefetch")
+val LyricsPrefetchCountKey = intPreferencesKey("lyricsPrefetchCount")
 
 
 /**
@@ -115,6 +117,8 @@ val PauseRemoteListenHistoryKey = booleanPreferencesKey("pauseRemoteListenHistor
 val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")
 val EnableKugouKey = booleanPreferencesKey("enableKugou")
 val EnableLrcLibKey = booleanPreferencesKey("enableLrcLib")
+val EnableBetterLyricsKey = booleanPreferencesKey("enableBetterLyrics")
+val EnableSimpMusicKey = booleanPreferencesKey("enableSimpMusic")
 val UseLoginForBrowse = booleanPreferencesKey("useLoginForBrowse")
 
 

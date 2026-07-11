@@ -75,8 +75,10 @@ import com.dd3boh.outertune.constants.AudioQualityKey
 import com.dd3boh.outertune.constants.AutoLoadMoreKey
 import com.dd3boh.outertune.constants.DEFAULT_AUDIO_DECODER
 import com.dd3boh.outertune.constants.ENABLE_FFMETADATAEX
+import com.dd3boh.outertune.constants.EnableLyricsPrefetchKey
 import com.dd3boh.outertune.constants.IgnoreAudioFocusKey
 import com.dd3boh.outertune.constants.KeepAliveKey
+import com.dd3boh.outertune.constants.LyricsPrefetchCountKey
 import com.dd3boh.outertune.constants.MAX_PLAYER_CONSECUTIVE_ERR
 import com.dd3boh.outertune.constants.MaxQueuesKey
 import com.dd3boh.outertune.constants.MediaSessionConstants.CommandToggleLike
@@ -89,6 +91,7 @@ import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.PlayerVolumeKey
 import com.dd3boh.outertune.constants.RepeatModeKey
 import com.dd3boh.outertune.constants.SERVICE_DEBUG
+import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.constants.SkipOnErrorKey
 import com.dd3boh.outertune.constants.SkipSilenceKey
 import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
@@ -106,6 +109,7 @@ import com.dd3boh.outertune.extensions.currentMetadata
 import com.dd3boh.outertune.extensions.findNextMediaItemById
 import com.dd3boh.outertune.extensions.metadata
 import com.dd3boh.outertune.extensions.setOffloadEnabled
+import com.dd3boh.outertune.lyrics.LyricsFetchRole
 import com.dd3boh.outertune.lyrics.LyricsHelper
 import com.dd3boh.outertune.models.HybridCacheDataSinkFactory
 import com.dd3boh.outertune.models.MediaMetadata
@@ -129,10 +133,13 @@ import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.models.WatchEndpoint
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -143,6 +150,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -165,8 +173,17 @@ class MusicService : MediaLibraryService(),
 
     @Inject
     lateinit var database: MusicDatabase
-    private val scope = CoroutineScope(Dispatchers.Main)
-    private val offloadScope = CoroutineScope(playerCoroutine)
+
+    // Parent of every service coroutine scope. Cancelled once in onDestroy() so no scope outlives the
+    // service. Each scope owns a SupervisorJob child of this so a failure in one coroutine neither
+    // cancels its siblings nor the whole service.
+    private val serviceJob = SupervisorJob()
+    private val scope = CoroutineScope(SupervisorJob(serviceJob) + Dispatchers.Main)
+    private val offloadScope = CoroutineScope(SupervisorJob(serviceJob) + playerCoroutine)
+
+    // Scope for the per-request playQueue() coroutine. Uses the Main dispatcher because it mutates the
+    // player, which must run on the application thread; the SupervisorJob binds it to the service lifecycle.
+    private val queueLoadScope = CoroutineScope(SupervisorJob(serviceJob) + Dispatchers.Main)
 
     // Critical player components
     @Inject
@@ -226,6 +243,15 @@ class MusicService : MediaLibraryService(),
     private var isAudioEffectSessionOpened = false
 
     var consecutivePlaybackErr = 0
+
+    // Current song plus upcoming songs to fetch lyrics for, read synchronously from the player on each
+    // track transition. A data class so the StateFlow deduplicates identical updates.
+    private data class LyricsFetchTargets(
+        val current: MediaMetadata?,
+        val upcoming: List<MediaMetadata>,
+    )
+
+    private val lyricsFetchTargets = MutableStateFlow(LyricsFetchTargets(null, emptyList()))
 
     override fun onCreate() {
         if (SERVICE_DEBUG) Log.i(TAG, "Starting MusicService")
@@ -356,6 +382,32 @@ class MusicService : MediaLibraryService(),
                 }
             }
 
+            // Fetch lyrics for the current song and prefetch the upcoming ones in a single coroutine so
+            // they never run concurrently: the current fetch (only while lyrics display is on) completes
+            // before prefetch starts. collectLatest restarts on a song change or a lyrics-display toggle,
+            // cancelling any fetch in flight; already-fetched songs are skipped by the DB check.
+            combine(
+                dataStore.data.map { it[ShowLyricsKey] ?: false }.distinctUntilChanged(),
+                lyricsFetchTargets
+            ) { showLyrics, targets -> showLyrics to targets }
+                .collectLatest(offloadScope) { (showLyrics, targets) ->
+                    val current = targets.current
+                    if (showLyrics && current != null && lyricsHelper.shouldFetch(current.id)) {
+                        lyricsHelper.fetchAndStoreRemote(current, LyricsFetchRole.CURRENT)
+                    }
+                    // Read prefetch settings and connectivity after the current-song fetch so their changes
+                    // do not cancel it. Changes take effect on the next lyricsFetchTargets emission.
+                    if (dataStore.get(EnableLyricsPrefetchKey, true) && isNetworkConnected.value) {
+                        val count = dataStore.get(LyricsPrefetchCountKey, 3)
+                        targets.upcoming.take(count).forEach { mediaMetadata ->
+                            if (!currentCoroutineContext().isActive) return@forEach
+                            if (lyricsHelper.shouldFetch(mediaMetadata.id)) {
+                                lyricsHelper.fetchAndStoreRemote(mediaMetadata, LyricsFetchRole.PREFETCH)
+                            }
+                        }
+                    }
+                }
+
 
             // network connectivity
             try {
@@ -474,8 +526,7 @@ class MusicService : MediaLibraryService(),
         queuePlaylistId = queue.playlistId
         var q: MultiQueueObject? = null
         val preloadItem = queue.preloadItem
-        // do not use scope.launch ... it breaks randomly... why is this bug back???
-        CoroutineScope(Dispatchers.Main).launch {
+        queueLoadScope.launch {
             if (SERVICE_DEBUG) Log.d(TAG, "playQueue: Resolving additional queue data...")
             try {
                 if (preloadItem != null) {
@@ -521,6 +572,8 @@ class MusicService : MediaLibraryService(),
 
                 player.prepare()
                 player.playWhenReady = playWhenReady
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 reportException(e)
                 Toast.makeText(this@MusicService, "plr: ${e.message}", Toast.LENGTH_LONG)
@@ -609,7 +662,8 @@ class MusicService : MediaLibraryService(),
 
     suspend fun saveQueueToDisk(currentPosition: Long) {
         val data = queueBoard.value.getAllQueues()
-        data.last().lastSongPos = currentPosition
+        // The queue can be empty when the service is torn down before initQueue() finishes loading it.
+        data.lastOrNull()?.let { it.lastSongPos = currentPosition }
         database.updateAllQueues(data)
     }
 
@@ -919,6 +973,23 @@ class MusicService : MediaLibraryService(),
         Toast.makeText(this@MusicService, getString(R.string.err_stop_on_error), Toast.LENGTH_LONG).show()
     }
 
+    /**
+     * Read the current song and the upcoming queue entries from the player and publish them for the
+     * lyrics fetch coroutine. Called on each track transition; the player is read synchronously here
+     * because onMediaItemTransition runs before currentMediaMetadata is updated in onEvents.
+     */
+    private fun updateLyricsFetchTargets() {
+        val currentIndex = player.currentMediaItemIndex
+        if (currentIndex == C.INDEX_UNSET) {
+            lyricsFetchTargets.value = LyricsFetchTargets(null, emptyList())
+            return
+        }
+        val current = player.getMediaItemAt(currentIndex).metadata
+        val upcoming = ((currentIndex + 1) until player.mediaItemCount)
+            .mapNotNull { player.getMediaItemAt(it).metadata }
+        lyricsFetchTargets.value = LyricsFetchTargets(current, upcoming)
+    }
+
 
 // Player overrides
 
@@ -961,6 +1032,8 @@ class MusicService : MediaLibraryService(),
         if (consecutivePlaybackErr > 0) {
             consecutivePlaybackErr--
         }
+
+        updateLyricsFetchTargets()
 
         if (player.isPlaying && reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
             player.prepare()
@@ -1115,6 +1188,13 @@ class MusicService : MediaLibraryService(),
 
     override fun onDestroy() {
         if (SERVICE_DEBUG) Log.i(TAG, "Terminating MusicService.")
+        serviceJob.cancel()
+        // Unregister before deInitQueue: cancelling the collector leaves the ConnectivityManager
+        // callback registered. isInitialized guards a teardown before onCreate's async init assigned it.
+        if (::connectivityObserver.isInitialized) {
+            connectivityObserver.unregister()
+        }
+        // deInitQueue reads player.currentPosition, so it must run before the player is released.
         deInitQueue()
 
         mediaSession.player.stop()
