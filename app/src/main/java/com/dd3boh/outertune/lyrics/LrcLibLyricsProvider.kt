@@ -10,6 +10,7 @@ import com.dd3boh.outertune.utils.get
  * Source: https://github.com/Malopieds/InnerTune
  */
 object LrcLibLyricsProvider : LyricsProvider {
+    override val id = "lrclib"
     override val name = "LrcLib"
 
     override fun isEnabled(context: Context): Boolean =
@@ -20,7 +21,7 @@ object LrcLibLyricsProvider : LyricsProvider {
         title: String,
         artist: String,
         duration: Int,
-    ): Result<String> = LrcLib.getLyrics(title, artist, duration)
+    ): LyricsFetchResult = LrcLib.getLyrics(title, artist, duration).toFetchResult()
 
     override suspend fun getAllLyrics(
         id: String,

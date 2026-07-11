@@ -8,6 +8,7 @@ import java.io.File
 
 
 object LocalLyricsProvider : LyricsProvider {
+    override val id = "local"
     override val name = "Local LRC"
     override fun isEnabled(context: Context) = true
 
@@ -24,7 +25,7 @@ object LocalLyricsProvider : LyricsProvider {
         title: String,
         artist: String,
         duration: Int,
-    ): Result<String> {
+    ): LyricsFetchResult {
         throw NotImplementedError()
     }
 

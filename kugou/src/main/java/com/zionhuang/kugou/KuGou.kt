@@ -54,19 +54,19 @@ private fun String.decodeBase64ToString(): String =
 object KuGou {
     var useTraditionalChinese: Boolean = false
 
-    suspend fun getLyrics(title: String, artist: String, duration: Int): Result<String> =
+    /**
+     * Look up lyrics. Returns success with the raw text when a match is found, success with null when
+     * the search succeeded but had no candidate (or the track is instrumental) — a definitive absence —
+     * and a failure when the request itself failed. Non-2xx responses throw because [expectSuccess] is set.
+     */
+    suspend fun getLyrics(title: String, artist: String, duration: Int): Result<String?> =
         runCatching {
             val keyword = generateKeyword(title, artist)
-            getLyricsCandidate(keyword, duration)?.let { candidate ->
-                downloadLyrics(candidate.id, candidate.accesskey).content.decodeBase64ToString()
-                    .normalize().let {
-                        if ("纯音乐，请欣赏" in it || "酷狗音乐  就是歌多" in it) {
-                            // instrumental tracks should report as having no lyrics
-                            throw IllegalStateException("No lyrics candidate")
-                        }
-                        it
-                    }
-            } ?: throw IllegalStateException("No lyrics candidate")
+            val candidate = getLyricsCandidate(keyword, duration) ?: return@runCatching null
+            val content = downloadLyrics(candidate.id, candidate.accesskey).content
+                .decodeBase64ToString().normalize()
+            // instrumental tracks report as having no lyrics
+            if ("纯音乐，请欣赏" in content || "酷狗音乐  就是歌多" in content) null else content
         }
 
     suspend fun getAllPossibleLyricsOptions(

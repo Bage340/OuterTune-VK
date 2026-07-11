@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 21,
-    "identityHash": "230b19488c77e751ccdc2445cbee88fc",
+    "identityHash": "f2c55293ba6abd6af0d59899bec3b91d",
     "entities": [
       {
         "tableName": "song",
@@ -1024,7 +1024,7 @@
       },
       {
         "tableName": "lyrics",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `lyrics` TEXT NOT NULL, `provider` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `lyrics` TEXT NOT NULL, `provider` TEXT, `lastCheckedAt` INTEGER, `providerSignature` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -1041,6 +1041,16 @@
           {
             "fieldPath": "provider",
             "columnName": "provider",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastCheckedAt",
+            "columnName": "lastCheckedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "providerSignature",
+            "columnName": "providerSignature",
             "affinity": "TEXT"
           }
         ],
@@ -1308,7 +1318,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '230b19488c77e751ccdc2445cbee88fc')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f2c55293ba6abd6af0d59899bec3b91d')"
     ]
   }
 }

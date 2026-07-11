@@ -33,9 +33,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.EnableBetterLyricsKey
 import com.dd3boh.outertune.constants.EnableKugouKey
 import com.dd3boh.outertune.constants.EnableLrcLibKey
 import com.dd3boh.outertune.constants.EnableLyricsPrefetchKey
+import com.dd3boh.outertune.constants.EnableSimpMusicKey
 import com.dd3boh.outertune.constants.LyricClickable
 import com.dd3boh.outertune.constants.LyricFontSizeKey
 import com.dd3boh.outertune.constants.LyricKaraokeEnable
@@ -141,6 +143,8 @@ fun ColumnScope.LyricParserFrag() {
 fun ColumnScope.LyricSourceFrag() {
     val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
     val (enableLrcLib, onEnableLrcLibChange) = rememberPreference(key = EnableLrcLibKey, defaultValue = true)
+    val (enableBetterLyrics, onEnableBetterLyricsChange) = rememberPreference(key = EnableBetterLyricsKey, defaultValue = false)
+    val (enableSimpMusic, onEnableSimpMusicChange) = rememberPreference(key = EnableSimpMusicKey, defaultValue = true)
     val (preferLocalLyric, onPreferLocalLyric) = rememberPreference(LyricSourcePrefKey, defaultValue = true)
     val (enablePrefetch, onEnablePrefetchChange) = rememberPreference(EnableLyricsPrefetchKey, defaultValue = true)
     val (prefetchCount, onPrefetchCountChange) = rememberPreference(LyricsPrefetchCountKey, defaultValue = 3)
@@ -149,6 +153,18 @@ fun ColumnScope.LyricSourceFrag() {
         mutableStateOf(false)
     }
 
+    SwitchPreference(
+        title = { Text(stringResource(R.string.enable_simpmusic)) },
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = enableSimpMusic,
+        onCheckedChange = onEnableSimpMusicChange
+    )
+    SwitchPreference(
+        title = { Text(stringResource(R.string.enable_betterlyrics)) },
+        icon = { Icon(Icons.Rounded.Lyrics, null) },
+        checked = enableBetterLyrics,
+        onCheckedChange = onEnableBetterLyricsChange
+    )
     SwitchPreference(
         title = { Text(stringResource(R.string.enable_lrclib)) },
         icon = { Icon(Icons.Rounded.Lyrics, null) },

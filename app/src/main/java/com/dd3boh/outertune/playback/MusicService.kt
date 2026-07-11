@@ -133,9 +133,11 @@ import com.zionhuang.innertube.models.SongItem
 import com.zionhuang.innertube.models.WatchEndpoint
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -171,8 +173,17 @@ class MusicService : MediaLibraryService(),
 
     @Inject
     lateinit var database: MusicDatabase
-    private val scope = CoroutineScope(Dispatchers.Main)
-    private val offloadScope = CoroutineScope(playerCoroutine)
+
+    // Parent of every service coroutine scope. Cancelled once in onDestroy() so no scope outlives the
+    // service. Each scope owns a SupervisorJob child of this so a failure in one coroutine neither
+    // cancels its siblings nor the whole service.
+    private val serviceJob = SupervisorJob()
+    private val scope = CoroutineScope(SupervisorJob(serviceJob) + Dispatchers.Main)
+    private val offloadScope = CoroutineScope(SupervisorJob(serviceJob) + playerCoroutine)
+
+    // Scope for the per-request playQueue() coroutine. Uses the Main dispatcher because it mutates the
+    // player, which must run on the application thread; the SupervisorJob binds it to the service lifecycle.
+    private val queueLoadScope = CoroutineScope(SupervisorJob(serviceJob) + Dispatchers.Main)
 
     // Critical player components
     @Inject
@@ -381,7 +392,7 @@ class MusicService : MediaLibraryService(),
             ) { showLyrics, targets -> showLyrics to targets }
                 .collectLatest(offloadScope) { (showLyrics, targets) ->
                     val current = targets.current
-                    if (showLyrics && current != null && database.lyrics(current.id).first() == null) {
+                    if (showLyrics && current != null && lyricsHelper.shouldFetch(current.id)) {
                         lyricsHelper.fetchAndStoreRemote(current, LyricsFetchRole.CURRENT)
                     }
                     // Read prefetch settings and connectivity after the current-song fetch so their changes
@@ -390,7 +401,7 @@ class MusicService : MediaLibraryService(),
                         val count = dataStore.get(LyricsPrefetchCountKey, 3)
                         targets.upcoming.take(count).forEach { mediaMetadata ->
                             if (!currentCoroutineContext().isActive) return@forEach
-                            if (database.lyrics(mediaMetadata.id).first() == null) {
+                            if (lyricsHelper.shouldFetch(mediaMetadata.id)) {
                                 lyricsHelper.fetchAndStoreRemote(mediaMetadata, LyricsFetchRole.PREFETCH)
                             }
                         }
@@ -515,8 +526,7 @@ class MusicService : MediaLibraryService(),
         queuePlaylistId = queue.playlistId
         var q: MultiQueueObject? = null
         val preloadItem = queue.preloadItem
-        // do not use scope.launch ... it breaks randomly... why is this bug back???
-        CoroutineScope(Dispatchers.Main).launch {
+        queueLoadScope.launch {
             if (SERVICE_DEBUG) Log.d(TAG, "playQueue: Resolving additional queue data...")
             try {
                 if (preloadItem != null) {
@@ -562,6 +572,8 @@ class MusicService : MediaLibraryService(),
 
                 player.prepare()
                 player.playWhenReady = playWhenReady
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 reportException(e)
                 Toast.makeText(this@MusicService, "plr: ${e.message}", Toast.LENGTH_LONG)
@@ -650,7 +662,8 @@ class MusicService : MediaLibraryService(),
 
     suspend fun saveQueueToDisk(currentPosition: Long) {
         val data = queueBoard.value.getAllQueues()
-        data.last().lastSongPos = currentPosition
+        // The queue can be empty when the service is torn down before initQueue() finishes loading it.
+        data.lastOrNull()?.let { it.lastSongPos = currentPosition }
         database.updateAllQueues(data)
     }
 
@@ -1175,6 +1188,13 @@ class MusicService : MediaLibraryService(),
 
     override fun onDestroy() {
         if (SERVICE_DEBUG) Log.i(TAG, "Terminating MusicService.")
+        serviceJob.cancel()
+        // Unregister before deInitQueue: cancelling the collector leaves the ConnectivityManager
+        // callback registered. isInitialized guards a teardown before onCreate's async init assigned it.
+        if (::connectivityObserver.isInitialized) {
+            connectivityObserver.unregister()
+        }
+        // deInitQueue reads player.currentPosition, so it must run before the player is released.
         deInitQueue()
 
         mediaSession.player.stop()

@@ -46,19 +46,19 @@ object LrcLib {
             if (album != null) parameter("album_name", album)
         }.body<List<Track>>()
 
+    /**
+     * Look up synced lyrics. Returns success with the raw LRC text when a match is found, success with
+     * null when the search succeeded but carried no synced match (a definitive absence), and a failure
+     * when the request itself failed. Non-2xx responses throw because [expectSuccess] is set.
+     */
     suspend fun getLyrics(
         title: String,
         artist: String,
         duration: Int,
         album: String? = null,
-    ) = runCatching {
+    ): Result<String?> = runCatching {
         val syncedTracks = queryLyrics(artist, title, album).filter { it.syncedLyrics != null }
-        val res = syncedTracks.bestMatchingFor(duration)?.syncedLyrics?.let(LrcLib::Lyrics)
-        if (res != null) {
-            return@runCatching res.text
-        } else {
-            throw IllegalStateException("Lyrics unavailable")
-        }
+        syncedTracks.bestMatchingFor(duration)?.syncedLyrics?.let(LrcLib::Lyrics)?.text
     }
 
     suspend fun getAllLyrics(

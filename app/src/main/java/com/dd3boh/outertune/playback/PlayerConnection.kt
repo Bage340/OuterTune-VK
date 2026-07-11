@@ -45,8 +45,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.akanework.gramophone.logic.utils.LrcUtils
 import org.akanework.gramophone.logic.utils.SemanticLyrics
-import org.akanework.gramophone.logic.utils.parseLrc
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerConnection(
@@ -101,7 +101,7 @@ class PlayerConnection(
             prefLocal && localLyrics != null -> localLyrics
             dbLyrics == null -> null
             dbLyrics.lyrics == LYRICS_NOT_FOUND -> localLyrics ?: uninitializedLyric
-            else -> parseLrc(dbLyrics.lyrics, parserOptions.trim, parserOptions.multiLine)
+            else -> LrcUtils.parseLyrics(dbLyrics.lyrics, null, parserOptions, null)
         }
     }
 

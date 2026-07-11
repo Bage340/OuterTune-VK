@@ -68,8 +68,8 @@ import com.dd3boh.outertune.ui.screens.settings.fragments.LyricParserFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.LyricSourceFrag
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.viewmodels.LyricsMenuViewModel
+import org.akanework.gramophone.logic.utils.LrcUtils
 import org.akanework.gramophone.logic.utils.SemanticLyrics
-import org.akanework.gramophone.logic.utils.parseLrc
 
 
 @Composable
@@ -85,6 +85,7 @@ fun LyricsMenu(
 
     val multilineLrc by rememberPreference(MultilineLrcKey, defaultValue = true)
     val lyricTrim by rememberPreference(LyricTrimKey, defaultValue = false)
+    val parserOptions = LrcUtils.LrcParserOptions(lyricTrim, multilineLrc, "Unable to parse lyrics")
 
     var showEditDialog by rememberSaveable {
         mutableStateOf(false)
@@ -106,7 +107,7 @@ fun LyricsMenu(
                         )
                     )
                 }
-                onRefreshRequest(parseLrc(it, lyricTrim, multilineLrc))
+                onRefreshRequest(LrcUtils.parseLyrics(it, null, parserOptions, null))
             }
         )
     }
@@ -229,7 +230,7 @@ fun LyricsMenu(
                                 )
                             }
 
-                            onRefreshRequest(parseLrc(result.lyrics, lyricTrim, multilineLrc))
+                            onRefreshRequest(LrcUtils.parseLyrics(result.lyrics, null, parserOptions, null))
                         }
                         .padding(12.dp)
                         .animateContentSize()
