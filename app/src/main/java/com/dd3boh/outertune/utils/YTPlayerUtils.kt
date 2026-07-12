@@ -219,14 +219,23 @@ object YTPlayerUtils {
     }
 
     /**
-     * Simple player response intended to use for metadata only.
-     * Stream URLs of this response might not work so don't use them.
+     * Fetches a WEB_REMIX player response for non-streaming data, including
+     * video metadata and playback tracking.
+     *
+     * Streaming URLs from this response are not guaranteed to be playable.
      */
     suspend fun playerResponseForMetadata(
         videoId: String,
         playlistId: String? = null,
-    ): Result<PlayerResponse> =
-        YouTube.player(videoId, playlistId, client = WEB_REMIX) // ANDROID_VR does not work with history
+    ): Result<PlayerResponse> {
+        // WEB_REMIX provides the playback tracking URL required for history registration.
+        // Include the web player integrity fields because omitting the player PoToken may
+        // cause the request to return UNPLAYABLE.
+        val signatureTimestamp = getSignatureTimestampOrNull(videoId)
+        val sessionId = if (YouTube.cookie != null) YouTube.dataSyncId else YouTube.visitorData
+        val webPlayerPot = getWebClientPoTokenOrNull(videoId, sessionId)?.playerRequestPoToken
+        return YouTube.player(videoId, playlistId, WEB_REMIX, signatureTimestamp, webPlayerPot)
+    }
 
     private fun findFormat(
         playerResponse: PlayerResponse,

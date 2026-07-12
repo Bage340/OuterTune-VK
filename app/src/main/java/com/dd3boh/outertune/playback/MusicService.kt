@@ -137,8 +137,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -1139,8 +1139,18 @@ class MusicService : MediaLibraryService(),
                 val ytHist = mediaItem.metadata?.isLocal != true && !dataStore.get(PauseRemoteListenHistoryKey, false)
                 if (SERVICE_DEBUG) Log.d(TAG, "Trying to register remote history: $ytHist")
                 if (ytHist) {
-                    val playbackUrl = YTPlayerUtils.playerResponseForMetadata(mediaItem.mediaId, null)
-                        .getOrNull()?.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+                    val metaResult = YTPlayerUtils.playerResponseForMetadata(mediaItem.mediaId, null)
+                    val response = metaResult.getOrNull()
+                    if (SERVICE_DEBUG) Log.d(
+                        TAG,
+                        "History meta: success=${metaResult.isSuccess}" +
+                            (metaResult.exceptionOrNull()?.let { " err=${it.javaClass.simpleName}:${it.message}" } ?: "") +
+                            " playability=${response?.playabilityStatus?.status}/${response?.playabilityStatus?.reason}" +
+                            " hasTracking=${response?.playbackTracking != null}" +
+                            " hasVideostats=${response?.playbackTracking?.videostatsPlaybackUrl != null}" +
+                            " loggedIn=${YouTube.cookie != null}"
+                    )
+                    val playbackUrl = response?.playbackTracking?.videostatsPlaybackUrl?.baseUrl
                     if (SERVICE_DEBUG) Log.d(TAG, "Got playback url: $playbackUrl")
                     playbackUrl?.let {
                         YouTube.registerPlayback(null, playbackUrl)
