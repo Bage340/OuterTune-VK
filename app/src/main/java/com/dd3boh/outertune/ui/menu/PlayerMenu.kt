@@ -315,15 +315,14 @@ fun PlayerMenu(
                 showSelectArtistDialog = true
             }
         }
-        if (mediaMetadata.album != null && !mediaMetadata.isLocal) {
-            GridMenuItem(
-                icon = R.drawable.album,
-                title = R.string.view_album
-            ) {
-                navController.navigate("album/${mediaMetadata.album.id}")
-                playerBottomSheetState.collapseSoft()
-                onDismiss()
-            }
+        GridMenuItem(
+            icon = R.drawable.album,
+            title = R.string.view_album,
+            enabled = mediaMetadata.album != null && !mediaMetadata.isLocal
+        ) {
+            mediaMetadata.album?.let { navController.navigate("album/${it.id}") }
+            playerBottomSheetState.collapseSoft()
+            onDismiss()
         }
 
         if (!mediaMetadata.isLocal)
