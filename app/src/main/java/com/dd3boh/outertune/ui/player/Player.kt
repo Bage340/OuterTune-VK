@@ -127,12 +127,14 @@ import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PLAYER_DEBUG
 import com.dd3boh.outertune.constants.PlayerHorizontalPadding
 import com.dd3boh.outertune.constants.QueuePeekHeight
+import com.dd3boh.outertune.constants.DEFAULT_SHOW_LYRICS_ON_CLICK
 import com.dd3boh.outertune.constants.DEFAULT_SLIDER_STYLE
 import com.dd3boh.outertune.constants.DEFAULT_SWIPE_TO_SKIP
 import com.dd3boh.outertune.constants.SeekIncrement
 import com.dd3boh.outertune.constants.SeekIncrementKey
 import com.dd3boh.outertune.constants.SliderStyleKey
 import com.dd3boh.outertune.constants.ShowLyricsKey
+import com.dd3boh.outertune.constants.ShowLyricsOnClickKey
 import com.dd3boh.outertune.constants.SleepTimerShowOnPlayerKey
 import com.dd3boh.outertune.constants.SwipeToSkipKey
 import com.dd3boh.outertune.extensions.isPowerSaver
@@ -274,6 +276,7 @@ fun PortraitPlayer(
             val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
             val swipeToSkip by rememberPreference(SwipeToSkipKey, defaultValue = DEFAULT_SWIPE_TO_SKIP)
+            val showLyricsOnClick by rememberPreference(ShowLyricsOnClickKey, defaultValue = DEFAULT_SHOW_LYRICS_ON_CLICK)
             val previousMediaMetadata = if (swipeToSkip && playerConnection.player.hasPreviousMediaItem()) {
                 val previousIndex = playerConnection.player.previousMediaItemIndex
                 playerConnection.player.getMediaItemAt(previousIndex).metadata
@@ -300,7 +303,7 @@ fun PortraitPlayer(
 //                                .width(horizontalLazyGridItemWidth)
                         .animateContentSize(),
                     sliderPositionProvider = { sliderPosition },
-                    showLyricsOnClick = true,
+                    showLyricsOnClick = showLyricsOnClick,
                     customMediaMetadata = mediaMetadata
                 )
             } else {
@@ -355,7 +358,7 @@ fun PortraitPlayer(
                                 .width(horizontalLazyGridItemWidth)
                                 .animateContentSize(),
                             sliderPositionProvider = { sliderPosition },
-                            showLyricsOnClick = true,
+                            showLyricsOnClick = showLyricsOnClick,
                             customMediaMetadata = it
                         )
                     }
@@ -404,6 +407,7 @@ fun LandscapePlayer(
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
     val swipeToSkip by rememberPreference(SwipeToSkipKey, defaultValue = DEFAULT_SWIPE_TO_SKIP)
+    val showLyricsOnClick by rememberPreference(ShowLyricsOnClickKey, defaultValue = DEFAULT_SHOW_LYRICS_ON_CLICK)
     val previousMediaMetadata = if (swipeToSkip && playerConnection.player.hasPreviousMediaItem()) {
         val previousIndex = playerConnection.player.previousMediaItemIndex
         playerConnection.player.getMediaItemAt(previousIndex).metadata
@@ -458,7 +462,7 @@ fun LandscapePlayer(
                     modifier = Modifier
 //                                .width(horizontalLazyGridItemWidth)
                         .animateContentSize(),
-                    showLyricsOnClick = true,
+                    showLyricsOnClick = showLyricsOnClick,
                     customMediaMetadata = mediaMetadata
                 )
             } else {
@@ -514,7 +518,7 @@ fun LandscapePlayer(
                             modifier = Modifier
                                 .width(horizontalLazyGridItemWidth)
                                 .animateContentSize(),
-                            showLyricsOnClick = true,
+                            showLyricsOnClick = showLyricsOnClick,
                             customMediaMetadata = it
                         )
                     }

@@ -38,6 +38,7 @@ enum class LyricsPosition {
 const val DEFAULT_ENABLED_TABS = "HSFOM"
 const val DEFAULT_ENABLED_FILTERS = "ARP"
 const val DEFAULT_SWIPE_TO_SKIP = true
+const val DEFAULT_SHOW_LYRICS_ON_CLICK = true
 
 /*
 ---------------------------

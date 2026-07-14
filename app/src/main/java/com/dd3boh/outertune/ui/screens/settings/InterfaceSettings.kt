@@ -40,7 +40,7 @@ import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.button.IconButton
-import com.dd3boh.outertune.ui.screens.settings.fragments.SwipeGesturesFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.GestureSettingsFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.TabArrangementFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.TabExtrasFrag
 import com.dd3boh.outertune.ui.utils.backToMain
@@ -83,7 +83,7 @@ fun InterfaceSettings(
         ElevatedCard(
             modifier = Modifier.fillMaxWidth()
         ) {
-            SwipeGesturesFrag()
+            GestureSettingsFrag()
         }
         Spacer(modifier = Modifier.height(48.dp))
 
