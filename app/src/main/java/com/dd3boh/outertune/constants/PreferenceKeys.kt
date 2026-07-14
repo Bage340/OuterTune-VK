@@ -87,6 +87,7 @@ val SleepTimerShowOnPlayerKey = booleanPreferencesKey("sleepTimerShowOnPlayer")
  * Lyrics
  */
 val ShowLyricsKey = booleanPreferencesKey("showLyrics")
+val ShowLyricsOnClickKey = booleanPreferencesKey("showLyricsOnClick")
 val LyricsTextPositionKey = stringPreferencesKey("lyricsTextPosition")
 val MultilineLrcKey = booleanPreferencesKey("multilineLrc")
 val LyricTrimKey = booleanPreferencesKey("lyricTrim")
