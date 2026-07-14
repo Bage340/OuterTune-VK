@@ -11,9 +11,7 @@
 A Material 3 YouTube Music client & local music player for Android
 
 > [!NOTE]
-> This is a maintenance fork based on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune).
->
-> Since upstream development of the YouTube Music features has stopped, this fork continues fixing issues and improving the app so it remains usable today.
+> This is a fork based on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune).
 >
 > - No distribution channel is available at this time, but one may be provided in the future.
 >
@@ -30,45 +28,51 @@ A Material 3 YouTube Music client & local music player for Android
 
 This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune) with a focus on YouTube Music playback stability, lyrics, navigation, and local music playback.
 
-- Fixes YouTube Music playback and display issues
-  - Fixed albums with missing tracks, crashes while opening playlists, and failed search result parsing
-  - Fixed the "Source error 2004" issue that could block YouTube Music playback
-  - Improved YouTube Music thumbnail resolution
-  - Fixed a crash that could occur when opening playlists or albums while their data was being updated
-  - Fixed m3u playlist import crashes and improved YouTube song matching
+### YouTube Music playback and display
 
-- Improves lyrics
-  - Uses LrcLib and caption tracks to improve lyrics matching and loading speed
-  - Adds a lyrics toggle button to the now-playing action bar
+- Fixed albums with missing tracks, crashes while opening playlists, and failed search result parsing
+- Fixed the "Source error 2004" issue that could block YouTube Music playback
+- Improved YouTube Music thumbnail resolution
+- Fixed a crash that could occur when opening playlists or albums while their data was being updated
+- Fixed m3u playlist import crashes and improved YouTube song matching
 
-- Improves app navigation
-  - Adjusted bottom navigation so tab switching and re-tapping the active tab behave more naturally
-  - Preserves the search bar state for each route
-  - Fixed the Folders screen search bar restoration, default sorting, and list refresh behavior
-  - Replaced the persistent search bar on tab screens with a top icon row (search, history, stats, settings, and more)
+### Lyrics
 
-- Improves local music playback
-  - Improved tag reading for local music files
-  - Improved local song linking and gapless playback
-  - Fixed the album song count shown on album screens
-  - Added a Local tab for browsing on-device songs, albums, artists, and playlists with filters and search
+- Uses LrcLib and caption tracks to improve lyrics matching and loading speed
+- Adds a lyrics toggle button to the now-playing action bar
+- Added SimpMusic and BetterLyrics as lyrics providers
+- Queries enabled providers in parallel with timeouts
+- Fetches lyrics in the playback service even while the lyrics panel is closed
 
-- Improves display and settings
-  - Restored the tablet UI
-  - Fixed overlapping player UI and made dialogs scrollable
-  - Automatically detects the system contrast setting on Android 14 and later
-  - Added custom accent colors
-  - Added selectable slider styles, with an animated squiggly style as the default
-  - Added a "keep audio focus" player setting
-  - Added a home screen grid showing your recent YouTube Music activity when signed in
-  - Added the current queue's name to the player's queue handle
+### Navigation and menus
 
-- Adds playback and download options
-  - Added a sleep timer that fades out and fully stops playback
-  - Added a Wi-Fi-only download toggle
+- Adjusted bottom navigation so tab switching and re-tapping the active tab behave more naturally
+- Fixed issues with the search bar, sorting, and list refreshes on the Folders screen
+- Replaced the persistent search bar on tab screens with a top icon row (search, history, stats, settings, and more)
 
-- Updates internal libraries and build tooling
-  - Updated Kotlin, KSP, NewPipeExtractor, Ktor, Android Gradle Plugin, Gradle, and related tooling
+### Local music playback
+
+- Improved tag reading, song linking, and gapless playback for local music
+- Fixed the album song count shown on album screens
+- Added a Local tab for browsing on-device songs, albums, artists, and playlists with filters and search
+
+### Display and settings
+
+- Improved the tablet UI
+- Automatically detects the system contrast setting on Android 14 and later
+- Added custom accent colors
+- Added a "keep audio focus" player setting
+- Added a home screen grid showing your recent YouTube Music activity when signed in
+- Added the current queue's name to the player's queue handle
+
+### Playback and downloads
+
+- Added a sleep timer that fades out and fully stops playback
+- Added a Wi-Fi-only download toggle
+
+### Internal libraries and build tooling
+
+- Updated Kotlin, KSP, NewPipeExtractor, Ktor, Android Gradle Plugin, Gradle, and related tooling
 
 ## Features
 
