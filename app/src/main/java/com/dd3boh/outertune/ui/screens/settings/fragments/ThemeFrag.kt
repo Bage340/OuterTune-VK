@@ -8,7 +8,6 @@
 
 package com.dd3boh.outertune.ui.screens.settings.fragments
 
-import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,8 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.ColorLens
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
@@ -47,14 +44,10 @@ import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.CustomThemeColorKey
 import com.dd3boh.outertune.constants.CustomThemeKey
-import com.dd3boh.outertune.constants.DEFAULT_PLAYER_BACKGROUND
 import com.dd3boh.outertune.constants.DarkMode
 import com.dd3boh.outertune.constants.DarkModeKey
 import com.dd3boh.outertune.constants.DynamicThemeKey
-import com.dd3boh.outertune.constants.PlayerBackgroundStyle
-import com.dd3boh.outertune.constants.PlayerBackgroundStyleKey
 import com.dd3boh.outertune.constants.PureBlackKey
-import com.dd3boh.outertune.constants.ShowQueueTitleKey
 import com.dd3boh.outertune.ui.component.EnumListPreference
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.SwitchPreference
@@ -201,52 +194,11 @@ private fun AccentColorPickerDialog(
 }
 
 
-@Composable
-fun ColumnScope.ThemePlayerFrag() {
-    val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(
-        key = PlayerBackgroundStyleKey,
-        defaultValue = DEFAULT_PLAYER_BACKGROUND
-    )
-    val availableBackgroundStyles = PlayerBackgroundStyle.entries.filter {
-        it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    }
-    val (showQueueTitle, onShowQueueTitleChange) = rememberPreference(ShowQueueTitleKey, defaultValue = true)
-
-    EnumListPreference(
-        title = { Text(stringResource(R.string.player_background_style)) },
-        icon = { Icon(Icons.Rounded.BlurOn, null) },
-        selectedValue = playerBackground,
-        onValueSelected = onPlayerBackgroundChange,
-        valueText = {
-            when (it) {
-                PlayerBackgroundStyle.FOLLOW_THEME -> stringResource(R.string.player_background_default)
-                PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.player_background_gradient)
-                PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-            }
-        },
-        values = availableBackgroundStyles
-    )
-    SwitchPreference(
-        title = { Text(stringResource(R.string.show_queue_title)) },
-        icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
-        checked = showQueueTitle,
-        onCheckedChange = onShowQueueTitleChange
-    )
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun ThemeAppFragPreview() {
     Column {
         ThemeAppFrag()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ThemePlayerFragPreview() {
-    Column {
-        ThemePlayerFrag()
     }
 }
 

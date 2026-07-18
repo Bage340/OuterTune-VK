@@ -172,12 +172,12 @@ import com.dd3boh.outertune.ui.screens.settings.AppearanceSettings
 import com.dd3boh.outertune.ui.screens.settings.AttributionScreen
 import com.dd3boh.outertune.ui.screens.settings.BackupAndRestore
 import com.dd3boh.outertune.ui.screens.settings.ExperimentalSettings
-import com.dd3boh.outertune.ui.screens.settings.InterfaceSettings
 import com.dd3boh.outertune.ui.screens.settings.LibrariesScreen
 import com.dd3boh.outertune.ui.screens.settings.LibrarySettings
 import com.dd3boh.outertune.ui.screens.settings.LocalPlayerSettings
 import com.dd3boh.outertune.ui.screens.settings.LyricsSettings
 import com.dd3boh.outertune.ui.screens.settings.PlayerSettings
+import com.dd3boh.outertune.ui.screens.settings.PrivacySettings
 import com.dd3boh.outertune.ui.screens.settings.SettingsScreen
 import com.dd3boh.outertune.ui.screens.settings.StorageSettings
 import com.dd3boh.outertune.ui.theme.DefaultThemeColor
@@ -700,14 +700,14 @@ class MainActivity : ComponentActivity() {
                                     composable("settings/appearance") {
                                         AppearanceSettings(navController, scrollBehavior)
                                     }
-                                    composable("settings/interface") {
-                                        InterfaceSettings(navController, scrollBehavior)
-                                    }
                                     composable("settings/library") {
                                         LibrarySettings(navController, scrollBehavior)
                                     }
-                                    composable("settings/library/lyrics") {
+                                    composable("settings/lyrics") {
                                         LyricsSettings(navController, scrollBehavior)
+                                    }
+                                    composable("settings/privacy") {
+                                        PrivacySettings(navController, scrollBehavior)
                                     }
                                     composable("settings/account_sync") {
                                         AccountSyncSettings(navController, scrollBehavior)

@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.NoCell
 import androidx.compose.material3.ElevatedCard
@@ -38,18 +37,16 @@ import com.dd3boh.outertune.constants.AudioDecoderKey
 import com.dd3boh.outertune.constants.DEFAULT_AUDIO_DECODER
 import com.dd3boh.outertune.constants.ENABLE_FFMETADATAEX
 import com.dd3boh.outertune.constants.KeepAliveKey
-import com.dd3boh.outertune.constants.PersistentQueueKey
 import com.dd3boh.outertune.constants.StopMusicOnTaskClearKey
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.ListPreference
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
-import com.dd3boh.outertune.ui.component.SettingsClickToReveal
 import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.dialog.InfoLabel
-import com.dd3boh.outertune.ui.screens.settings.fragments.AudioEffectsFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.AudioQualityFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.NowPlayingFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.PlaybackBehaviourFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.PlayerGeneralFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.SleepTimerFrag
@@ -73,7 +70,6 @@ fun PlayerSettings(
         defaultValue = DEFAULT_AUDIO_DECODER
     )
     val (keepAlive, onKeepAliveChange) = rememberPreference(key = KeepAliveKey, defaultValue = false)
-    val (persistentQueue, onPersistentQueueChange) = rememberPreference(key = PersistentQueueKey, defaultValue = true)
     val (stopMusicOnTaskClear, onStopMusicOnTaskClearChange) = rememberPreference(
         key = StopMusicOnTaskClearKey,
         defaultValue = true
@@ -105,10 +101,13 @@ fun PlayerSettings(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
+        PreferenceGroupTitle(
+            title = stringResource(R.string.grp_now_playing)
+        )
         ElevatedCard(
             modifier = Modifier.fillMaxWidth()
         ) {
-            AudioEffectsFrag()
+            NowPlayingFrag()
         }
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -131,59 +130,48 @@ fun PlayerSettings(
         ) {
             SleepTimerFrag()
         }
+        Spacer(modifier = Modifier.height(16.dp))
 
-        SettingsClickToReveal(stringResource(R.string.advanced)) {
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                SwitchPreference(
-                    title = { Text(stringResource(R.string.persistent_queue)) },
-                    description = stringResource(R.string.persistent_queue_desc_ot),
-                    icon = { Icon(Icons.AutoMirrored.Rounded.QueueMusic, null) },
-                    checked = persistentQueue,
-                    onCheckedChange = onPersistentQueueChange
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (ENABLE_FFMETADATAEX) {
-                    ListPreference(
-                        title = { Text(stringResource(R.string.audio_decoder_preference)) },
-                        icon = { Icon(Icons.Rounded.AudioFile, null) },
-                        selectedValue = audioDecoder,
-                        onValueSelected = onAudioDecoderChange,
-                        values = listOf(
-                            DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF,
-                            DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON,
-                            DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER,
-                        ),
-                        valueText = {
-                            when (it) {
-                                DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF -> stringResource(R.string.audio_decoder_system_only)
-                                DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON -> stringResource(R.string.audio_decoder_system_with_ffmpeg)
-                                DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER -> stringResource(R.string.audio_decoder_ffmpeg_only)
-                                else -> {stringResource(R.string.error_unknown)}
-                            }
+        PreferenceGroupTitle(
+            title = stringResource(R.string.advanced)
+        )
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (ENABLE_FFMETADATAEX) {
+                ListPreference(
+                    title = { Text(stringResource(R.string.audio_decoder_preference)) },
+                    icon = { Icon(Icons.Rounded.AudioFile, null) },
+                    selectedValue = audioDecoder,
+                    onValueSelected = onAudioDecoderChange,
+                    values = listOf(
+                        DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF,
+                        DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON,
+                        DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER,
+                    ),
+                    valueText = {
+                        when (it) {
+                            DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF -> stringResource(R.string.audio_decoder_system_only)
+                            DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON -> stringResource(R.string.audio_decoder_system_with_ffmpeg)
+                            DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER -> stringResource(R.string.audio_decoder_ffmpeg_only)
+                            else -> {stringResource(R.string.error_unknown)}
                         }
-                    )
-                    InfoLabel(stringResource(R.string.restart_to_apply_changes))
-                }
-                SwitchPreference(
-                    title = { Text(stringResource(R.string.keep_alive_title)) },
-                    description = stringResource(R.string.keep_alive_description),
-                    icon = { Icon(Icons.Rounded.NoCell, null) },
-                    checked = keepAlive,
-                    onCheckedChange = {
-                        if (it) {
-                            onStopMusicOnTaskClearChange(false)
-                        }
-                        onKeepAliveChange(it)
                     }
                 )
+                InfoLabel(stringResource(R.string.restart_to_apply_changes))
             }
+            SwitchPreference(
+                title = { Text(stringResource(R.string.keep_alive_title)) },
+                description = stringResource(R.string.keep_alive_description),
+                icon = { Icon(Icons.Rounded.NoCell, null) },
+                checked = keepAlive,
+                onCheckedChange = {
+                    if (it) {
+                        onStopMusicOnTaskClearChange(false)
+                    }
+                    onKeepAliveChange(it)
+                }
+            )
         }
         Spacer(Modifier.height(96.dp))
     }
