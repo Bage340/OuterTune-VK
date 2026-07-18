@@ -260,4 +260,5 @@
     <string name="oobe_welcome_tip">Untuk pengalaman terbaik, Kami merekomendasikan menyelesaikan pengaturan cepat untuk pengaturan lebih lanjut seperti tema, akun YouTube, media lokal, Dan unduhan.</string>
     <string name="oobe_cache_title">Cache lagu</string>
     <string name="oobe_cache_subtitle">Pilih ukuran cache untuk lagu anda, ini bisa membantu mengurangi penggunaan internet atau masalah playback API YouTube</string>
+    <string name="off">Nonaktif</string>
 </resources>

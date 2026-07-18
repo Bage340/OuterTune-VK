@@ -2,4 +2,5 @@
 <resources>
     <string name="grp_behavior">Behaviour</string>
     <string name="oobe_ytm_integration_description">Access your favourite tracks seamlessly</string>
+    <string name="off">Off</string>
 </resources>

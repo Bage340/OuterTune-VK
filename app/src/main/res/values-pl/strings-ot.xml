@@ -269,4 +269,5 @@
     <string name="scanner_strict_file_paths_description">­Wyłącza wszystkie mądre dopasowania metadanych. Może to spowodować problemy jeśli pliki są przeniesione w pamięci lokalnej, ale pozwala jednej piosence by była w różnych folderach</string>
     <string name="scanner_type_tooltip">Systemowy skaner jest szybszy, ale może nieprawidłowo wypakowywać metadane w porównaniu z innym ekstraktorami. Zmienianie skanera nie przeładuje automatycznie metadanych istniejących piosenek.</string>
     <string name="restore_lm_tooltip">Dla świeżej instalacji aplikacji, niestandardowe pobrania oraz lokalne media mogą nie działa. By rozwiązać ten problem dodaj je z powrotem.</string>
+    <string name="off">Wyłączono</string>
 </resources>

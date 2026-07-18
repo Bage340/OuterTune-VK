@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -100,6 +101,7 @@ fun LibrarySongsScreen(
 ) {
     if (UI_DEBUG) Log.v("LibrarySongsScreen", "S_RC-1")
     val context = LocalContext.current
+    val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val menuState = LocalMenuState.current
@@ -237,7 +239,7 @@ fun LibrarySongsScreen(
                                 action = {
                                     playerConnection.playQueue(
                                         ListQueue(
-                                            title = context.getString(R.string.queue_all_songs),
+                                            title = resources.getString(R.string.queue_all_songs),
                                             items = songs.map { it.toMediaMetadata() },
                                             startShuffled = false,
                                         )
@@ -250,7 +252,7 @@ fun LibrarySongsScreen(
                                 action = {
                                     playerConnection.playQueue(
                                         ListQueue(
-                                            title = context.getString(R.string.queue_all_songs),
+                                            title = resources.getString(R.string.queue_all_songs),
                                             items = songs.map { it.toMediaMetadata() },
                                             startShuffled = true,
                                         )
@@ -363,7 +365,7 @@ fun LibrarySongsScreen(
                         onPlay = {
                             playerConnection.playQueue(
                                 ListQueue(
-                                    title = context.getString(R.string.queue_all_songs),
+                                    title = resources.getString(R.string.queue_all_songs),
                                     items = songs.map { it.toMediaMetadata() },
                                     startIndex = index
                                 )

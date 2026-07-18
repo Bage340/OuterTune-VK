@@ -266,4 +266,5 @@
         <item quantity="many">%d cançons processades</item>
         <item quantity="other">%d cançons processades</item>
     </plurals>
+    <string name="off">Desactivat</string>
 </resources>

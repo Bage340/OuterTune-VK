@@ -117,4 +117,5 @@
     <string name="oobe_local_music_support_description">Phát tệp nhạc của bạn (VD. MP3, OGG, FLAC,...)</string>
     <string name="oobe_complete_title">Đã thiết lập thành công!</string>
     <string name="oobe_welcome_message">Chào mừng đến với OuterTune</string>
+    <string name="off">Đang tắt</string>
 </resources>

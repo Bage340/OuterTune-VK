@@ -266,4 +266,5 @@
     <string name="scanner_strict_file_paths_description">Disabilita tutte le corrispondenze intelligenti dei metadati. Ciò può causare problemi se i file vengono spostati nella memoria locale, ma consente lo stesso brano in cartelle diverse</string>
     <string name="scanner_type_tooltip">Lo scanner di sistema è più veloce, ma potrebbe estrarre in modo errato alcuni metadati rispetto ad altri estrattori. Tieni presente che il cambio di scanner non ricaricherà automaticamente i metadati dei brani esistenti.</string>
     <string name="restore_lm_tooltip">Per le nuove installazioni dell\'app, i percorsi personalizzati di download e di scansione dei media locali potrebbero non funzionare. Per risolvere il problema, rimuovili e aggiungili nuovamente.</string>
+    <string name="off">Off</string>
 </resources>

@@ -73,6 +73,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -676,6 +677,7 @@ fun LocalPlaylistHeader(
     if (UI_DEBUG) Log.v("LocalPlaylistScreen", "P_H_RC-1")
     val playerConnection = LocalPlayerConnection.current ?: return
     val context = LocalContext.current
+    val resources = LocalResources.current
     val database = LocalDatabase.current
     val isNetworkConnected = LocalNetworkConnected.current
     val scope = rememberCoroutineScope()
@@ -765,9 +767,10 @@ fun LocalPlaylistHeader(
                         IconButton(
                             onClick = {
                                 scope.launch {
+                                    val playlistSyncedMessage = resources.getString(R.string.playlist_synced)
                                     syncUtils.syncPlaylist(playlist.playlist.browseId, playlist.id)
                                     snackbarHostState.showSnackbar(
-                                        message = context.getString(R.string.playlist_synced),
+                                        message = playlistSyncedMessage,
                                         withDismissAction = true
                                     )
                                 }

@@ -287,4 +287,5 @@
     <string name="download_on_wifi_only_title">Descargar solo mediante Wi-Fi</string>
     <string name="download_on_wifi_only_description">No descargar mediante datos móviles. Las canciones puestas en cola mientras se usan datos móviles comenzarán a descargarse automáticamente cuando haya una conexión Wi-Fi disponible</string>
     <string name="download_waiting_for_wifi">Se descargará cuando haya una conexión Wi-Fi</string>
+    <string name="off">Desactivado</string>
 </resources>

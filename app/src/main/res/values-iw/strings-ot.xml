@@ -246,4 +246,5 @@
         <item quantity="other"/>
     </plurals>
     <string name="library_filter">מסנן ספרייה</string>
+    <string name="off">מצב מושבת</string>
 </resources>

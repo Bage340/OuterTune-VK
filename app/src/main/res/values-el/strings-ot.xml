@@ -93,4 +93,5 @@
     <string name="att_maintainer">Συντηρητής</string>
     <string name="att_translator">Μεταφραστής (%s)</string>
     <string name="action_logout_tooltip">Για πλήρη έξοδο, παρακαλώ εξέλθετε απο τον λογαριασμό σας στο YouTube στη διαδικτυακή πύλη του YouTube πρωτού εξέλθετε απο εδώ</string>
+    <string name="off">Ανενεργός</string>
 </resources>

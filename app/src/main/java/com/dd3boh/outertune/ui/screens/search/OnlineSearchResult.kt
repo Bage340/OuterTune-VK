@@ -31,7 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -82,7 +82,7 @@ fun OnlineSearchResult(
     navController: NavController,
     viewModel: OnlineSearchViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
 
@@ -175,7 +175,7 @@ fun OnlineSearchResult(
                                             val songSuggestions = collection.filter { it is SongItem }
                                             playerConnection.playQueue(
                                                 ListQueue(
-                                                    title = "${context.getString(R.string.queue_searched_songs_ot)} ${
+                                                    title = "${resources.getString(R.string.queue_searched_songs_ot)} ${
                                                         URLDecoder.decode(
                                                             viewModel.query,
                                                             "UTF-8"

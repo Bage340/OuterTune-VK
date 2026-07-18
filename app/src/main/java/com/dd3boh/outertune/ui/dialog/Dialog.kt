@@ -66,6 +66,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -498,6 +499,7 @@ fun DetailsDialog(
     setVisibility: (newState: Boolean) -> Unit,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = LocalSnackbarHostState.current
 
@@ -599,7 +601,7 @@ fun DetailsDialog(
                                 coroutineScope.launch {
                                     val job = launch {
                                         snackbarHostState.showSnackbar(
-                                            message = context.getString(R.string.copied),
+                                            message = resources.getString(R.string.copied),
                                             withDismissAction = true,
                                             duration = SnackbarDuration.Indefinite
                                         )

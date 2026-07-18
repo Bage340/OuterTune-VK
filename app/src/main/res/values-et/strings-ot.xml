@@ -167,4 +167,5 @@
     <string name="flat_subfolders_description">Kui soovid säilitada failipuu struktuuri kettal, siis lülita see valik välja</string>
     <string name="dl_migrate_title">Tõsta allalaaditu välisesse andmeruumi…</string>
     <string name="dl_migrate_description">Tõsta allalaaditu rakenduse sisemisest andmeruumist nutiseadme välisesse andmeruumi</string>
+    <string name="off">Väljas</string>
 </resources>

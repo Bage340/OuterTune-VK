@@ -260,4 +260,5 @@
     <string name="oobe_cache_title">歌曲缓存</string>
     <string name="oobe_cache_subtitle">设置歌曲缓存容量。此操作有助于解决网络或 YouTube API 播放时出现的问题</string>
     <string name="restore_lm_tooltip">对于全新安装的应用，自定义下载路径和本地媒体扫描路径可能无法正常工作。要解决此问题，请先移除这些路径，然后重新添加。</string>
+    <string name="off">已关闭</string>
 </resources>

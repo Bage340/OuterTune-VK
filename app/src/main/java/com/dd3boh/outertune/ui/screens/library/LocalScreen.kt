@@ -56,6 +56,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -128,6 +129,7 @@ fun LocalScreen(
     viewModel: LocalLibraryViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val density = LocalDensity.current
     val menuState = LocalMenuState.current
     val coroutineScope = rememberCoroutineScope()
@@ -453,7 +455,7 @@ fun LocalScreen(
                         onPlay = {
                             playerConnection.playQueue(
                                 ListQueue(
-                                    title = context.getString(R.string.local_files),
+                                    title = resources.getString(R.string.local_files),
                                     items = filteredSongs.map { it.toMediaMetadata() },
                                     startIndex = index
                                 )
@@ -524,7 +526,7 @@ fun LocalScreen(
                                         onPlay = {
                                             playerConnection.playQueue(
                                                 ListQueue(
-                                                    title = context.getString(R.string.local_files),
+                                                    title = resources.getString(R.string.local_files),
                                                     items = songs.map { it.toMediaMetadata() },
                                                     startIndex = index
                                                 )
@@ -700,7 +702,7 @@ fun LocalScreen(
                                             .clickable {
                                                 playerConnection.playQueue(
                                                     ListQueue(
-                                                        title = context.getString(R.string.local_files),
+                                                        title = resources.getString(R.string.local_files),
                                                         items = songs.map { it.toMediaMetadata() },
                                                         startIndex = index
                                                     )

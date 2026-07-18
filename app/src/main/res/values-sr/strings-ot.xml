@@ -234,4 +234,5 @@
     <string name="speed_medium">Srednje</string>
     <string name="speed_fast">Brzo</string>
     <string name="speed_very_fast">Veoma brzo</string>
+    <string name="off">Искључено</string>
 </resources>

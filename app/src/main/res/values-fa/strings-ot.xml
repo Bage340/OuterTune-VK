@@ -244,4 +244,5 @@
         <item quantity="one">%d ثانی</item>
         <item quantity="other">%d ثانیه</item>
     </plurals>
+    <string name="off">خاموش</string>
 </resources>

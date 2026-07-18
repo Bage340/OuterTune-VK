@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -94,7 +95,7 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun ColumnScope.BackupAndRestoreFrag(viewModel: BackupRestoreViewModel) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
 
     val backupLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
@@ -117,7 +118,7 @@ fun ColumnScope.BackupAndRestoreFrag(viewModel: BackupRestoreViewModel) {
             onClick = {
                 val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
                 backupLauncher.launch(
-                    "${context.getString(R.string.app_name)}_${MusicDatabase.MUSIC_DATABASE_VERSION}_${
+                    "${resources.getString(R.string.app_name)}_${MusicDatabase.MUSIC_DATABASE_VERSION}_${
                         LocalDateTime.now().format(formatter)
                     }.backup"
                 )
@@ -783,7 +784,7 @@ fun ColumnScope.SongCacheFrag() {
         values = listOf(0, 128, 256, 512, 1024, 2048, 4096, 8192, -1),
         valueText = {
             when (it) {
-                0 -> stringResource(androidx.compose.ui.R.string.state_off)
+                0 -> stringResource(R.string.off)
                 -1 -> stringResource(R.string.unlimited)
                 else -> formatFileSize(it * 1024 * 1024L)
             }
@@ -900,7 +901,7 @@ fun ColumnScope.ImageCacheFrag() {
         values = listOf(0, 128, 256, 512, 1024, 2048, 4096, 8192),
         valueText = {
             when (it) {
-                0 -> stringResource(androidx.compose.ui.R.string.state_off)
+                0 -> stringResource(R.string.off)
                 else -> formatFileSize(it * 1024 * 1024L)
             }
         },

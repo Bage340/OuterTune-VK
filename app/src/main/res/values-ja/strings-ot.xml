@@ -144,6 +144,7 @@
     <string name="action_next">次へ</string>
     <string name="action_skip">スキップ</string>
     <string name="info">情報</string>
+    <string name="off">OFF</string>
     <string name="player_background_style">プレーヤーの背景スタイル</string>
     <string name="show_queue_title">プレーヤーにキュー名表示</string>
     <string name="oobe_use_backup">バックアップがある</string>
