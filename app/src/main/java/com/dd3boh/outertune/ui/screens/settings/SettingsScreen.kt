@@ -21,9 +21,10 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Interests
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.material.icons.rounded.Storage
@@ -93,16 +94,6 @@ fun SettingsScreen(
                 icon = { Icon(Icons.Rounded.AccountCircle, null) },
                 onClick = { navController.navigate("settings/account_sync") }
             )
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.grp_library_and_content)) },
-                icon = { Icon(Icons.AutoMirrored.Rounded.LibraryBooks, null) },
-                onClick = { navController.navigate("settings/library") }
-            )
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.local_player_settings_title)) },
-                icon = { Icon(Icons.Rounded.SdCard, null) },
-                onClick = { navController.navigate("settings/local") }
-            )
         }
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -110,21 +101,10 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             PreferenceEntry(
-                title = { Text(stringResource(R.string.appearance)) },
+                title = { Text(stringResource(R.string.grp_appearance_controls)) },
                 icon = { Icon(Icons.Rounded.Palette, null) },
                 onClick = { navController.navigate("settings/appearance") }
             )
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.grp_interface)) },
-                icon = { Icon(Icons.Rounded.Interests, null) },
-                onClick = { navController.navigate("settings/interface") }
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
             PreferenceEntry(
                 title = { Text(stringResource(R.string.player_and_audio)) },
                 icon = { Icon(Icons.Rounded.PlayArrow, null) },
@@ -137,14 +117,40 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             PreferenceEntry(
-                title = { Text(stringResource(R.string.backup_restore)) },
-                icon = { Icon(Icons.Rounded.Restore, null) },
-                onClick = { navController.navigate("settings/backup_restore") }
+                title = { Text(stringResource(R.string.grp_library_and_content)) },
+                icon = { Icon(Icons.AutoMirrored.Rounded.LibraryBooks, null) },
+                onClick = { navController.navigate("settings/library") }
             )
+            PreferenceEntry(
+                title = { Text(stringResource(R.string.local_player_settings_title)) },
+                icon = { Icon(Icons.Rounded.SdCard, null) },
+                onClick = { navController.navigate("settings/local") }
+            )
+            PreferenceEntry(
+                title = { Text(stringResource(R.string.lyrics_settings_title)) },
+                icon = { Icon(Icons.Rounded.Lyrics, null) },
+                onClick = { navController.navigate("settings/lyrics") }
+            )
+            PreferenceEntry(
+                title = { Text(stringResource(R.string.privacy)) },
+                icon = { Icon(Icons.Rounded.PrivacyTip, null) },
+                onClick = { navController.navigate("settings/privacy") }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
             PreferenceEntry(
                 title = { Text(stringResource(R.string.storage)) },
                 icon = { Icon(Icons.Rounded.Storage, null) },
                 onClick = { navController.navigate("settings/storage") }
+            )
+            PreferenceEntry(
+                title = { Text(stringResource(R.string.backup_restore)) },
+                icon = { Icon(Icons.Rounded.Restore, null) },
+                onClick = { navController.navigate("settings/backup_restore") }
             )
         }
         Spacer(modifier = Modifier.height(16.dp))

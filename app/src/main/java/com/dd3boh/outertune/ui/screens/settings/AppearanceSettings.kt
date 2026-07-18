@@ -19,7 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Interests
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,15 +32,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.SlimNavBarKey
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
-import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
+import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.component.button.IconButton
-import com.dd3boh.outertune.ui.screens.settings.fragments.AppearanceMiscFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.GestureSettingsFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.TabArrangementFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.TabExtrasFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.ThemeAppFrag
-import com.dd3boh.outertune.ui.screens.settings.fragments.ThemePlayerFrag
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.utils.rememberPreference
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.CompositionLocalProvider
@@ -54,6 +57,7 @@ fun AppearanceSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
+    val (slimNav, onSlimNavChange) = rememberPreference(SlimNavBarKey, defaultValue = false)
 
     ColumnWithContentPadding(
         modifier = Modifier.fillMaxHeight(),
@@ -71,37 +75,46 @@ fun AppearanceSettings(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
+        PreferenceGroupTitle(
+            title = stringResource(R.string.grp_layout)
+        )
         ElevatedCard(
             modifier = Modifier.fillMaxWidth()
         ) {
-            ThemePlayerFrag()
+            TabArrangementFrag()
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            AppearanceMiscFrag()
-        }
-        Spacer(modifier = Modifier.height(48.dp))
-
         PreferenceGroupTitle(
-            title = stringResource(R.string.more_settings)
+            title = stringResource(R.string.grp_display)
         )
-
         ElevatedCard(
             modifier = Modifier.fillMaxWidth()
         ) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.grp_interface)) },
-                icon = { Icon(Icons.Rounded.Interests, null) },
-                onClick = { navController.navigate("settings/interface") }
+            TabExtrasFrag()
+            SwitchPreference(
+                title = { Text(stringResource(R.string.slim_navbar_title)) },
+                description = stringResource(R.string.slim_navbar_description),
+                icon = { Icon(Icons.Rounded.MoreHoriz, null) },
+                checked = slimNav,
+                onCheckedChange = onSlimNavChange
             )
         }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PreferenceGroupTitle(
+            title = stringResource(R.string.grp_behavior)
+        )
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            GestureSettingsFrag()
+        }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 
     TopAppBar(
-        title = { Text(stringResource(R.string.appearance)) },
+        title = { Text(stringResource(R.string.grp_appearance_controls)) },
         navigationIcon = {
             IconButton(
                 onClick = navController::navigateUp,

@@ -21,9 +21,7 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Reorder
-import androidx.compose.material.icons.rounded.Swipe
 import androidx.compose.material.icons.rounded.Tab
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,17 +45,13 @@ import com.dd3boh.outertune.constants.ContentLanguageKey
 import com.dd3boh.outertune.constants.CountryCodeToName
 import com.dd3boh.outertune.constants.DEFAULT_ENABLED_FILTERS
 import com.dd3boh.outertune.constants.DEFAULT_ENABLED_TABS
-import com.dd3boh.outertune.constants.DEFAULT_SHOW_LYRICS_ON_CLICK
-import com.dd3boh.outertune.constants.DEFAULT_SWIPE_TO_SKIP
 import com.dd3boh.outertune.constants.DefaultOpenTabKey
 import com.dd3boh.outertune.constants.EnabledFiltersKey
 import com.dd3boh.outertune.constants.EnabledTabsKey
 import com.dd3boh.outertune.constants.LanguageCodeToName
 import com.dd3boh.outertune.constants.ListItemHeight
-import com.dd3boh.outertune.constants.ShowLyricsOnClickKey
 import com.dd3boh.outertune.constants.SYSTEM_DEFAULT
 import com.dd3boh.outertune.constants.SwipeToQueueKey
-import com.dd3boh.outertune.constants.SwipeToSkipKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.ui.component.ListPreference
@@ -399,12 +393,7 @@ fun ColumnScope.TabExtrasFrag() {
 
 @Composable
 fun ColumnScope.GestureSettingsFrag() {
-    val (swipeToSkip, onSwipeToSkipChange) = rememberPreference(SwipeToSkipKey, defaultValue = DEFAULT_SWIPE_TO_SKIP)
     val (swipe2Queue, onSwipe2QueueChange) = rememberPreference(SwipeToQueueKey, defaultValue = true)
-    val (showLyricsOnClick, onShowLyricsOnClickChange) = rememberPreference(
-        ShowLyricsOnClickKey,
-        defaultValue = DEFAULT_SHOW_LYRICS_ON_CLICK
-    )
 
     SwitchPreference(
         title = { Text(stringResource(R.string.swipe2Queue)) },
@@ -412,20 +401,6 @@ fun ColumnScope.GestureSettingsFrag() {
         icon = { Icon(Icons.AutoMirrored.Rounded.PlaylistAdd, null) },
         checked = swipe2Queue,
         onCheckedChange = onSwipe2QueueChange
-    )
-    SwitchPreference(
-        title = { Text(stringResource(R.string.swipe_to_skip_title)) },
-        description = stringResource(R.string.swipe_to_skip_description),
-        icon = { Icon(Icons.Rounded.Swipe, null) },
-        checked = swipeToSkip,
-        onCheckedChange = onSwipeToSkipChange
-    )
-    SwitchPreference(
-        title = { Text(stringResource(R.string.tap_artwork_to_show_lyrics_title)) },
-        description = stringResource(R.string.tap_artwork_to_show_lyrics_description),
-        icon = { Icon(Icons.Rounded.Lyrics, null) },
-        checked = showLyricsOnClick,
-        onCheckedChange = onShowLyricsOnClickChange
     )
 }
 

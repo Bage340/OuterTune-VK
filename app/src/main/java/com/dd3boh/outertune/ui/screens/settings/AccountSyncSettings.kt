@@ -10,6 +10,8 @@
 package com.dd3boh.outertune.ui.screens.settings
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,11 +28,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.InnerTubeCookieKey
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
@@ -38,10 +43,11 @@ import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.screens.settings.fragments.AccountExtrasFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.AccountFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.SyncAutoFrag
-import com.dd3boh.outertune.ui.screens.settings.fragments.SyncExtrasFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.SyncManualFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.SyncParamsFrag
 import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.utils.rememberPreference
+import com.zionhuang.innertube.utils.parseCookieString
 
 @SuppressLint("PrivateResource")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +56,11 @@ fun AccountSyncSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
+    val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
+    val isLoggedIn = remember(innerTubeCookie) {
+        "SAPISID" in parseCookieString(innerTubeCookie)
+    }
+
     ColumnWithContentPadding(
         modifier = Modifier.fillMaxHeight(),
         columnModifier = Modifier
@@ -67,45 +78,41 @@ fun AccountSyncSettings(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            AccountExtrasFrag()
+        AnimatedVisibility(isLoggedIn) {
+            Column {
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    AccountExtrasFrag()
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                PreferenceGroupTitle(
+                    title = stringResource(R.string.grp_sync)
+                )
+
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SyncAutoFrag()
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SyncManualFrag()
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SyncParamsFrag()
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        PreferenceGroupTitle(
-            title = stringResource(R.string.grp_sync)
-        )
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            SyncAutoFrag()
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            SyncManualFrag()
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            SyncParamsFrag()
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            SyncExtrasFrag()
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
     }
 
     TopAppBar(
@@ -125,4 +132,3 @@ fun AccountSyncSettings(
         scrollBehavior = scrollBehavior
     )
 }
-

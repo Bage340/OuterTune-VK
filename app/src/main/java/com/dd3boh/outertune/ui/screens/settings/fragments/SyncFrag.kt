@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.SyncLock
 import androidx.compose.material.icons.rounded.SyncProblem
@@ -40,8 +39,6 @@ import com.dd3boh.outertune.LocalSnackbarHostState
 import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.InnerTubeCookieKey
-import com.dd3boh.outertune.constants.PauseListenHistoryKey
-import com.dd3boh.outertune.constants.PauseRemoteListenHistoryKey
 import com.dd3boh.outertune.constants.SyncConflictResolution
 import com.dd3boh.outertune.constants.SyncContent
 import com.dd3boh.outertune.constants.SyncMode
@@ -220,28 +217,6 @@ fun ColumnScope.SyncParamsFrag() {
 }
 
 @Composable
-fun ColumnScope.SyncExtrasFrag() {
-    val (innerTubeCookie, onInnerTubeCookieChange) = rememberPreference(InnerTubeCookieKey, "")
-    val isLoggedIn = remember(innerTubeCookie) {
-        "SAPISID" in parseCookieString(innerTubeCookie)
-    }
-
-    val pauseListenHistory by rememberPreference(key = PauseListenHistoryKey, defaultValue = false)
-    val (pauseRemoteListenHistory, onPauseRemoteListenHistoryChange) = rememberPreference(
-        key = PauseRemoteListenHistoryKey,
-        defaultValue = false
-    )
-
-    SwitchPreference(
-        title = { Text(stringResource(R.string.pause_remote_listen_history)) },
-        icon = { Icon(Icons.Rounded.History, null) },
-        checked = pauseRemoteListenHistory,
-        onCheckedChange = onPauseRemoteListenHistoryChange,
-        isEnabled = !pauseListenHistory && isLoggedIn
-    )
-}
-
-@Composable
 fun SyncProgressItem(isSyncing: Boolean, modifier: Modifier = Modifier) {
     AnimatedVisibility(isSyncing) {
         Row(
@@ -263,10 +238,4 @@ private fun SyncAutoFragPreview() {
 @Composable
 private fun SyncParamsFragPreview() {
     Column { SyncParamsFrag() }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SyncExtrasFragPreview() {
-    Column { SyncExtrasFrag() }
 }

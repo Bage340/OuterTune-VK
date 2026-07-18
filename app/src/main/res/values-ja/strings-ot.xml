@@ -25,9 +25,12 @@
     <string name="sync_progress_success">同期完了</string>
     <string name="prefs_advanced">高度なオプション</string>
     <string name="settings_debug">デバッグ</string>
+    <string name="grp_appearance_controls">外観と操作</string>
     <string name="grp_audio">オーディオ</string>
+    <string name="grp_display">表示</string>
     <string name="grp_layout">配置</string>
     <string name="grp_localization">言語設定</string>
+    <string name="grp_now_playing">再生画面</string>
     <string name="grp_lyrics_format">書式設定</string>
     <string name="grp_lyrics_parser">歌詞解析</string>
     <string name="swipe2Queue">スワイプで、キューに追加</string>
