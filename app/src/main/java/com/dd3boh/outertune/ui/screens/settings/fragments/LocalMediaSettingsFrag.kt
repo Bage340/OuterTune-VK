@@ -57,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -110,6 +111,7 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun ColumnScope.LocalScannerFrag() {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val database = LocalDatabase.current
     val coroutineScope = rememberCoroutineScope()
     val playerConnection = LocalPlayerConnection.current
@@ -179,7 +181,7 @@ fun ColumnScope.LocalScannerFrag() {
                 ) {
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.scanner_missing_storage_perm),
+                            message = resources.getString(R.string.scanner_missing_storage_perm),
                             withDismissAction = true,
                             duration = SnackbarDuration.Short
                         )
@@ -206,6 +208,7 @@ fun ColumnScope.LocalScannerFrag() {
                     if (scannerState > 0) {
                         return@launch
                     }
+                    val scanFailMessage = resources.getString(R.string.scanner_scan_fail)
                     // full rescan
                     if (fullRescan) {
                         try {
@@ -230,7 +233,7 @@ fun ColumnScope.LocalScannerFrag() {
                             scannerFailure = true
 
                             snackbarHostState.showSnackbar(
-                                message = "${context.getString(R.string.scanner_scan_fail)}: ${e.message}",
+                                message = "$scanFailMessage: ${e.message}",
                                 withDismissAction = true,
                                 duration = SnackbarDuration.Short
                             )
@@ -266,7 +269,7 @@ fun ColumnScope.LocalScannerFrag() {
                             scannerFailure = true
 
                             snackbarHostState.showSnackbar(
-                                message = "${context.getString(R.string.scanner_scan_fail)}: ${e.message}",
+                                message = "$scanFailMessage: ${e.message}",
                                 withDismissAction = true,
                                 duration = SnackbarDuration.Short
                             )

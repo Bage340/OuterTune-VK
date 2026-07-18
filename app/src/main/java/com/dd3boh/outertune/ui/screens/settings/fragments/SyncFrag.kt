@@ -32,7 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.LocalNetworkConnected
@@ -83,7 +83,7 @@ fun ColumnScope.SyncAutoFrag() {
 
 @Composable
 fun ColumnScope.SyncManualFrag() {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     val isNetworkConnected = LocalNetworkConnected.current
     val syncUtils = LocalSyncUtils.current
@@ -111,15 +111,16 @@ fun ColumnScope.SyncManualFrag() {
         icon = { Icon(Icons.Rounded.Sync, null) },
         onClick = {
             coroutineScope.launch(Dispatchers.Main) {
+                val syncSuccessMessage = resources.getString(R.string.sync_progress_success)
                 snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.sync_progress_active),
+                    message = resources.getString(R.string.sync_progress_active),
                     withDismissAction = true,
                     duration = SnackbarDuration.Short
                 )
 
                 syncUtils.tryAutoSync(true)
                 snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.sync_progress_success),
+                    message = syncSuccessMessage,
                     withDismissAction = true,
                     duration = SnackbarDuration.Short
                 )

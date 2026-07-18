@@ -266,4 +266,5 @@
     <string name="scanner_strict_file_paths_description">Desativa toda a correspondência inteligente de metadados. Isso pode causar problemas se os arquivos forem movidos no seu armazenamento local, mas permite a mesma música em pastas diferentes</string>
     <string name="scanner_type_tooltip">O busca do sistema é mais rápida, mas pode extrair alguns metadados incorretamente comparado a outros extratores. Observe que ao alterar buscadores, os metadados de músicas existentes não serão recarregados.</string>
     <string name="restore_lm_tooltip">Em instalações limpas do app, caminhos de busca de mídia local e download podem não funcionar. Para resolver isso, remova-os e adicione-os novamente.</string>
+    <string name="off">Desativado</string>
 </resources>

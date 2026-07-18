@@ -220,4 +220,5 @@
     <string name="ffmpeg_lgpl">هدا التطبيق يستعمل مكاتب من FFmpeg project تحت حقوق LGPLv2.1</string>
     <string name="action_logout_tooltip">"لتسجيل خروج تام،المرجوا تسجيل الخروج من حساب YouTube  الخاص بك في the web portal  قبل استعمال زر تسجيل الخروج"</string>
     <string name="audio_decoder_ffmpeg_only">إعدادات المشغل</string>
+    <string name="off">غير مفعَّل</string>
 </resources>

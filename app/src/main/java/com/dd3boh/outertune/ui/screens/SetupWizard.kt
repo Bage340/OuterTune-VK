@@ -644,7 +644,7 @@ fun SetupWizard(
                                 values = listOf(0, 128, 256, 512, 1024, 2048, 4096, 8192, -1),
                                 valueText = {
                                     when (it) {
-                                        0 -> stringResource(androidx.compose.ui.R.string.state_off)
+                                        0 -> stringResource(R.string.off)
                                         -1 -> stringResource(R.string.unlimited)
                                         else -> formatFileSize(it * 1024 * 1024L)
                                     }

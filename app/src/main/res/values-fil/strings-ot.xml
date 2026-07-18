@@ -9,4 +9,5 @@
     <string name="queue_remote_history">Kasaysayan (remote)</string>
     <string name="library_filter">Silid-aklatan filter</string>
     <string name="library_empty">ang iyong library contents ay lalabas dito</string>
+    <string name="off">Naka-off</string>
 </resources>

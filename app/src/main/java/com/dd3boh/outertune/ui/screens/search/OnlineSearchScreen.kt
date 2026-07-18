@@ -33,7 +33,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -84,7 +84,7 @@ fun OnlineSearchScreen(
     viewModel: OnlineSearchSuggestionViewModel = hiltViewModel(),
 ) {
     val menuState = LocalMenuState.current
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val database = LocalDatabase.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -240,7 +240,7 @@ fun OnlineSearchScreen(
                                         val songSuggestions = viewState.items.filter { it is SongItem }
                                         playerConnection.playQueue(
                                             ListQueue(
-                                                title = "${context.getString(R.string.queue_searched_songs_ot)} $query",
+                                                title = "${resources.getString(R.string.queue_searched_songs_ot)} $query",
                                                 items = songSuggestions.map { (it as SongItem).toMediaMetadata() },
                                                 startIndex = songSuggestions.indexOf(item)
                                             ),

@@ -46,7 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -85,7 +85,7 @@ fun AboutScreen(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val clipboardManager = LocalClipboard.current
     val uriHandler = LocalUriHandler.current
 
@@ -212,7 +212,7 @@ fun AboutScreen(
                     title = { Text(stringResource(R.string.help_contact_email_inquiries)) },
                     onClick = {
                         val clipData = ClipData.newPlainText(
-                            context.getString(R.string.app_name),
+                            resources.getString(R.string.app_name),
                             AnnotatedString("outertune@protonmail.com")
                         )
                         clipboardManager.nativeClipboard.setPrimaryClip(clipData)

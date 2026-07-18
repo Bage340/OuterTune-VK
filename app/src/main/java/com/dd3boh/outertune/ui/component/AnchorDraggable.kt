@@ -45,8 +45,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
@@ -70,7 +70,7 @@ fun SwipeToQueueBox(
     snackbarHostState: SnackbarHostState? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val context = LocalContext.current
+    val resources = LocalResources.current
     val coroutineScope = rememberCoroutineScope()
     val playerConnection = LocalPlayerConnection.current
 
@@ -79,7 +79,7 @@ fun SwipeToQueueBox(
             playerConnection?.enqueueNext(item)
             coroutineScope.launch {
                 snackbarHostState?.showSnackbar(
-                    message = context.getString(
+                    message = resources.getString(
                         R.string.song_added_to_queue,
                         item.mediaMetadata.title
                     ),
@@ -93,7 +93,7 @@ fun SwipeToQueueBox(
             coroutineScope.launch {
                 val job = launch {
                     snackbarHostState?.showSnackbar(
-                        message = context.getString(
+                        message = resources.getString(
                             R.string.song_added_to_queue_end,
                             item.mediaMetadata.title
                         ),

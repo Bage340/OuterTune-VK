@@ -217,4 +217,5 @@
     </plurals>
     <string name="scanner_strict_file_name_title">Noms de fitxer estrictes</string>
     <string name="scanner_strict_file_name_description">Quan està activat, els noms de fitxer NO s’ignoraran. Per exemple, Song.ogg serà una cançó diferent de Song.flac. La sensibilitat de l’escàner encara s’aplicarà</string>
+    <string name="off">Desactivat</string>
 </resources>

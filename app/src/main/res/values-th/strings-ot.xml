@@ -42,4 +42,5 @@
     <string name="track_number">หมายเลขแทร็ก</string>
     <string name="play_count">จำนวนครั้งการเล่น</string>
     <string name="playlist_add_local_to_synced_note">หมายเหตุ: การเพิ่มเพลงในเครื่องลงในเพลย์ลิสต์ที่ซิงค์/ระยะไกลไม่ได้รับการสนับสนุน การผสมผสานแบบอื่น ๆ สามารถใช้งานได้</string>
+    <string name="off">ปิดอยู่</string>
 </resources>

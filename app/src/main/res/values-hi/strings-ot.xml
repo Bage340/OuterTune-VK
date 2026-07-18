@@ -236,4 +236,5 @@
     <string name="oobe_ytm_logon_subtitle">अपनी निजी अकाउंट सामग्री को सिंक करने और एक्सेस करने के लिए अपने YouTube Music अकाउंट में साइन इन करें। यह वैकल्पिक है।</string>
     <string name="oobe_local_media_title">स्थानीय मीडिया</string>
     <string name="oobe_local_media_subtitle">अपने संगीत वाले फ़ोल्डर चुनें। हम उन्हें स्कैन करके गाने जोड़ देंगे।</string>
+    <string name="off">बंद है</string>
 </resources>

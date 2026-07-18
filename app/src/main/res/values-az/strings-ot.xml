@@ -66,4 +66,5 @@
     <string name="device_info_title">Cihaz məlumatları</string>
     <string name="help_bug_report_action">Xəta bildir</string>
     <string name="help_support_forum">Dəstək</string>
+    <string name="off">Deaktiv</string>
 </resources>

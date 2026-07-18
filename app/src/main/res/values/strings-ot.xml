@@ -371,6 +371,7 @@ while also allowing users to translate our app as well. New, specific strings to
     <string name="action_skip">Skip</string>
     <string name="action_cancel">Cancel</string>
     <string name="info">Information</string>
+    <string name="off">Off</string>
     <plurals name="second">
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
