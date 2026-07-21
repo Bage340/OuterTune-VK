@@ -13,6 +13,9 @@ import android.annotation.SuppressLint
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -41,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,12 +54,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.media3.common.C
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Player.STATE_READY
@@ -63,17 +71,61 @@ import coil3.compose.AsyncImage
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.DEFAULT_SWIPE_TO_SKIP
 import com.dd3boh.outertune.constants.ListThumbnailSize
 import com.dd3boh.outertune.constants.MiniPlayerHeight
+import com.dd3boh.outertune.constants.SwipeToSkipKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.ui.component.button.IconButton
+import com.dd3boh.outertune.utils.rememberPreference
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.math.sign
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.tooling.preview.Preview
+
+/** Horizontal distance that always completes a mini player swipe. */
+private val MiniPlayerSwipeDistanceThreshold: Dp = 64.dp
+
+/** Shortest horizontal distance that a fast fling may complete a mini player swipe with. */
+private val MiniPlayerFlingDistanceThreshold: Dp = 24.dp
+
+/** Release speed, per second, that a fling must reach to complete a mini player swipe. */
+private val MiniPlayerFlingVelocityThreshold: Dp = 1000.dp
+
+internal enum class MiniPlayerSwipeDirection { NEXT, PREVIOUS }
+
+/**
+ * Decides which song a finished horizontal mini player gesture moves to, or null when the gesture
+ * is too short or too slow. All arguments are pixels; velocity is pixels per second.
+ *
+ * A fling also requires the accumulated distance and the release velocity to share a direction, so
+ * that a gesture reversed just before release does not skip.
+ */
+internal fun resolveMiniPlayerSwipeDirection(
+    distancePx: Float,
+    velocityPxPerSecond: Float,
+    normalDistanceThresholdPx: Float,
+    minimumFlingDistancePx: Float,
+    velocityThresholdPxPerSecond: Float,
+): MiniPlayerSwipeDirection? {
+    if (distancePx == 0f) return null
+
+    val isFling = abs(distancePx) >= minimumFlingDistancePx &&
+            abs(velocityPxPerSecond) >= velocityThresholdPxPerSecond &&
+            sign(velocityPxPerSecond) == sign(distancePx)
+    if (abs(distancePx) < normalDistanceThresholdPx && !isFling) return null
+
+    return if (distancePx < 0f) MiniPlayerSwipeDirection.NEXT else MiniPlayerSwipeDirection.PREVIOUS
+}
+
+/** Whether [targetIndex] refers to a song other than the one at [currentIndex]. */
+internal fun canSeekToMiniPlayerSwipeTarget(targetIndex: Int, currentIndex: Int): Boolean =
+    targetIndex != C.INDEX_UNSET && targetIndex != currentIndex
 
 @Composable
 fun MiniPlayer(
@@ -88,6 +140,15 @@ fun MiniPlayer(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
 
+    val swipeToSkip by rememberPreference(SwipeToSkipKey, defaultValue = DEFAULT_SWIPE_TO_SKIP)
+    val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val normalDistanceThresholdPx = with(density) { MiniPlayerSwipeDistanceThreshold.toPx() }
+    val minimumFlingDistancePx = with(density) { MiniPlayerFlingDistanceThreshold.toPx() }
+    val velocityThresholdPxPerSecond = with(density) { MiniPlayerFlingVelocityThreshold.toPx() }
+
+    var swipeDistancePx by remember { mutableFloatStateOf(0f) }
+    val swipeState = rememberDraggableState { delta -> swipeDistancePx += delta }
 
     var position by rememberSaveable(playbackState) {
         mutableLongStateOf(playerConnection.player.currentPosition)
@@ -130,7 +191,51 @@ fun MiniPlayer(
                 .fillMaxSize(),
         ) {
             val iconButtonColor = MaterialTheme.colorScheme.onSecondaryContainer
-            Box(Modifier.weight(1f)) {
+            Box(
+                Modifier
+                    .weight(1f)
+                    .draggable(
+                        state = swipeState,
+                        orientation = Orientation.Horizontal,
+                        enabled = swipeToSkip && mediaMetadata != null,
+                        onDragStarted = { swipeDistancePx = 0f },
+                        onDragStopped = { velocity ->
+                            val direction = resolveMiniPlayerSwipeDirection(
+                                distancePx = swipeDistancePx,
+                                velocityPxPerSecond = velocity,
+                                normalDistanceThresholdPx = normalDistanceThresholdPx,
+                                minimumFlingDistancePx = minimumFlingDistancePx,
+                                velocityThresholdPxPerSecond = velocityThresholdPxPerSecond,
+                            )
+                            swipeDistancePx = 0f
+
+                            val player = playerConnection.player
+                            when (direction) {
+                                MiniPlayerSwipeDirection.NEXT ->
+                                    if (canSeekToMiniPlayerSwipeTarget(
+                                            player.nextMediaItemIndex,
+                                            player.currentMediaItemIndex
+                                        )
+                                    ) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                                        player.seekToNext()
+                                    }
+
+                                MiniPlayerSwipeDirection.PREVIOUS ->
+                                    if (canSeekToMiniPlayerSwipeTarget(
+                                            player.previousMediaItemIndex,
+                                            player.currentMediaItemIndex
+                                        )
+                                    ) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                                        player.seekToPreviousMediaItem()
+                                    }
+
+                                null -> {}
+                            }
+                        },
+                    )
+            ) {
                 mediaMetadata?.let {
                     MiniMediaInfo(
                         mediaMetadata = it,
