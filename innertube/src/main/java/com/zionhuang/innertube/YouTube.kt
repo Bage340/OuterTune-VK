@@ -882,8 +882,16 @@ object YouTube {
             .jsonPrimitive.content
     }
 
-    suspend fun accountInfo(): Result<AccountInfo> = runCatching {
-        innerTube.accountMenu(WEB_REMIX).body<AccountMenuResponse>()
+    /**
+     * Fetches account information with an explicit cookie, visitor data and dataSyncId snapshot, so
+     * that the request is not affected by asynchronous updates to the shared credentials.
+     */
+    suspend fun accountInfo(
+        cookie: String?,
+        visitorData: String?,
+        dataSyncId: String?,
+    ): Result<AccountInfo> = runCatching {
+        innerTube.accountMenu(WEB_REMIX, cookie, visitorData, dataSyncId).body<AccountMenuResponse>()
             .actions[0].openPopupAction.popup.multiPageMenuRenderer
             .header?.activeAccountHeaderRenderer
             ?.toAccountInfo()

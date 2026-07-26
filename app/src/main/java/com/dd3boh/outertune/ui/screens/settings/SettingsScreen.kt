@@ -58,6 +58,7 @@ import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.LastVersionKey
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.constants.UpdateAvailableKey
+import com.dd3boh.outertune.ui.component.AccountAvatar
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.button.IconButton
@@ -91,7 +92,7 @@ fun SettingsScreen(
         ) {
             PreferenceEntry(
                 title = { Text(stringResource(R.string.grp_account_sync)) },
-                icon = { Icon(Icons.Rounded.AccountCircle, null) },
+                icon = { AccountAvatar { Icon(Icons.Rounded.AccountCircle, null) } },
                 onClick = { navController.navigate("settings/account_sync") }
             )
         }

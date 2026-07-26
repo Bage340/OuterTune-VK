@@ -29,38 +29,48 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.edit
 import androidx.navigation.NavController
 import com.dd3boh.outertune.App.Companion.forgetAccount
+import com.dd3boh.outertune.LocalAccountImageFetcher
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AccountChannelHandleKey
 import com.dd3boh.outertune.constants.AccountEmailKey
+import com.dd3boh.outertune.constants.AccountImageFetchedKey
+import com.dd3boh.outertune.constants.AccountImageUrlKey
 import com.dd3boh.outertune.constants.AccountNameKey
 import com.dd3boh.outertune.constants.DataSyncIdKey
 import com.dd3boh.outertune.constants.InnerTubeCookieKey
 import com.dd3boh.outertune.constants.UseLoginForBrowse
 import com.dd3boh.outertune.constants.VisitorDataKey
+import com.dd3boh.outertune.ui.component.AccountAvatar
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.dialog.InfoLabel
 import com.dd3boh.outertune.ui.dialog.TextFieldDialog
+import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.rememberPreference
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.utils.parseCookieString
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun ColumnScope.AccountFrag(navController: NavController) {
     val context = LocalContext.current
 
-    val (accountName, onAccountNameChange) = rememberPreference(AccountNameKey, "")
-    val (accountEmail, onAccountEmailChange) = rememberPreference(AccountEmailKey, "")
-    val (accountChannelHandle, onAccountChannelHandleChange) = rememberPreference(AccountChannelHandleKey, "")
-    val (innerTubeCookie, onInnerTubeCookieChange) = rememberPreference(InnerTubeCookieKey, "")
-    val (visitorData, onVisitorDataChange) = rememberPreference(VisitorDataKey, "")
-    val (dataSyncId, onDataSyncIdChange) = rememberPreference(DataSyncIdKey, "")
+    val accountName by rememberPreference(AccountNameKey, "")
+    val accountEmail by rememberPreference(AccountEmailKey, "")
+    val accountChannelHandle by rememberPreference(AccountChannelHandleKey, "")
+    val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
+    val visitorData by rememberPreference(VisitorDataKey, "")
+    val dataSyncId by rememberPreference(DataSyncIdKey, "")
+    val accountImageFetcher = LocalAccountImageFetcher.current
     val isLoggedIn = remember(innerTubeCookie) {
         "SAPISID" in parseCookieString(innerTubeCookie)
     }
@@ -79,7 +89,7 @@ fun ColumnScope.AccountFrag(navController: NavController) {
             accountEmail.takeIf { it.isNotEmpty() }
                 ?: accountChannelHandle.takeIf { it.isNotEmpty() }
         } else null,
-        icon = { Icon(Icons.Rounded.Person, null) },
+        icon = { AccountAvatar { Icon(Icons.Rounded.Person, null) } },
         onClick = { navController.navigate("login") }
     )
     if (isLoggedIn) {
@@ -134,20 +144,20 @@ fun ColumnScope.AccountFrag(navController: NavController) {
             modifier = Modifier,
             initialTextFieldValue = TextFieldValue(text),
             onDone = { data ->
-                data.split("\n").forEach {
-                    if (it.startsWith("***INNERTUBE COOKIE*** =")) {
-                        onInnerTubeCookieChange(it.substringAfter("***INNERTUBE COOKIE*** ="))
-                    } else if (it.startsWith("***VISITOR DATA*** =")) {
-                        onVisitorDataChange(it.substringAfter("***VISITOR DATA*** ="))
-                    } else if (it.startsWith("***DATASYNC ID*** =")) {
-                        onDataSyncIdChange(it.substringAfter("***DATASYNC ID*** ="))
-                    } else if (it.startsWith("***ACCOUNT NAME*** =")) {
-                        onAccountNameChange(it.substringAfter("***ACCOUNT NAME*** ="))
-                    } else if (it.startsWith("***ACCOUNT EMAIL*** =")) {
-                        onAccountEmailChange(it.substringAfter("***ACCOUNT EMAIL*** ="))
-                    } else if (it.startsWith("***ACCOUNT CHANNEL HANDLE*** =")) {
-                        onAccountChannelHandleChange(it.substringAfter("***ACCOUNT CHANNEL HANDLE*** ="))
+                // Not tied to this screen, so that neither the write nor the fetch is cancelled
+                // when the dialog and the settings screen go away.
+                GlobalScope.launch {
+                    context.dataStore.edit { settings ->
+                        data.split("\n").forEach { line ->
+                            TOKEN_EDITOR_FIELDS.firstOrNull { line.startsWith(it.first) }?.let { (prefix, key) ->
+                                settings[key] = line.substringAfter(prefix)
+                            }
+                        }
+                        // The stored image belongs to the credentials being replaced.
+                        settings.remove(AccountImageUrlKey)
+                        settings.remove(AccountImageFetchedKey)
                     }
+                    accountImageFetcher.fetch()
                 }
             },
             onDismiss = { showTokenEditor = false },
@@ -168,6 +178,15 @@ fun ColumnScope.AccountFrag(navController: NavController) {
         )
     }
 }
+
+private val TOKEN_EDITOR_FIELDS = listOf(
+    "***INNERTUBE COOKIE*** =" to InnerTubeCookieKey,
+    "***VISITOR DATA*** =" to VisitorDataKey,
+    "***DATASYNC ID*** =" to DataSyncIdKey,
+    "***ACCOUNT NAME*** =" to AccountNameKey,
+    "***ACCOUNT EMAIL*** =" to AccountEmailKey,
+    "***ACCOUNT CHANNEL HANDLE*** =" to AccountChannelHandleKey,
+)
 
 @Composable
 fun ColumnScope.AccountExtrasFrag() {

@@ -2,6 +2,7 @@ package com.zionhuang.innertube.models.response
 
 import com.zionhuang.innertube.models.AccountInfo
 import com.zionhuang.innertube.models.Runs
+import com.zionhuang.innertube.models.Thumbnail
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -33,11 +34,22 @@ data class AccountMenuResponse(
                             val accountName: Runs,
                             val email: Runs?,
                             val channelHandle: Runs?,
+                            val accountPhoto: AccountPhoto?,
                         ) {
                             fun toAccountInfo() = AccountInfo(
                                 name = accountName.runs!!.first().text,
                                 email = email?.runs?.first()?.text,
-                                channelHandle = channelHandle?.runs?.first()?.text
+                                channelHandle = channelHandle?.runs?.first()?.text,
+                                thumbnailUrl = accountPhoto?.thumbnails?.firstOrNull()?.url
+                            )
+
+                            /**
+                             * Holds the thumbnail list as nullable, unlike [com.zionhuang.innertube.models.Thumbnails],
+                             * so that a response carrying an accountPhoto without thumbnails still decodes.
+                             */
+                            @Serializable
+                            data class AccountPhoto(
+                                val thumbnails: List<Thumbnail>?,
                             )
                         }
                     }

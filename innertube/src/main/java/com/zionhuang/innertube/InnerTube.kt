@@ -34,10 +34,10 @@ class InnerTube {
     var dataSyncId: String? = null
     var cookie: String? = null
         set(value) {
+            // Validate before publishing so a parse failure cannot leave an invalid shared cookie.
+            if (value != null) parseCookieString(value)
             field = value
-            cookieMap = if (value == null) emptyMap() else parseCookieString(value)
         }
-    private var cookieMap = emptyMap<String, String>()
 
     var proxy: Proxy? = null
         set(value) {
@@ -76,7 +76,16 @@ class InnerTube {
         }
     }
 
-    private fun HttpRequestBuilder.ytClient(client: YouTubeClient, setLogin: Boolean = false) {
+    /**
+     * @param cookie overrides the shared [InnerTube.cookie] for this request only. Callers that must
+     * authenticate as a specific account, rather than as whichever account is currently configured,
+     * pass it explicitly.
+     */
+    private fun HttpRequestBuilder.ytClient(
+        client: YouTubeClient,
+        setLogin: Boolean = false,
+        cookie: String? = this@InnerTube.cookie,
+    ) {
         contentType(ContentType.Application.Json)
         headers {
             append("X-Goog-Api-Format-Version", "1")
@@ -86,6 +95,7 @@ class InnerTube {
             append("Referer", YouTubeClient.REFERER_YOUTUBE_MUSIC)
             if (setLogin && client.loginSupported) {
                 cookie?.let { cookie ->
+                    val cookieMap = parseCookieString(cookie)
                     append("cookie", cookie)
                     if ("SAPISID" !in cookieMap) return@let
                     val currentTime = System.currentTimeMillis() / 1000
@@ -249,8 +259,13 @@ class InnerTube {
 
     suspend fun getSwJsData() = httpClient.get("https://music.youtube.com/sw.js_data")
 
-    suspend fun accountMenu(client: YouTubeClient) = httpClient.post("account/account_menu") {
-        ytClient(client, setLogin = true)
+    suspend fun accountMenu(
+        client: YouTubeClient,
+        cookie: String?,
+        visitorData: String?,
+        dataSyncId: String?,
+    ) = httpClient.post("account/account_menu") {
+        ytClient(client, setLogin = true, cookie = cookie)
         setBody(AccountMenuBody(client.toContext(locale, visitorData, dataSyncId)))
     }
 
