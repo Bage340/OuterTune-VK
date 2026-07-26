@@ -1,0 +1,89 @@
+{
+  "responseContext": {
+    "serviceTrackingParams": [
+      {
+        "service": "CSI",
+        "params": [
+          { "key": "c", "value": "WEB_REMIX" },
+          { "key": "cver", "value": "1.20250310.01.00" },
+          { "key": "yt_li", "value": "1" }
+        ]
+      },
+      {
+        "service": "GFEEDBACK",
+        "params": [{ "key": "logged_in", "value": "1" }]
+      }
+    ],
+    "responseId": "REDACTED"
+  },
+  "actions": [
+    {
+      "clickTrackingParams": "REDACTED",
+      "openPopupAction": {
+        "popup": {
+          "multiPageMenuRenderer": {
+            "header": {
+              "activeAccountHeaderRenderer": {
+                "accountName": { "runs": [{ "text": "Test User" }] },
+                "accountPhoto": {
+                  "thumbnails": [
+                    {
+                      "url": "https://yt3.ggpht.com/example=s108-c-k-c0x00ffffff-no-rj",
+                      "width": 108,
+                      "height": 108
+                    }
+                  ]
+                },
+                "settingsEndpoint": {
+                  "clickTrackingParams": "REDACTED",
+                  "applicationSettingsEndpoint": { "hack": true }
+                },
+                "email": { "runs": [{ "text": "test.user@example.com" }] },
+                "manageAccountTitle": {
+                  "runs": [
+                    {
+                      "text": "Google アカウントを管理",
+                      "navigationEndpoint": {
+                        "clickTrackingParams": "REDACTED",
+                        "urlEndpoint": {
+                          "url": "https://myaccount.google.com/",
+                          "target": "TARGET_NEW_WINDOW"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "trackingParams": "REDACTED"
+              }
+            },
+            "sections": [
+              {
+                "multiPageMenuSectionRenderer": {
+                  "items": [
+                    {
+                      "compactLinkRenderer": {
+                        "icon": { "iconType": "EXIT_TO_APP" },
+                        "title": { "runs": [{ "text": "ログアウト" }] },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "REDACTED",
+                          "signOutEndpoint": { "hack": true }
+                        },
+                        "trackingParams": "REDACTED"
+                      }
+                    }
+                  ],
+                  "trackingParams": "REDACTED"
+                }
+              }
+            ],
+            "trackingParams": "REDACTED",
+            "style": "MULTI_PAGE_MENU_STYLE_TYPE_ACCOUNT"
+          }
+        },
+        "popupType": "DROPDOWN",
+        "reusePopup": true
+      }
+    }
+  ],
+  "trackingParams": "REDACTED"
+}

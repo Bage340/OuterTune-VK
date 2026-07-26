@@ -26,6 +26,8 @@ import coil3.request.allowHardware
 import coil3.request.crossfade
 import com.dd3boh.outertune.constants.AccountChannelHandleKey
 import com.dd3boh.outertune.constants.AccountEmailKey
+import com.dd3boh.outertune.constants.AccountImageFetchedKey
+import com.dd3boh.outertune.constants.AccountImageUrlKey
 import com.dd3boh.outertune.constants.AccountNameKey
 import com.dd3boh.outertune.constants.ContentCountryKey
 import com.dd3boh.outertune.constants.ContentLanguageKey
@@ -46,6 +48,7 @@ import com.dd3boh.outertune.utils.CoilBitmapLoader
 import com.dd3boh.outertune.utils.LocalArtworkPathKeyer
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
+import com.dd3boh.outertune.utils.normalizeDataSyncId
 import com.dd3boh.outertune.utils.reportException
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.YouTubeLocale
@@ -131,20 +134,7 @@ class App : Application(), SingletonImageLoader.Factory {
                 .map { it[DataSyncIdKey] }
                 .distinctUntilChanged()
                 .collect { dataSyncId ->
-                    YouTube.dataSyncId = dataSyncId?.let {
-                        /*
-                         * Workaround to avoid breaking older installations that have a dataSyncId
-                         * that contains "||" in it.
-                         * If the dataSyncId ends with "||" and contains only one id, then keep the
-                         * id before the "||".
-                         * If the dataSyncId contains "||" and is not at the end, then keep the
-                         * second id.
-                         * This is needed to keep using the same account as before.
-                         */
-                        it.takeIf { !it.contains("||") }
-                            ?: it.takeIf { it.endsWith("||") }?.substringBefore("||")
-                            ?: it.substringAfter("||")
-                    }
+                    YouTube.dataSyncId = normalizeDataSyncId(dataSyncId)
                 }
         }
         GlobalScope.launch {
@@ -219,6 +209,8 @@ class App : Application(), SingletonImageLoader.Factory {
                     settings.remove(AccountNameKey)
                     settings.remove(AccountEmailKey)
                     settings.remove(AccountChannelHandleKey)
+                    settings.remove(AccountImageUrlKey)
+                    settings.remove(AccountImageFetchedKey)
                 }
             }
         }

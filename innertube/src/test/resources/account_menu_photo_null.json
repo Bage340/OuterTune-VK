@@ -1,0 +1,21 @@
+{
+  "actions": [
+    {
+      "openPopupAction": {
+        "popup": {
+          "multiPageMenuRenderer": {
+            "header": {
+              "activeAccountHeaderRenderer": {
+                "accountName": { "runs": [{ "text": "Test User" }] },
+                "accountPhoto": null,
+                "email": { "runs": [{ "text": "test.user@example.com" }] },
+                "trackingParams": "REDACTED"
+              }
+            },
+            "trackingParams": "REDACTED"
+          }
+        }
+      }
+    }
+  ]
+}

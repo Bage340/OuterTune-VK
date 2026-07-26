@@ -82,6 +82,7 @@ import com.dd3boh.outertune.constants.SearchSourceKey
 import com.dd3boh.outertune.constants.UpdateAvailableKey
 import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.extensions.tabMode
+import com.dd3boh.outertune.ui.component.AccountAvatar
 import com.dd3boh.outertune.ui.component.InputFieldHeight
 import com.dd3boh.outertune.ui.component.SearchBar
 import com.dd3boh.outertune.ui.component.SearchBarHorizontalPadding
@@ -443,10 +444,12 @@ private fun TopIconBar(
             )
         }
         IconButton(onClick = onAccountClick) {
-            Icon(
-                imageVector = Icons.Rounded.Person,
-                contentDescription = stringResource(R.string.account)
-            )
+            AccountAvatar(contentDescription = stringResource(R.string.account)) {
+                Icon(
+                    imageVector = Icons.Rounded.Person,
+                    contentDescription = stringResource(R.string.account)
+                )
+            }
         }
     }
 }
