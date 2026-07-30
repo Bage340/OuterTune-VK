@@ -49,6 +49,7 @@ This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune
 - Adjusted bottom navigation so tab switching and re-tapping the active tab behave more naturally
 - Fixed issues with the search bar, sorting, and list refreshes on the Folders screen
 - Replaced the persistent search bar on tab screens with a top icon row (search, history, stats, settings, and more)
+- Added swipe-to-skip to the mini player
 
 ### Local music playback
 
@@ -64,6 +65,8 @@ This fork builds on [OuterTune/OuterTune](https://github.com/OuterTune/OuterTune
 - Added a "keep audio focus" player setting
 - Added a home screen grid showing your recent YouTube Music activity when signed in
 - Added the current queue's name to the player's queue handle
+- Replaced the account icon with the signed-in account's profile image
+- Reorganized the settings screens, merging Appearance and Interface into "Appearance and controls" and adding a top-level Privacy screen
 
 ### Playback and downloads
 
