@@ -366,7 +366,7 @@ fun SearchBarContainer(
             onStatsClick = { navController.navigate("stats") },
             onScannerClick = { navController.navigate("settings/local") },
             onSettingsClick = { navController.navigate("settings") },
-            onAccountClick = { navController.navigate("account") },
+            onAccountClick = { navController.navigate("settings/account_sync") },
             onSearchClick = { onSearchActiveChange(true) },
         )
     }
