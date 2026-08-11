@@ -426,7 +426,7 @@ fun HomeScreen(
                             YouTubeCardItem(
                                 item = item,
                                 width = recentActivityItemWidth,
-                                isActive = when (item.type) {
+                                isActive = queuePlaylistId != null && when (item.type) {
                                     RecentActivityType.PLAYLIST -> queuePlaylistId == item.id
                                     RecentActivityType.ALBUM -> queuePlaylistId == item.playlistId
                                     RecentActivityType.ARTIST -> queuePlaylistId == item.radioPlaylistId ||
