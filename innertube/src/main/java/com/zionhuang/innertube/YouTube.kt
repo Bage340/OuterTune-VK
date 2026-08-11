@@ -16,7 +16,6 @@ import com.zionhuang.innertube.models.WatchEndpoint.WatchEndpointMusicSupportedC
 import com.zionhuang.innertube.models.YTItem
 import com.zionhuang.innertube.models.YouTubeClient
 import com.zionhuang.innertube.models.YouTubeClient.Companion.IOS
-import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB
 import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.zionhuang.innertube.models.YouTubeLocale
 import com.zionhuang.innertube.models.getContinuation
@@ -610,20 +609,7 @@ object YouTube {
                 it.musicTwoRowItemRenderer?.let { renderer ->
                     LibraryPage.fromMusicTwoRowItemRenderer(renderer)
                 }
-            }.toMutableList()
-
-        /*
-         * We need to fetch the artist page when accessing the library because it allows to have
-         * a proper playEndpoint, which is needed to correctly report the playing indicator in
-         * the home page.
-         *
-         * Despite this, we need to use the old thumbnail because it's the proper format for a
-         * square picture, which is what we need.
-         */
-        items.forEachIndexed { index, item ->
-            if (item is ArtistItem)
-                items[index] = artist(item.id).getOrNull()?.artist!!.copy(thumbnail = item.thumbnail)
-        }
+            }
 
         LibraryPage(
             items = items,
