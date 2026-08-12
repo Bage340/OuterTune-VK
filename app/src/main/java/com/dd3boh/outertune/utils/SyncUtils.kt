@@ -457,8 +457,17 @@ class SyncUtils @Inject constructor(
                                         bookmarkedAt = if (isLikedArtist) LocalDateTime.now() else null
                                     )
                                 )
-                            } else if (localArtist.artist.bookmarkedAt == null && isLikedArtist) {
-                                update(localArtist.artist.localToggleLike())
+                            } else {
+                                var updated = localArtist.artist
+                                if (updated.bookmarkedAt == null && isLikedArtist) {
+                                    updated = updated.localToggleLike()
+                                }
+                                if (updated.thumbnailUrl == null && remoteArtist.thumbnail != null) {
+                                    updated = updated.copy(thumbnailUrl = remoteArtist.thumbnail)
+                                }
+                                if (updated != localArtist.artist) {
+                                    update(updated)
+                                }
                             }
                         }
                     }
