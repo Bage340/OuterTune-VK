@@ -149,6 +149,11 @@ class Migration20To21Test {
         }
 
         helper.runMigrationsAndValidate(TEST_DB, 21, true, MIGRATION_20_21).use { db ->
+            // MigrationTestHelper exposes a raw SupportSQLiteDatabase connection. Enable FK
+            // enforcement explicitly before verifying the ON DELETE behavior Room uses at runtime.
+            db.setForeignKeyConstraintsEnabled(true)
+            assertEquals(1, db.singleInt("PRAGMA foreign_keys"))
+
             assertThrows(SQLiteConstraintException::class.java) {
                 db.execSQL(
                     """
