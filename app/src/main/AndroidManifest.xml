@@ -37,6 +37,12 @@
             android:name="org.apache.http.legacy"
             android:required="false" />
 
+        <!--
+          VK ID's non-exported AuthActivity and exported redirect receiver are merged from
+          com.vk.id:vkid. Their exact host/scheme/client placeholders are supplied by the
+          official vkid.manifest.placeholders Gradle plugin; do not duplicate them here.
+        -->
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

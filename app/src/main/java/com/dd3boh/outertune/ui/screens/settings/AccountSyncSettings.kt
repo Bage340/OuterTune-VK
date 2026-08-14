@@ -41,6 +41,9 @@ import com.dd3boh.outertune.ui.screens.settings.fragments.SyncAutoFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.SyncExtrasFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.SyncManualFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.SyncParamsFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.VkAccountSection
+import com.dd3boh.outertune.ui.screens.settings.fragments.VkMusicCapabilitiesFrag
+import com.dd3boh.outertune.ui.screens.settings.fragments.VkMusicSyncSettingsFrag
 import com.dd3boh.outertune.ui.utils.backToMain
 
 @SuppressLint("PrivateResource")
@@ -57,7 +60,7 @@ fun AccountSyncSettings(
             .verticalScroll(rememberScrollState())
     ) {
         PreferenceGroupTitle(
-            title = stringResource(R.string.account)
+            title = stringResource(R.string.youtube_music_account_title)
         )
 
         ElevatedCard(
@@ -75,7 +78,18 @@ fun AccountSyncSettings(
         Spacer(modifier = Modifier.height(16.dp))
 
         PreferenceGroupTitle(
-            title = stringResource(R.string.grp_sync)
+            title = stringResource(R.string.vk_id_title)
+        )
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            VkAccountSection()
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PreferenceGroupTitle(
+            title = stringResource(R.string.youtube_music_sync_title)
         )
 
         ElevatedCard(
@@ -103,6 +117,28 @@ fun AccountSyncSettings(
             modifier = Modifier.fillMaxWidth()
         ) {
             SyncExtrasFrag()
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PreferenceGroupTitle(
+            title = stringResource(R.string.vk_music_capabilities_title)
+        )
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            VkMusicCapabilitiesFrag()
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        PreferenceGroupTitle(
+            title = stringResource(R.string.vk_music_sync_title)
+        )
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            VkMusicSyncSettingsFrag()
         }
         Spacer(modifier = Modifier.height(16.dp))
 

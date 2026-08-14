@@ -113,18 +113,12 @@ class TagLibScanner : MetadataScanner {
                                 if (date == null) {
                                     date = LocalDate.parse(it.trim()).atStartOfDay()
                                 }
-                            } catch (e: Exception) {
-                                if (SCANNER_DEBUG) {
-                                    e.printStackTrace()
-                                }
+                            } catch (_: Exception) {
                                 try {
                                     if (year == null) {
                                         year = date?.year ?: parseInt(it.trim())
                                     }
-                                } catch (e: Exception) {
-                                    if (SCANNER_DEBUG) {
-                                        e.printStackTrace()
-                                    }
+                                } catch (_: Exception) {
                                 }
                             }
                         }
@@ -132,19 +126,13 @@ class TagLibScanner : MetadataScanner {
                         "TRACKNUMBER" -> {
                             try {
                             trackNumber = parseInt(it)
-                            } catch (e: Exception) {
-                                if (SCANNER_DEBUG) {
-                                    e.printStackTrace()
-                                }
+                            } catch (_: Exception) {
                             }
                         }
                         "DISCNUMBER" -> {
                             try {
                                 discNumber = parseInt(it)
-                            } catch (e: Exception) {
-                                if (SCANNER_DEBUG) {
-                                    e.printStackTrace()
-                                }
+                            } catch (_: Exception) {
                             }
                         }
                         else -> {

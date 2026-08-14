@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="source_local">Локально</string>
+    <string name="source_youtube">YouTube</string>
+    <string name="source_vk">VK</string>
+    <string name="source_badge_content_description">Источник: %1$s</string>
+    <string name="provider_search_vk_section">Результаты VK</string>
+    <string name="provider_search_youtube_section">Результаты YouTube</string>
+    <string name="provider_search_youtube_too">Искать также на YouTube</string>
+    <string name="provider_search_retry">Повторить</string>
+    <string name="provider_search_loading">Ищем в музыкальных источниках…</string>
+    <string name="provider_search_vk_sign_in">Войдите в VK для поиска. Показаны результаты YouTube.</string>
+    <string name="provider_search_vk_unavailable">Поиск VK недоступен. Показаны результаты YouTube.</string>
+    <string name="provider_search_vk_failed">Не удалось выполнить поиск VK. Показаны результаты YouTube.</string>
+    <string name="provider_search_no_high_match">Надёжное совпадение в VK не найдено. Показаны результаты YouTube.</string>
+    <string name="provider_search_youtube_failed">Не удалось выполнить поиск YouTube.</string>
+</resources>

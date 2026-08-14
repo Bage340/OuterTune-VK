@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.SyncLock
 import androidx.compose.material.icons.rounded.SyncProblem
@@ -239,6 +241,56 @@ fun ColumnScope.SyncExtrasFrag() {
         onCheckedChange = onPauseRemoteListenHistoryChange,
         isEnabled = !pauseListenHistory && isLoggedIn
     )
+}
+
+/** Public VK Music operations are unavailable, so every capability is explicit and non-clickable. */
+@Composable
+fun ColumnScope.VkMusicCapabilitiesFrag() {
+    val unavailableDescription = stringResource(R.string.vk_music_unavailable_reason)
+    val capabilities = listOf(
+        R.string.vk_music_search_capability to Icons.Rounded.Search,
+        R.string.vk_music_library_capability to Icons.Rounded.Favorite,
+        R.string.vk_music_playlists_capability to Icons.Rounded.SyncLock,
+        R.string.vk_music_upload_capability to Icons.Rounded.CloudOff,
+    )
+
+    capabilities.forEach { (titleResource, icon) ->
+        PreferenceEntry(
+            title = { Text(stringResource(titleResource)) },
+            description = unavailableDescription,
+            icon = { Icon(icon, contentDescription = null) },
+            onClick = {},
+            isEnabled = false,
+        )
+    }
+}
+
+/**
+ * Future-facing settings remain visibly OFF and disabled. No preference is persisted until an
+ * official VK Music API makes the corresponding behavior real.
+ */
+@Composable
+fun ColumnScope.VkMusicSyncSettingsFrag() {
+    val unavailableDescription = stringResource(R.string.vk_music_unavailable_reason)
+    val settings = listOf(
+        R.string.vk_music_sync_enabled to Icons.Rounded.Sync,
+        R.string.vk_music_sync_startup to Icons.Rounded.History,
+        R.string.vk_music_sync_background to Icons.Rounded.CloudOff,
+        R.string.vk_music_sync_playlists to Icons.Rounded.SyncLock,
+        R.string.vk_music_sync_deletions to Icons.Rounded.SyncProblem,
+        R.string.vk_music_sync_auto_add to Icons.Rounded.Favorite,
+    )
+
+    settings.forEach { (titleResource, icon) ->
+        SwitchPreference(
+            title = { Text(stringResource(titleResource)) },
+            description = unavailableDescription,
+            icon = { Icon(icon, contentDescription = null) },
+            checked = false,
+            onCheckedChange = {},
+            isEnabled = false,
+        )
+    }
 }
 
 @Composable

@@ -142,19 +142,13 @@ class FFmpegScanner() : MetadataScanner {
                     "TRACKNUMBER" -> {
                         try {
                             trackNumber = parseInt(it)
-                        } catch (e: Exception) {
-                            if (SCANNER_DEBUG) {
-                                e.printStackTrace()
-                            }
+                        } catch (_: Exception) {
                         }
                     }
                     "DISCNUMBER" -> {
                         try {
                             discNumber = parseInt(it)
-                        } catch (e: Exception) {
-                            if (SCANNER_DEBUG) {
-                                e.printStackTrace()
-                            }
+                        } catch (_: Exception) {
                         }
                     }
 

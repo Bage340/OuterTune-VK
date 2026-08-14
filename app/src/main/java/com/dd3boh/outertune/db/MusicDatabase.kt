@@ -28,9 +28,13 @@ import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.PlaylistEntity.Companion.generatePlaylistId
 import com.dd3boh.outertune.db.entities.PlaylistSongMap
 import com.dd3boh.outertune.db.entities.PlaylistSongMapPreview
+import com.dd3boh.outertune.db.entities.ProviderPlaylistItem
+import com.dd3boh.outertune.db.entities.ProviderSyncHealth
 import com.dd3boh.outertune.db.entities.QueueEntity
 import com.dd3boh.outertune.db.entities.QueueSongMap
 import com.dd3boh.outertune.db.entities.RecentActivityEntity
+import com.dd3boh.outertune.db.entities.RemotePlaylistMapping
+import com.dd3boh.outertune.db.entities.RemoteTrackMapping
 import com.dd3boh.outertune.db.entities.RelatedSongMap
 import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.db.entities.SongAlbumMap
@@ -39,6 +43,9 @@ import com.dd3boh.outertune.db.entities.SongEntity
 import com.dd3boh.outertune.db.entities.SongGenreMap
 import com.dd3boh.outertune.db.entities.SortedSongAlbumMap
 import com.dd3boh.outertune.db.entities.SortedSongArtistMap
+import com.dd3boh.outertune.db.entities.SyncOperation
+import com.dd3boh.outertune.db.entities.SyncRun
+import com.dd3boh.outertune.db.entities.SyncTombstone
 import com.dd3boh.outertune.extensions.toSQLiteQuery
 import java.time.Instant
 import java.time.LocalDateTime
@@ -68,7 +75,7 @@ class MusicDatabase(
     fun close() = delegate.close()
 
     companion object {
-        const val MUSIC_DATABASE_VERSION = 20
+        const val MUSIC_DATABASE_VERSION = 21
     }
 }
 
@@ -92,7 +99,14 @@ class MusicDatabase(
         PlayCountEntity::class,
         Event::class,
         RelatedSongMap::class,
-        RecentActivityEntity::class
+        RecentActivityEntity::class,
+        RemoteTrackMapping::class,
+        RemotePlaylistMapping::class,
+        ProviderPlaylistItem::class,
+        SyncOperation::class,
+        SyncTombstone::class,
+        SyncRun::class,
+        ProviderSyncHealth::class,
     ],
     views = [
         SortedSongArtistMap::class,
@@ -134,6 +148,7 @@ abstract class InternalDatabase : RoomDatabase() {
                     .addMigrations(MIGRATION_14_15)
                     .addMigrations(MIGRATION_15_16)
                     .addMigrations(MIGRATION_16_17)
+                    .addMigrations(MIGRATION_20_21)
                     .build()
             )
 
@@ -145,8 +160,272 @@ abstract class InternalDatabase : RoomDatabase() {
                     .addMigrations(MIGRATION_14_15)
                     .addMigrations(MIGRATION_15_16)
                     .addMigrations(MIGRATION_16_17)
+                    .addMigrations(MIGRATION_20_21)
                     .build()
             )
+    }
+}
+
+/**
+ * Additive provider identity and crash-safe sync state.
+ *
+ * Existing v20 tables are intentionally left untouched. Legacy network entities are linked to
+ * YOUTUBE so old SongEntity.id and PlaylistEntity.browseId behavior remains valid.
+ */
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `remote_track_mapping` (
+                `provider` TEXT NOT NULL,
+                `remoteTrackId` TEXT NOT NULL,
+                `localSongId` TEXT NOT NULL,
+                `ownerId` TEXT,
+                `secondaryId` TEXT,
+                `remoteUrl` TEXT,
+                `metadataReference` TEXT,
+                `syncState` TEXT NOT NULL,
+                `lastSeenAt` INTEGER,
+                `lastSyncedAt` INTEGER,
+                `metadataHash` TEXT,
+                `duration` INTEGER,
+                `confidence` REAL,
+                PRIMARY KEY(`provider`, `remoteTrackId`),
+                FOREIGN KEY(`localSongId`) REFERENCES `song`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_remote_track_mapping_localSongId_provider` " +
+                "ON `remote_track_mapping` (`localSongId`, `provider`)"
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `remote_playlist_mapping` (
+                `provider` TEXT NOT NULL,
+                `remotePlaylistId` TEXT NOT NULL,
+                `localPlaylistId` TEXT NOT NULL,
+                `remoteRevision` TEXT,
+                `etag` TEXT,
+                `lastSeenAt` INTEGER,
+                `lastSyncedAt` INTEGER,
+                `syncMode` TEXT NOT NULL,
+                PRIMARY KEY(`provider`, `remotePlaylistId`),
+                FOREIGN KEY(`localPlaylistId`) REFERENCES `playlist`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_remote_playlist_mapping_localPlaylistId_provider` " +
+                "ON `remote_playlist_mapping` (`localPlaylistId`, `provider`)"
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `provider_playlist_item` (
+                `provider` TEXT NOT NULL,
+                `remotePlaylistId` TEXT NOT NULL,
+                `membershipId` TEXT NOT NULL,
+                `remoteTrackId` TEXT NOT NULL,
+                `localSongId` TEXT,
+                `position` INTEGER NOT NULL,
+                `addedAt` INTEGER,
+                `lastSeenAt` INTEGER,
+                `metadataHash` TEXT,
+                PRIMARY KEY(`provider`, `remotePlaylistId`, `membershipId`),
+                FOREIGN KEY(`provider`, `remotePlaylistId`) REFERENCES `remote_playlist_mapping`(`provider`, `remotePlaylistId`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                FOREIGN KEY(`localSongId`) REFERENCES `song`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_provider_playlist_item_provider_remotePlaylistId_position` " +
+                "ON `provider_playlist_item` (`provider`, `remotePlaylistId`, `position`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_provider_playlist_item_provider_remoteTrackId` " +
+                "ON `provider_playlist_item` (`provider`, `remoteTrackId`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_provider_playlist_item_localSongId` " +
+                "ON `provider_playlist_item` (`localSongId`)"
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `sync_operation` (
+                `id` TEXT NOT NULL,
+                `provider` TEXT NOT NULL,
+                `operationType` TEXT NOT NULL,
+                `entityType` TEXT NOT NULL,
+                `localEntityId` TEXT,
+                `remoteEntityId` TEXT,
+                `payloadJson` TEXT,
+                `payloadHash` TEXT,
+                `idempotencyKey` TEXT NOT NULL,
+                `createdAt` INTEGER NOT NULL,
+                `updatedAt` INTEGER NOT NULL,
+                `attemptCount` INTEGER NOT NULL,
+                `lastAttemptAt` INTEGER,
+                `nextAttemptAt` INTEGER,
+                `lastError` TEXT,
+                `state` TEXT NOT NULL,
+                `leaseOwner` TEXT,
+                `leaseExpiresAt` INTEGER,
+                `completedAt` INTEGER,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_sync_operation_idempotencyKey` " +
+                "ON `sync_operation` (`idempotencyKey`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_sync_operation_provider_state_nextAttemptAt` " +
+                "ON `sync_operation` (`provider`, `state`, `nextAttemptAt`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_sync_operation_leaseOwner_leaseExpiresAt` " +
+                "ON `sync_operation` (`leaseOwner`, `leaseExpiresAt`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_sync_operation_provider_entityType_localEntityId` " +
+                "ON `sync_operation` (`provider`, `entityType`, `localEntityId`)"
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `sync_tombstone` (
+                `provider` TEXT NOT NULL,
+                `entityType` TEXT NOT NULL,
+                `remoteEntityId` TEXT NOT NULL,
+                `localEntityId` TEXT,
+                `deletedAt` INTEGER NOT NULL,
+                `source` TEXT NOT NULL,
+                `payloadHash` TEXT,
+                `acknowledgedAt` INTEGER,
+                PRIMARY KEY(`provider`, `entityType`, `remoteEntityId`)
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_sync_tombstone_provider_entityType_deletedAt` " +
+                "ON `sync_tombstone` (`provider`, `entityType`, `deletedAt`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_sync_tombstone_localEntityId` " +
+                "ON `sync_tombstone` (`localEntityId`)"
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `sync_run` (
+                `id` TEXT NOT NULL,
+                `provider` TEXT NOT NULL,
+                `trigger` TEXT NOT NULL,
+                `state` TEXT NOT NULL,
+                `health` TEXT NOT NULL,
+                `startedAt` INTEGER NOT NULL,
+                `finishedAt` INTEGER,
+                `cursor` TEXT,
+                `pageCount` INTEGER NOT NULL,
+                `scannedCount` INTEGER NOT NULL,
+                `insertedCount` INTEGER NOT NULL,
+                `updatedCount` INTEGER NOT NULL,
+                `deletedCount` INTEGER NOT NULL,
+                `conflictCount` INTEGER NOT NULL,
+                `errorCount` INTEGER NOT NULL,
+                `lastError` TEXT,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_sync_run_provider_startedAt` " +
+                "ON `sync_run` (`provider`, `startedAt`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_sync_run_state_startedAt` " +
+                "ON `sync_run` (`state`, `startedAt`)"
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `provider_sync_health` (
+                `provider` TEXT NOT NULL,
+                `state` TEXT NOT NULL,
+                `lastRunId` TEXT,
+                `lastStartedAt` INTEGER,
+                `lastCompletedAt` INTEGER,
+                `lastSuccessfulAt` INTEGER,
+                `consecutiveFailures` INTEGER NOT NULL,
+                `pendingOperationCount` INTEGER NOT NULL,
+                `lastError` TEXT,
+                `updatedAt` INTEGER NOT NULL,
+                PRIMARY KEY(`provider`)
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_provider_sync_health_state_updatedAt` " +
+                "ON `provider_sync_health` (`state`, `updatedAt`)"
+        )
+
+        db.execSQL(
+            """
+            INSERT OR IGNORE INTO `remote_track_mapping` (
+                `provider`, `remoteTrackId`, `localSongId`, `ownerId`, `secondaryId`,
+                `remoteUrl`, `metadataReference`, `syncState`, `lastSeenAt`, `lastSyncedAt`,
+                `metadataHash`, `duration`, `confidence`
+            )
+            SELECT
+                'YOUTUBE', `id`, `id`, NULL, NULL,
+                NULL, NULL, 'LINKED', NULL, NULL,
+                NULL, `duration`, 1.0
+            FROM `song`
+            WHERE `isLocal` = 0
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            """
+            INSERT OR IGNORE INTO `remote_playlist_mapping` (
+                `provider`, `remotePlaylistId`, `localPlaylistId`, `remoteRevision`,
+                `etag`, `lastSeenAt`, `lastSyncedAt`, `syncMode`
+            )
+            SELECT
+                'YOUTUBE', `browseId`, `id`, NULL,
+                NULL, NULL, NULL, 'ADD_ONLY'
+            FROM `playlist`
+            WHERE `browseId` IS NOT NULL
+            """.trimIndent()
+        )
+
+        // Preserve opaque YouTube setVideoId membership where v20 already has it. A deterministic
+        // legacy key is used only when that old row had no provider membership identifier.
+        db.execSQL(
+            """
+            INSERT OR IGNORE INTO `provider_playlist_item` (
+                `provider`, `remotePlaylistId`, `membershipId`, `remoteTrackId`, `localSongId`,
+                `position`, `addedAt`, `lastSeenAt`, `metadataHash`
+            )
+            SELECT
+                'YOUTUBE', playlist.`browseId`,
+                CASE
+                    WHEN map.`setVideoId` IS NOT NULL AND length(map.`setVideoId`) > 0
+                        THEN map.`setVideoId`
+                    ELSE 'legacy:' || CAST(map.`id` AS TEXT)
+                END,
+                track.`remoteTrackId`, map.`songId`, map.`position`, NULL, NULL, NULL
+            FROM `playlist_song_map` AS map
+            INNER JOIN `playlist` AS playlist ON playlist.`id` = map.`playlistId`
+            INNER JOIN `remote_track_mapping` AS track
+                ON track.`provider` = 'YOUTUBE' AND track.`localSongId` = map.`songId`
+            WHERE playlist.`browseId` IS NOT NULL
+            """.trimIndent()
+        )
     }
 }
 

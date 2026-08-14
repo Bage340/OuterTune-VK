@@ -62,15 +62,18 @@ class MediaLibrarySessionCallback @Inject constructor(
         controller: MediaSession.ControllerInfo
     ): MediaSession.ConnectionResult {
         val connectionResult = super.onConnect(session, controller)
-        return MediaSession.ConnectionResult.accept(
-            connectionResult.availableSessionCommands.buildUpon()
+        val sessionCommands = connectionResult.availableSessionCommands.buildUpon()
+        if (controller.packageName == context.packageName) {
+            sessionCommands
                 .add(MediaSessionConstants.CommandToggleLibrary)
                 .add(MediaSessionConstants.CommandToggleLike)
                 .add(MediaSessionConstants.CommandToggleStartRadio)
                 .add(MediaSessionConstants.CommandToggleShuffle)
                 .add(MediaSessionConstants.CommandToggleRepeatMode)
                 .add(SessionCommand(MusicService.COMMAND_GET_BINDER, Bundle.EMPTY))
-                .build(),
+        }
+        return MediaSession.ConnectionResult.accept(
+            sessionCommands.build(),
             connectionResult.availablePlayerCommands
         )
     }
@@ -81,6 +84,11 @@ class MediaLibrarySessionCallback @Inject constructor(
         customCommand: SessionCommand,
         args: Bundle,
     ): ListenableFuture<SessionResult> {
+        if (controller.packageName != context.packageName) {
+            return Futures.immediateFuture(
+                SessionResult(SessionError.ERROR_PERMISSION_DENIED)
+            )
+        }
         when (customCommand.customAction) {
             MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
             MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> toggleStartRadio()

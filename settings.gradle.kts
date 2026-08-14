@@ -1,15 +1,53 @@
 @file:Suppress("UnstableApiUsage")
+
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven("https://artifactory-external.vkpartner.ru/artifactory/vkid-sdk-android/") {
+            content {
+                includeGroupByRegex("com\\.vk(\\..*)?")
+                includeGroup("vkid.manifest.placeholders")
+            }
+        }
+        maven("https://artifactory-external.vkpartner.ru/artifactory/maven/") {
+            content {
+                includeGroupByRegex("com\\.vk(\\..*)?")
+                includeGroup("vkid.manifest.placeholders")
+            }
+        }
+    }
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
     repositories {
         google()
         mavenCentral()
-        maven { setUrl("https://jitpack.io") }
+        exclusiveContent {
+            forRepository {
+                maven("https://jitpack.io")
+            }
+            filter {
+                includeGroup("com.github.nanihadesuka")
+                includeGroupByRegex("com\\.github\\.TeamNewPipe(\\..*)?")
+            }
+        }
+        maven("https://artifactory-external.vkpartner.ru/artifactory/vkid-sdk-android/") {
+            content { includeGroupByRegex("com\\.vk(\\..*)?") }
+        }
+        maven("https://artifactory-external.vkpartner.ru/artifactory/maven/") {
+            content { includeGroupByRegex("com\\.vk(\\..*)?") }
+        }
+        maven("https://artifactory-external.vkpartner.ru/artifactory/vk-id-captcha/android/") {
+            content { includeGroupByRegex("com\\.vk(\\..*)?") }
+        }
     }
 }
 
-rootProject.name = "OuterTune"
+rootProject.name = "OuterTune-VK"
 include(":app")
 include(":innertube")
 include(":kugou")
