@@ -38,10 +38,6 @@ class BackupRestoreViewModel @Inject constructor(
             context.applicationContext.contentResolver.openOutputStream(uri)?.use {
                 it.buffered().zipOutputStream().use { outputStream ->
                     outputStream.setLevel(Deflater.BEST_COMPRESSION)
-                    (context.filesDir / "datastore" / SETTINGS_FILENAME).inputStream().buffered().use { inputStream ->
-                        outputStream.putNextEntry(ZipEntry(SETTINGS_FILENAME))
-                        inputStream.copyTo(outputStream)
-                    }
                     runBlocking(Dispatchers.IO) {
                         database.checkpoint()
                     }
@@ -67,10 +63,9 @@ class BackupRestoreViewModel @Inject constructor(
                     while (entry != null) {
                         when (entry.name) {
                             SETTINGS_FILENAME -> {
-                                (context.filesDir / "datastore" / SETTINGS_FILENAME).outputStream()
-                                    .use { outputStream ->
-                                        inputStream.copyTo(outputStream)
-                                    }
+                                // Legacy backups may contain the preferences DataStore. It also contains
+                                // authentication material, so importing it would restore plaintext secrets.
+                                // Deliberately ignore this entry; current backups contain the database only.
                             }
 
                             InternalDatabase.DB_NAME -> {
@@ -94,8 +89,8 @@ class BackupRestoreViewModel @Inject constructor(
                                     t.openHelper.writableDatabase.isDatabaseIntegrityOk
                                     t.close()
                                     true
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "DB validation failed", e)
+                                } catch (_: Exception) {
+                                    Log.e(TAG, "DB validation failed")
                                     false
                                 }
 
@@ -129,7 +124,7 @@ class BackupRestoreViewModel @Inject constructor(
             exitProcess(0)
         }.onFailure {
             reportException(it)
-            Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, R.string.backup_create_failed, Toast.LENGTH_SHORT).show()
         }
     }
 

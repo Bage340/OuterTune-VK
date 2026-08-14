@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="youtube_music_account_title">Аккаунт YouTube Music</string>
+    <string name="youtube_music_sync_title">Синхронизация YouTube Music</string>
+    <string name="vk_id_title">VK ID</string>
+    <string name="vk_music_capabilities_title">Возможности VK Музыки</string>
+    <string name="vk_music_sync_title">Настройки синхронизации VK Музыки</string>
+
+    <string name="vk_id_status_not_configured">Нужна настройка</string>
+    <string name="vk_id_status_disconnected">Не подключён</string>
+    <string name="vk_id_status_in_progress">Выполняется</string>
+    <string name="vk_id_status_connected">Подключён</string>
+    <string name="vk_id_status_error">Требует внимания</string>
+    <string name="vk_id_status_a11y">Статус VK ID: %1$s</string>
+    <string name="vk_id_account_status_a11y">Аккаунт VK ID %1$s. Статус: %2$s</string>
+
+    <string name="vk_id_configuration_required">Нужно настроить VK ID</string>
+    <string name="vk_id_configuration_required_short">Нет данных собственного приложения VK ID</string>
+    <string name="vk_id_configuration_required_description">Соберите приложение с данными собственного зарегистрированного Android-приложения VK ID. Без них функция безопасно отключена.</string>
+    <string name="vk_id_disconnected_description">Аккаунт VK ID не подключён</string>
+    <string name="vk_id_connected_description">Сессия официального VK ID доступна</string>
+    <string name="vk_id_user_id">ID пользователя: %1$d</string>
+    <string name="vk_id_connect">Подключить VK ID</string>
+    <string name="vk_id_connect_again">Подключить заново</string>
+    <string name="vk_id_connect_description">Открыть официальный экран авторизации VK ID</string>
+    <string name="vk_id_refresh">Обновить аккаунт VK ID</string>
+    <string name="vk_id_refresh_description">Обновить сессию и данные аккаунта через официальный SDK</string>
+    <string name="vk_id_disconnect">Отключить VK ID</string>
+    <string name="vk_id_disconnect_description">Отозвать сессию и очистить хранилище токенов официального SDK</string>
+    <string name="vk_id_retry">Повторить</string>
+    <string name="vk_id_identity_only_description">VK ID подключает только профиль. Он не даёт доступ к поиску, библиотеке, плейлистам, загрузке или воспроизведению VK Музыки.</string>
+
+    <string name="vk_id_progress_connecting">Подключение VK ID…</string>
+    <string name="vk_id_progress_refreshing_session">Обновление сессии VK ID…</string>
+    <string name="vk_id_progress_refreshing_account">Обновление аккаунта VK ID…</string>
+    <string name="vk_id_progress_disconnecting">Отключение VK ID…</string>
+
+    <string name="vk_id_error_configuration">Для этой сборки не настроены данные приложения VK ID.</string>
+    <string name="vk_id_error_canceled">Подключение VK ID отменено.</string>
+    <string name="vk_id_error_no_browser">Для VK ID не найден поддерживаемый браузер.</string>
+    <string name="vk_id_error_state">VK ID отклонил небезопасный OAuth state. Начните подключение заново.</string>
+    <string name="vk_id_error_authorization">Авторизация VK ID не завершена.</string>
+    <string name="vk_id_error_redirect">Redirect VK ID не соответствует настройке этого приложения.</string>
+    <string name="vk_id_error_access_expired">Access token VK ID истёк. Обновите сессию.</string>
+    <string name="vk_id_error_refresh_expired">Сессия VK ID истекла. Подключитесь заново.</string>
+    <string name="vk_id_error_revoked">Доступ VK ID отозван или аккаунт отключён. Подключитесь заново.</string>
+    <string name="vk_id_error_network">VK ID недоступен. Проверьте подключение и повторите.</string>
+    <string name="vk_id_error_service">VK ID не выполнил запрос. Повторите позже или подключитесь заново.</string>
+
+    <string name="vk_music_unavailable_reason">Недоступно: VK не публикует этот музыкальный API для сторонних приложений.</string>
+    <string name="vk_music_search_capability">Поиск по каталогу</string>
+    <string name="vk_music_library_capability">Сохранённая музыка и библиотека</string>
+    <string name="vk_music_playlists_capability">Просмотр и изменение плейлистов</string>
+    <string name="vk_music_upload_capability">Загрузка аудио и воспроизведение</string>
+    <string name="vk_music_sync_enabled">Включить синхронизацию VK Музыки</string>
+    <string name="vk_music_sync_startup">Синхронизация при запуске</string>
+    <string name="vk_music_sync_background">Фоновая синхронизация</string>
+    <string name="vk_music_sync_playlists">Синхронизировать плейлисты</string>
+    <string name="vk_music_sync_deletions">Повторять удаление с сервера</string>
+    <string name="vk_music_sync_auto_add">Автоматически добавлять найденные соответствия</string>
+</resources>

@@ -9,4 +9,16 @@
     <exclude
         domain="database"
         path="exoplayer_internal.db" />
+    <!-- VK ID 2.7.2 SDK-owned encrypted token/session storage. -->
+    <exclude
+        domain="sharedpref"
+        path="vkid_encrypted_shared_prefs.xml" />
+    <!-- Upstream stores the YouTube SAPISID cookie alongside settings in this DataStore file. -->
+    <exclude
+        domain="file"
+        path="./datastore/settings.preferences_pb" />
+    <!-- WebView's cookie jar may contain Google/YouTube session cookies. -->
+    <exclude
+        domain="root"
+        path="app_webview/" />
 </full-backup-content>

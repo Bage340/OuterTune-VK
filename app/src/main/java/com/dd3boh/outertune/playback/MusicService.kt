@@ -508,7 +508,7 @@ class MusicService : MediaLibraryService(),
                 player.playWhenReady = playWhenReady
             } catch (e: Exception) {
                 reportException(e)
-                Toast.makeText(this@MusicService, "plr: ${e.message}", Toast.LENGTH_LONG)
+                Toast.makeText(this@MusicService, "Playback failed", Toast.LENGTH_LONG)
                     .show()
             }
 
@@ -912,7 +912,7 @@ class MusicService : MediaLibraryService(),
 
         Toast.makeText(
             this@MusicService,
-            "plr: ${error.message} (${error.errorCode}): ${error.cause?.message ?: ""} ",
+            "Playback failed (${error.errorCode})",
             Toast.LENGTH_LONG
         ).show()
     }
@@ -1039,7 +1039,7 @@ class MusicService : MediaLibraryService(),
                 if (ytHist) {
                     val playbackUrl = YTPlayerUtils.playerResponseForMetadata(mediaItem.mediaId, null)
                         .getOrNull()?.playbackTracking?.videostatsPlaybackUrl?.baseUrl
-                    Log.d(TAG, "Got playback url: $playbackUrl")
+                    Log.d(TAG, "Playback tracking endpoint resolved: ${playbackUrl != null}")
                     playbackUrl?.let {
                         YouTube.registerPlayback(null, playbackUrl)
                             .onFailure {

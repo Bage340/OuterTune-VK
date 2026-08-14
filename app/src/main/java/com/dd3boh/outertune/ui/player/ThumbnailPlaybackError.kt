@@ -103,47 +103,53 @@ fun ThumbnailPlaybackError(
                 tint = MaterialTheme.colorScheme.error
             )
             Text(
-                text = "${error.message} (${error.errorCode}): ${
-                    error.cause?.message ?: error.cause?.cause?.message ?: stringResource(
-                        R.string.error_unknown
-                    )
-                }",
+                text = if (BuildConfig.DEBUG) {
+                    "${error.message} (${error.errorCode}): ${
+                        error.cause?.message ?: error.cause?.cause?.message ?: stringResource(
+                            R.string.error_unknown
+                        )
+                    }"
+                } else {
+                    "${stringResource(R.string.error_unknown)} (${error.errorCode})"
+                },
                 color = textColor,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
-        AnimatedVisibility(!showStackTrace) {
-            TextButton(
-                onClick = { showStackTrace = true }
-            ) {
+        if (BuildConfig.DEBUG) {
+            AnimatedVisibility(!showStackTrace) {
+                TextButton(
+                    onClick = { showStackTrace = true }
+                ) {
+                    Text(
+                        text = stringResource(R.string.tap_show_more),
+                        color = textColor,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+            AnimatedVisibility(showStackTrace) {
                 Text(
-                    text = stringResource(R.string.tap_show_more),
+                    text = error.stackTraceToString(),
                     color = textColor,
                     style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .padding(top = 64.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = {
+                                    val systemInfo =
+                                        "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) | ${BuildConfig.FLAVOR}\n${BuildConfig.APPLICATION_ID} | ${BuildConfig.BUILD_TYPE}\n${Build.BRAND} ${Build.DEVICE} (${Build.MODEL})\n${Build.VERSION.SDK_INT} (${Build.ID})\n\n"
+                                    val clipData = ClipData.newPlainText(
+                                        "OuterTune player error",
+                                        AnnotatedString(systemInfo + "OuterTune player error\n\n" + error.stackTraceToString())
+                                    )
+                                    clipboardManager.nativeClipboard.setPrimaryClip(clipData)
+                                }
+                            )
+                        },
                 )
             }
-        }
-        AnimatedVisibility(showStackTrace) {
-            Text(
-                text = error.stackTraceToString(),
-                color = textColor,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier
-                    .padding(top = 64.dp)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onTap = {
-                                val systemInfo =
-                                    "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) | ${BuildConfig.FLAVOR}\n${BuildConfig.APPLICATION_ID} | ${BuildConfig.BUILD_TYPE}\n${Build.BRAND} ${Build.DEVICE} (${Build.MODEL})\n${Build.VERSION.SDK_INT} (${Build.ID})\n\n"
-                                val clipData = ClipData.newPlainText(
-                                    "OuterTune player error",
-                                    AnnotatedString(systemInfo + "OuterTune player error\n\n" + error.stackTraceToString())
-                                )
-                                clipboardManager.nativeClipboard.setPrimaryClip(clipData)
-                            }
-                        )
-                    },
-            )
         }
         Spacer(Modifier.height(64.dp))
     }

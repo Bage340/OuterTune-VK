@@ -116,16 +116,12 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
         } catch (e: Exception) {
             when (e) {
                 is IOException, is IllegalArgumentException, is IllegalStateException -> {
-                    if (SCANNER_DEBUG) {
-                        e.printStackTrace()
-                    }
-                    throw InvalidAudioFileException("Failed to access file or not in a playable format: ${e.message} for: $path")
+                    throw InvalidAudioFileException("Failed to access file or not in a playable format")
                 }
 
                 else -> {
                     if (SCANNER_DEBUG) {
-                        Log.w(TAG, "ERROR READING METADATA: ${e.message} for: $path")
-                        e.printStackTrace()
+                        Log.w(TAG, "Metadata extraction failed: ${e::class.java.simpleName}")
                     }
 
                     // we still want the song to be playable even if metadata extractor fails
@@ -798,8 +794,7 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
                     rawDateModified?.toLongOrNull()?.let {
                         dateModified = LocalDateTime.ofInstant(Instant.ofEpochSecond(it), ZoneOffset.UTC)
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                } catch (_: Exception) {
                 }
 
                 val artistList = ArrayList<ArtistEntity>()
@@ -1260,8 +1255,7 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
                             }
                         }.map { it.uri })
                     }
-                } catch (e: FileNotFoundException) {
-                    e.printStackTrace()
+                } catch (_: FileNotFoundException) {
                     throw Exception("oh well idk man this should never happen")
                 }
             }

@@ -8,8 +8,10 @@
 
 package com.dd3boh.outertune.utils
 
+import android.util.Log
 import androidx.compose.ui.util.fastAny
 import androidx.media3.exoplayer.offline.Download
+import com.dd3boh.outertune.BuildConfig
 import com.dd3boh.outertune.constants.MAX_COIL_JOBS
 import com.dd3boh.outertune.constants.MAX_DL_JOBS
 import com.dd3boh.outertune.constants.MAX_LM_SCANNER_JOBS
@@ -44,7 +46,11 @@ val ytmCoroutine = Dispatchers.IO.limitedParallelism(MAX_YTM_CONTENT_JOBS)
 val playerCoroutine = newFixedThreadPoolContext(4, "player_service_offload")
 
 fun reportException(throwable: Throwable) {
-    throwable.printStackTrace()
+    if (BuildConfig.DEBUG) {
+        Log.e("OuterTune", "Unhandled application error", throwable)
+    } else {
+        Log.e("OuterTune", "Unhandled ${throwable::class.java.simpleName}")
+    }
 }
 
 /**

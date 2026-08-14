@@ -11,7 +11,11 @@ package com.dd3boh.outertune
 
 import android.app.Application
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.webkit.CookieManager
+import android.webkit.WebStorage
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import androidx.datastore.preferences.core.edit
@@ -40,13 +44,19 @@ import com.dd3boh.outertune.constants.ProxyUrlKey
 import com.dd3boh.outertune.constants.SYSTEM_DEFAULT
 import com.dd3boh.outertune.constants.UseLoginForBrowse
 import com.dd3boh.outertune.constants.VisitorDataKey
+import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.extensions.toEnum
 import com.dd3boh.outertune.extensions.toInetSocketAddress
+import com.dd3boh.outertune.providers.syncengine.RoomProviderSyncStore
+import com.dd3boh.outertune.providers.syncengine.StaticMusicProviderRegistry
+import com.dd3boh.outertune.providers.syncengine.SyncCoordinator
+import com.dd3boh.outertune.providers.vk.UnsupportedVkMusicProvider
 import com.dd3boh.outertune.utils.CoilBitmapLoader
 import com.dd3boh.outertune.utils.LocalArtworkPathKeyer
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
+import com.dd3boh.outertune.work.ProviderSyncWorkerRuntime
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.YouTubeLocale
 import com.zionhuang.kugou.KuGou
@@ -61,10 +71,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.net.Proxy
 import java.util.Locale
+import javax.inject.Inject
 
 @HiltAndroidApp
 class App : Application(), SingletonImageLoader.Factory {
-    private val TAG = App::class.simpleName.toString()
+    @Inject
+    lateinit var musicDatabase: MusicDatabase
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
@@ -75,6 +87,15 @@ class App : Application(), SingletonImageLoader.Factory {
         }
 
         instance = this;
+
+        ProviderSyncWorkerRuntime.install(
+            SyncCoordinator(
+                store = RoomProviderSyncStore(musicDatabase),
+                providers = StaticMusicProviderRegistry(
+                    listOf(UnsupportedVkMusicProvider()),
+                ),
+            ),
+        )
 
         val locale = Locale.getDefault()
         val languageTag = locale.toLanguageTag().replace("-Hant", "") // replace zh-Hant-* to zh-*
@@ -207,6 +228,8 @@ class App : Application(), SingletonImageLoader.Factory {
     }
 
     companion object {
+        private const val TAG = "App"
+
         lateinit var instance: App
             private set
 
@@ -219,6 +242,20 @@ class App : Application(), SingletonImageLoader.Factory {
                     settings.remove(AccountNameKey)
                     settings.remove(AccountEmailKey)
                     settings.remove(AccountChannelHandleKey)
+                }
+            }
+            YouTube.cookie = null
+            YouTube.visitorData = null
+            YouTube.dataSyncId = null
+            Handler(Looper.getMainLooper()).post {
+                runCatching {
+                    val cookieManager = CookieManager.getInstance()
+                    cookieManager.removeAllCookies {
+                        cookieManager.flush()
+                    }
+                    WebStorage.getInstance().deleteAllData()
+                }.onFailure {
+                    Log.w(TAG, "Could not clear WebView login state: ${it::class.java.simpleName}")
                 }
             }
         }

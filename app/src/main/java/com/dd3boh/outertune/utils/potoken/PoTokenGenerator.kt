@@ -30,7 +30,7 @@ class PoTokenGenerator {
         } catch (e: Exception) {
             when (e) {
                 is BadWebViewException -> {
-                    Log.e(TAG, "Could not obtain poToken because WebView is broken", e)
+                    Log.e(TAG, "Could not obtain poToken because WebView is broken")
                     webViewBadImpl = true
                     null
                 }
@@ -45,7 +45,7 @@ class PoTokenGenerator {
      * [PoTokenWebView.generatePoToken] was called
      */
     private suspend fun getWebClientPoToken(videoId: String, sessionId: String, forceRecreate: Boolean): PoTokenResult {
-        Log.d(TAG, "Web poToken requested: $videoId, $sessionId")
+        Log.d(TAG, "Web poToken requested")
 
         val (poTokenGenerator, streamingPot, hasBeenRecreated) =
             webPoTokenGenLock.withLock {
@@ -84,12 +84,12 @@ class PoTokenGenerator {
                 // retry, this time recreating the [webPoTokenGenerator] from scratch;
                 // this might happen for example if the app goes in the background and the WebView
                 // content is lost
-                Log.e(TAG, "Failed to obtain poToken, retrying", throwable)
+                Log.e(TAG, "Failed to obtain poToken, retrying")
                 return getWebClientPoToken(videoId = videoId, sessionId = sessionId, forceRecreate = true)
             }
         }
 
-        Log.d(TAG, "[$videoId] playerPot=$playerPot, streamingPot=$streamingPot")
+        Log.d(TAG, "Web poToken generated")
 
         return PoTokenResult(playerPot, streamingPot)
     }

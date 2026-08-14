@@ -68,7 +68,7 @@ class PoTokenWebView private constructor(
 
                     val fmt = "\"${m.message()}\", source: ${m.sourceId()} (${m.lineNumber()})"
                     val exception = BadWebViewException(fmt)
-                    Log.e(TAG, "This WebView implementation is broken: $fmt")
+                    Log.e(TAG, "This WebView implementation is broken")
 
                     onInitializationErrorCloseAndCancel(exception)
                     popAllPoTokenContinuations().forEach { (_, cont) -> cont.resumeWithException(exception) }
@@ -145,12 +145,12 @@ class PoTokenWebView private constructor(
      */
     @JavascriptInterface
     fun onRunBotguardResult(botguardResponse: String) {
-        Log.d(TAG, "botguardResponse: $botguardResponse")
+        Log.d(TAG, "Botguard response received")
         makeBotguardServiceRequest(
             "https://www.youtube.com/api/jnn/v1/GenerateIT",
             "[ \"$REQUEST_KEY\", \"$botguardResponse\" ]",
         ) { responseBody ->
-            Log.d(TAG, "GenerateIT response: $responseBody")
+            Log.d(TAG, "GenerateIT response received")
             val (integrityToken, expirationTimeInSeconds) = parseIntegrityTokenData(responseBody)
 
             // leave 10 minutes of margin just to be sure
@@ -168,7 +168,7 @@ class PoTokenWebView private constructor(
     suspend fun generatePoToken(identifier: String): String {
         return withContext(Dispatchers.Main) {
             suspendCancellableCoroutine { cont ->
-                Log.d(TAG, "generatePoToken() called with identifier $identifier")
+                Log.d(TAG, "generatePoToken() called")
                 addPoTokenEmitter(identifier, cont)
                 webView.evaluateJavascript(
                     """try {
@@ -204,7 +204,7 @@ class PoTokenWebView private constructor(
      */
     @JavascriptInterface
     fun onObtainPoTokenResult(identifier: String, poTokenU8: String) {
-        Log.d(TAG, "Generated poToken (before decoding): identifier=$identifier poTokenU8=$poTokenU8")
+        Log.d(TAG, "Generated poToken response received")
         val poToken = try {
             u8ToBase64(poTokenU8)
         } catch (t: Throwable) {
@@ -212,7 +212,7 @@ class PoTokenWebView private constructor(
             return
         }
 
-        Log.d(TAG, "Generated poToken: identifier=$identifier poToken=$poToken")
+        Log.d(TAG, "Generated poToken decoded")
         popPoTokenContinuation(identifier)?.resume(poToken)
     }
 

@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.aboutlibraries)
+    alias(libs.plugins.vkid.manifest.placeholders)
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -21,17 +22,20 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val vkIdConfigured = rootProject.extra["vkIdConfigured"] as Boolean
+
 android {
     namespace = "com.dd3boh.outertune"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.dd3boh.outertune"
+        applicationId = "com.bage340.outertunevk"
         minSdk = 24
         targetSdk = 36
         versionCode = 71
         versionName = "0.10.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("boolean", "VK_ID_CONFIGURED", vkIdConfigured.toString())
     }
 
     signingConfigs {
@@ -112,7 +116,7 @@ android {
         variant.outputs
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
-                var outputFileName = "OuterTune-${variant.versionName}-${output.baseName}-${output.versionCode}.apk"
+                val outputFileName = "OuterTune-VK-${variant.versionName}-${output.baseName}-${output.versionCode}.apk"
                 output.outputFileName = outputFileName
             }
     }
@@ -185,6 +189,8 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
+
     lint {
         lintConfig = file("lint.xml")
     }
@@ -236,10 +242,16 @@ dependencies {
     implementation(libs.media3.okhttp)
     implementation(libs.media3.session)
     implementation(libs.media3.workmanager)
+    implementation(libs.work.runtime.ktx)
 
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.room.testing)
 
     implementation(libs.apache.lang3)
 
@@ -250,6 +262,14 @@ dependencies {
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.serialization.json)
+
+    // Official VK ID SDK. VK Music/audio methods are not part of this dependency.
+    // Its optional runtime Tracer bridge pulls a non-FOSS telemetry license; authentication uses
+    // the SDK's tracking-core abstraction and does not require that implementation.
+    implementation(libs.vkid) {
+        exclude(group = "com.vk.id", module = "tracking-tracer")
+    }
+    implementation(libs.vkid.tracking.noop)
 
     // modules
     implementation(project(":innertube"))
@@ -262,8 +282,7 @@ dependencies {
     implementation(libs.aboutlibraries.compose.m3)
 
     // sdk24 support
-    // Support for N is officially unsupported even it the app should still work. Leave this outside of the version catalog.
-    implementation("androidx.webkit:webkit:1.14.0")
+    implementation(libs.webkit)
 }
 
 afterEvaluate {

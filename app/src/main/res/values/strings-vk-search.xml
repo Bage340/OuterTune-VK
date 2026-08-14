@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="source_local">Local</string>
+    <string name="source_youtube">YouTube</string>
+    <string name="source_vk">VK</string>
+    <string name="source_badge_content_description">%1$s source</string>
+    <string name="provider_search_vk_section">VK results</string>
+    <string name="provider_search_youtube_section">YouTube results</string>
+    <string name="provider_search_youtube_too">Search YouTube too</string>
+    <string name="provider_search_retry">Retry</string>
+    <string name="provider_search_loading">Searching music sources…</string>
+    <string name="provider_search_vk_sign_in">Sign in to VK to search there. Showing YouTube results.</string>
+    <string name="provider_search_vk_unavailable">VK search is unavailable. Showing YouTube results.</string>
+    <string name="provider_search_vk_failed">VK search failed. Showing YouTube results.</string>
+    <string name="provider_search_no_high_match">No reliable VK match was found. Showing YouTube results.</string>
+    <string name="provider_search_youtube_failed">YouTube search failed.</string>
+</resources>

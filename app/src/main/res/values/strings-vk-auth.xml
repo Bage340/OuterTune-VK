@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="youtube_music_account_title">YouTube Music account</string>
+    <string name="youtube_music_sync_title">YouTube Music sync</string>
+    <string name="vk_id_title">VK ID</string>
+    <string name="vk_music_capabilities_title">VK Music capabilities</string>
+    <string name="vk_music_sync_title">VK Music sync settings</string>
+
+    <string name="vk_id_status_not_configured">Setup needed</string>
+    <string name="vk_id_status_disconnected">Disconnected</string>
+    <string name="vk_id_status_in_progress">Working</string>
+    <string name="vk_id_status_connected">Connected</string>
+    <string name="vk_id_status_error">Attention</string>
+    <string name="vk_id_status_a11y">VK ID status: %1$s</string>
+    <string name="vk_id_account_status_a11y">VK ID account %1$s. Status: %2$s</string>
+
+    <string name="vk_id_configuration_required">VK ID configuration required</string>
+    <string name="vk_id_configuration_required_short">Own application credentials are not configured</string>
+    <string name="vk_id_configuration_required_description">Build the app with credentials for its own registered VK ID Android application. This checkout remains safely disabled.</string>
+    <string name="vk_id_disconnected_description">No VK ID account is connected</string>
+    <string name="vk_id_connected_description">Official VK ID session is available</string>
+    <string name="vk_id_user_id">User ID: %1$d</string>
+    <string name="vk_id_connect">Connect VK ID</string>
+    <string name="vk_id_connect_again">Connect again</string>
+    <string name="vk_id_connect_description">Open the official VK ID authorization flow</string>
+    <string name="vk_id_refresh">Refresh VK ID account</string>
+    <string name="vk_id_refresh_description">Refresh the SDK-managed session and account details</string>
+    <string name="vk_id_disconnect">Disconnect VK ID</string>
+    <string name="vk_id_disconnect_description">Revoke the session and clear the official SDK token storage</string>
+    <string name="vk_id_retry">Retry</string>
+    <string name="vk_id_identity_only_description">VK ID connects identity only. It does not grant VK Music search, library, playlist, upload, or playback access.</string>
+
+    <string name="vk_id_progress_connecting">Connecting to VK ID…</string>
+    <string name="vk_id_progress_refreshing_session">Refreshing VK ID session…</string>
+    <string name="vk_id_progress_refreshing_account">Refreshing VK ID account…</string>
+    <string name="vk_id_progress_disconnecting">Disconnecting VK ID…</string>
+
+    <string name="vk_id_error_configuration">VK ID credentials are not configured for this build.</string>
+    <string name="vk_id_error_canceled">VK ID connection was canceled.</string>
+    <string name="vk_id_error_no_browser">No supported browser is available for VK ID.</string>
+    <string name="vk_id_error_state">VK ID rejected an unsafe OAuth state. Start a new connection.</string>
+    <string name="vk_id_error_authorization">VK ID authorization was not completed.</string>
+    <string name="vk_id_error_redirect">The VK ID redirect does not match this application configuration.</string>
+    <string name="vk_id_error_access_expired">The VK ID access token expired. Refresh the session.</string>
+    <string name="vk_id_error_refresh_expired">The VK ID session expired. Connect again.</string>
+    <string name="vk_id_error_revoked">VK ID access was revoked or the account is signed out. Connect again.</string>
+    <string name="vk_id_error_network">VK ID is unreachable. Check the connection and retry.</string>
+    <string name="vk_id_error_service">VK ID could not complete the request. Retry later or connect again.</string>
+
+    <string name="vk_music_unavailable_reason">Unavailable: VK does not publish this music API for third-party applications.</string>
+    <string name="vk_music_search_capability">Catalog search</string>
+    <string name="vk_music_library_capability">Saved music and library</string>
+    <string name="vk_music_playlists_capability">Playlist access and editing</string>
+    <string name="vk_music_upload_capability">Audio upload and playback</string>
+    <string name="vk_music_sync_enabled">Enable VK Music sync</string>
+    <string name="vk_music_sync_startup">Sync at startup</string>
+    <string name="vk_music_sync_background">Background sync</string>
+    <string name="vk_music_sync_playlists">Sync playlists</string>
+    <string name="vk_music_sync_deletions">Mirror remote deletions</string>
+    <string name="vk_music_sync_auto_add">Automatically add matched tracks</string>
+</resources>

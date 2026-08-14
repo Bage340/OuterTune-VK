@@ -208,7 +208,7 @@ object YTPlayerUtils {
             throw Exception("Could not find stream url")
         }
 
-        Log.d(TAG, "[$videoId] stream url: $streamUrl")
+        Log.d(TAG, "[$videoId] playable stream resolved")
 
         PlaybackData(
             audioConfig,
