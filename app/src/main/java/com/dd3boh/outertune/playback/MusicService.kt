@@ -40,6 +40,7 @@ import androidx.media3.common.Timeline
 import androidx.media3.common.audio.SonicAudioProcessor
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
@@ -252,6 +253,21 @@ class MusicService : MediaLibraryService(),
     )
 
     private val lyricsFetchTargets = MutableStateFlow(LyricsFetchTargets(null, emptyList()))
+    /**
+     * Resolved stream urls by media id, with the time they claim to stay valid until. Hoisted out of
+     * [createDataSourceFactory] so a url googlevideo refuses mid-song can be dropped and resolved
+     * again, which is the only way past a url that validates and then dies a minute in.
+     */
+    private val songUrlCache = HashMap<String, Pair<String, Long>>()
+
+    /** Client each cached url came from, so a refused one can be skipped on the next resolution. */
+    private val songUrlClient = HashMap<String, String>()
+
+    /** Headers each cached url has to be fetched with, kept alongside it for the cache-hit path. */
+    private val songUrlHeaders = HashMap<String, Map<String, String>>()
+
+    /** Refresh attempts per media id, so a song that cannot play at all stops retrying. */
+    private val streamRefreshes = HashMap<String, Int>()
 
     override fun onCreate() {
         if (SERVICE_DEBUG) Log.i(TAG, "Starting MusicService")
@@ -723,7 +739,6 @@ class MusicService : MediaLibraryService(),
     }
 
     private fun createDataSourceFactory(): DataSource.Factory {
-        val songUrlCache = HashMap<String, Pair<String, Long>>()
         return ResolvingDataSource.Factory(createCacheDataSource()) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
             if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: song id = $mediaId")
@@ -767,7 +782,15 @@ class MusicService : MediaLibraryService(),
             songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {
                 if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: remote song (temp cache)")
                 offloadScope.launch { recoverSong(mediaId) }
+                // Bounded like the fresh-resolve path below; letting this read run open-ended was
+                // measurably worse (playback died at 31 s rather than 62 s). The headers matter as
+                // much as the url: googlevideo expects the fetch to look like the client it issued
+                // the url for, and every read past the first chunk comes through here.
                 return@Factory dataSpec.withUri(it.first.toUri())
+                    .subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
+                    .withRequestHeaders(
+                        dataSpec.httpRequestHeaders + songUrlHeaders[mediaId].orEmpty()
+                    )
             }
 
             if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: remote song (online fetch)")
@@ -829,7 +852,11 @@ class MusicService : MediaLibraryService(),
 
             songUrlCache[mediaId] =
                 streamUrl to System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)
-            dataSpec.withUri(streamUrl.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
+            songUrlClient[mediaId] = playbackData.streamClient
+            songUrlHeaders[mediaId] = playbackData.streamHeaders
+            dataSpec.withUri(streamUrl.toUri())
+                .subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
+                .withRequestHeaders(dataSpec.httpRequestHeaders + playbackData.streamHeaders)
         }
     }
 
@@ -968,6 +995,32 @@ class MusicService : MediaLibraryService(),
         consecutivePlaybackErr = 0
     }
 
+    /**
+     * Drops the refused stream url for [mediaId] and re-prepares so it resolves again, skipping the
+     * client that just failed.
+     *
+     * @return true if a retry was started, false once the song has used up its attempts
+     */
+    private fun refreshStreamAndRetry(mediaId: String): Boolean {
+        val attempts = streamRefreshes.getOrDefault(mediaId, 0)
+        if (attempts >= MAX_STREAM_REFRESHES) {
+            Log.w(TAG, "stream for $mediaId still refused after $attempts refreshes, giving up")
+            return false
+        }
+        streamRefreshes[mediaId] = attempts + 1
+
+        val failedClient = songUrlClient.remove(mediaId)
+        songUrlHeaders.remove(mediaId)
+        songUrlCache.remove(mediaId)
+        if (failedClient == "WEB_REMIX") {
+            YTPlayerUtils.markWebRemixFailed(mediaId)
+        }
+        Log.w(TAG, "stream for $mediaId refused on $failedClient, resolving again")
+
+        player.prepare()
+        return true
+    }
+
     fun stopOnError() {
         player.pause()
         Toast.makeText(this@MusicService, getString(R.string.err_stop_on_error), Toast.LENGTH_LONG).show()
@@ -1005,6 +1058,17 @@ class MusicService : MediaLibraryService(),
             return
         }
 
+        // googlevideo hands out urls that pass validation and are then refused partway through the
+        // track, so the player is the first thing that learns a client's url is no good. Report it
+        // back and resolve again against a different client rather than dropping the song.
+        val responseCode = (error.cause as? InvalidResponseCodeException)?.responseCode
+        val mediaId = player.currentMediaItem?.mediaId
+        if ((responseCode == 403 || responseCode == 410) && mediaId != null &&
+            refreshStreamAndRetry(mediaId)
+        ) {
+            return
+        }
+
         if (dataStore.get(SkipOnErrorKey, false)) {
             skipOnError()
         } else {
@@ -1035,6 +1099,8 @@ class MusicService : MediaLibraryService(),
         }
 
         updateLyricsFetchTargets()
+        // A song that got playing again starts with a full budget next time it comes round.
+        mediaItem?.mediaId?.let { streamRefreshes.remove(it) }
 
         if (player.isPlaying && reason == MEDIA_ITEM_TRANSITION_REASON_SEEK) {
             player.prepare()
@@ -1248,6 +1314,9 @@ class MusicService : MediaLibraryService(),
         const val NOTIFICATION_ID = 888
         const val ERROR_CODE_NO_STREAM = 1000001
         const val CHUNK_LENGTH = 512 * 1024L
+
+        /** Stream url resolutions allowed per song before a refused stream is treated as fatal. */
+        const val MAX_STREAM_REFRESHES = 5
 
         const val COMMAND_GET_BINDER = "GET_BINDER"
     }

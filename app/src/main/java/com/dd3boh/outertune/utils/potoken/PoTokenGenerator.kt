@@ -17,17 +17,23 @@ class PoTokenGenerator {
     private var webViewBadImpl = false // whether the system has a bad WebView implementation
 
     private val webPoTokenGenLock = Mutex()
-    private var webPoTokenSessionId: String? = null
+    private var webPoTokenVisitorData: String? = null
     private var webPoTokenStreamingPot: String? = null
     private var webPoTokenGenerator: PoTokenWebView? = null
 
-    fun getWebClientPoToken(videoId: String, sessionId: String): PoTokenResult? {
+    /**
+     * @param visitorData identifies the session the tokens are minted for. It must be the same
+     * value the player request and the stream url end up carrying: the streaming (GVS) token is
+     * bound to it, and a token bound to one identifier but presented by another session is honoured
+     * only for the first stretch of a stream before every later read is refused.
+     */
+    fun getWebClientPoToken(videoId: String, visitorData: String): PoTokenResult? {
         if (!webViewSupported || webViewBadImpl) {
             return null
         }
 
         return try {
-            runBlocking { getWebClientPoToken(videoId, sessionId, forceRecreate = false) }
+            runBlocking { getWebClientPoToken(videoId, visitorData, forceRecreate = false) }
         } catch (e: Exception) {
             when (e) {
                 is BadWebViewException -> {
@@ -45,16 +51,16 @@ class PoTokenGenerator {
      * case the current [webPoTokenGenerator] threw an error last time
      * [PoTokenWebView.generatePoToken] was called
      */
-    private suspend fun getWebClientPoToken(videoId: String, sessionId: String, forceRecreate: Boolean): PoTokenResult {
-        if (POTOKEN_DEBUG) Log.d(TAG, "Web poToken requested: $videoId, $sessionId")
+    private suspend fun getWebClientPoToken(videoId: String, visitorData: String, forceRecreate: Boolean): PoTokenResult {
+        if (POTOKEN_DEBUG) Log.d(TAG, "Web poToken requested: $videoId, $visitorData")
 
         val (poTokenGenerator, streamingPot, hasBeenRecreated) =
             webPoTokenGenLock.withLock {
                 val shouldRecreate =
-                    forceRecreate || webPoTokenGenerator == null || webPoTokenGenerator!!.isExpired || webPoTokenSessionId != sessionId
+                    forceRecreate || webPoTokenGenerator == null || webPoTokenGenerator!!.isExpired || webPoTokenVisitorData != visitorData
 
                 if (shouldRecreate) {
-                    webPoTokenSessionId = sessionId
+                    webPoTokenVisitorData = visitorData
 
                     withContext(Dispatchers.Main) {
                         webPoTokenGenerator?.close()
@@ -65,7 +71,7 @@ class PoTokenGenerator {
 
                     // The streaming poToken needs to be generated exactly once before generating
                     // any other (player) tokens.
-                    webPoTokenStreamingPot = webPoTokenGenerator!!.generatePoToken(webPoTokenSessionId!!)
+                    webPoTokenStreamingPot = webPoTokenGenerator!!.generatePoToken(webPoTokenVisitorData!!)
                 }
 
                 Triple(webPoTokenGenerator!!, webPoTokenStreamingPot!!, shouldRecreate)
@@ -74,7 +80,7 @@ class PoTokenGenerator {
         val playerPot = try {
             // Not using synchronized here, since poTokenGenerator would be able to generate
             // multiple poTokens in parallel if needed. The only important thing is for exactly one
-            // streaming poToken (based on [sessionId]) to be generated before anything else.
+            // streaming poToken (based on [visitorData]) to be generated before anything else.
             poTokenGenerator.generatePoToken(videoId)
         } catch (throwable: Throwable) {
             if (hasBeenRecreated) {
@@ -86,12 +92,12 @@ class PoTokenGenerator {
                 // this might happen for example if the app goes in the background and the WebView
                 // content is lost
                 Log.e(TAG, "Failed to obtain poToken, retrying", throwable)
-                return getWebClientPoToken(videoId = videoId, sessionId = sessionId, forceRecreate = true)
+                return getWebClientPoToken(videoId = videoId, visitorData = visitorData, forceRecreate = true)
             }
         }
 
         if (POTOKEN_DEBUG) Log.d(TAG, "[$videoId] playerPot=$playerPot, streamingPot=$streamingPot")
 
-        return PoTokenResult(playerPot, streamingPot)
+        return PoTokenResult(visitorData, playerPot, streamingPot)
     }
 }

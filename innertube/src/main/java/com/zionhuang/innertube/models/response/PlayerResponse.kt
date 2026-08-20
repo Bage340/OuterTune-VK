@@ -88,13 +88,17 @@ data class PlayerResponse(
     @Serializable
     data class VideoDetails(
         val videoId: String,
-        val title: String,
-        val author: String,
-        val channelId: String,
-        val lengthSeconds: String,
-        val musicVideoType: String?,
-        val viewCount: String,
-        val thumbnail: Thumbnails,
+        // Everything past videoId is optional: the tv/embedded clients answer with a trimmed
+        // videoDetails, and requiring these fields made the whole response fail to parse, which
+        // silently dropped those clients from the stream fallback chain. Metadata is taken from
+        // MAIN_CLIENT anyway, so a sparse videoDetails from a fallback client costs nothing.
+        val title: String? = null,
+        val author: String? = null,
+        val channelId: String? = null,
+        val lengthSeconds: String? = null,
+        val musicVideoType: String? = null,
+        val viewCount: String? = null,
+        val thumbnail: Thumbnails? = null,
     )
 
     @Serializable

@@ -13,7 +13,7 @@ import android.util.Log
 import androidx.media3.common.PlaybackException
 import com.dd3boh.outertune.constants.AudioQuality
 import com.dd3boh.outertune.utils.YTPlayerUtils.MAIN_CLIENT
-import com.dd3boh.outertune.utils.YTPlayerUtils.STREAM_FALLBACK_CLIENTS
+import com.dd3boh.outertune.utils.YTPlayerUtils.STREAM_CLIENTS
 import com.dd3boh.outertune.utils.YTPlayerUtils.validateStatus
 import com.dd3boh.outertune.utils.cipher.SignatureCipherManager
 import com.dd3boh.outertune.utils.potoken.PoTokenGenerator
@@ -21,11 +21,18 @@ import com.dd3boh.outertune.utils.potoken.PoTokenResult
 import com.zionhuang.innertube.NewPipeUtils
 import com.zionhuang.innertube.YouTube
 import com.zionhuang.innertube.models.YouTubeClient
+import com.zionhuang.innertube.models.YouTubeClient.Companion.ANDROID_VR_1_43_32
+import com.zionhuang.innertube.models.YouTubeClient.Companion.ANDROID_VR_1_65_10
 import com.zionhuang.innertube.models.YouTubeClient.Companion.ANDROID_VR_NO_AUTH
 import com.zionhuang.innertube.models.YouTubeClient.Companion.IOS
+import com.zionhuang.innertube.models.YouTubeClient.Companion.ORIGIN_YOUTUBE_MUSIC
+import com.zionhuang.innertube.models.YouTubeClient.Companion.REFERER_YOUTUBE_MUSIC
+import com.zionhuang.innertube.models.YouTubeClient.Companion.TVHTML5
+import com.zionhuang.innertube.models.YouTubeClient.Companion.VISIONOS
 import com.zionhuang.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import com.zionhuang.innertube.models.response.PlayerResponse
 import okhttp3.OkHttpClient
+import java.util.concurrent.ConcurrentHashMap
 
 object YTPlayerUtils {
 
@@ -38,20 +45,58 @@ object YTPlayerUtils {
     private val poTokenGenerator = PoTokenGenerator()
 
     /**
-     * Client used for metadata and the initial stream response. Other clients are not used here
-     * because their metadata can differ (e.g. different loudnessDb normalization targets).
+     * How long a video keeps skipping WEB_REMIX after one of its streams was rejected. Long enough
+     * to get past the rejection, short enough that a transient CDN failure does not pin the video to
+     * a lower-quality client for the rest of the session.
      */
-    private val MAIN_CLIENT: YouTubeClient = ANDROID_VR_NO_AUTH
+    private const val WEB_REMIX_FAILURE_TTL_MS = 5 * 60 * 1000L
+
+    /** videoId -> when its WEB_REMIX stream was last rejected mid-playback. */
+    private val webRemixFailures = ConcurrentHashMap<String, Long>()
 
     /**
-     * Clients used for fallback streams in case the streams of the main client do not work.
+     * Records that [videoId]'s WEB_REMIX stream url was refused while playing. Such a url passes
+     * [validateStatus] and only fails later, so the resolver cannot tell it apart on its own; the
+     * player has to report it back for the next resolution to move on to another client.
      */
-    private val STREAM_FALLBACK_CLIENTS: Array<YouTubeClient> = arrayOf(
-        WEB_REMIX, // premium formats and correct metadata; requires working signature deobfuscation
-//        ANDROID,
-//        TVHTML5,
-//        TVHTML5_SIMPLY_EMBEDDED_PLAYER,
+    fun markWebRemixFailed(videoId: String) {
+        webRemixFailures[videoId] = System.currentTimeMillis()
+    }
+
+    private fun hasRecentWebRemixFailure(videoId: String): Boolean {
+        val failedAt = webRemixFailures[videoId] ?: return false
+        if ((System.currentTimeMillis() - failedAt) !in 0 until WEB_REMIX_FAILURE_TTL_MS) {
+            webRemixFailures.remove(videoId, failedAt)
+            return false
+        }
+        return true
+    }
+
+    /**
+     * Client used for metadata and the initial stream response. Other clients are not used for the
+     * metadata because it can differ between them (e.g. different loudnessDb normalization targets).
+     *
+     * This has to be a client that carries the signed-in session. Leading with an anonymous one
+     * hands YouTube an unauthenticated request for every single song, which is what gets answered
+     * with "sign in to confirm you're not a bot".
+     */
+    private val MAIN_CLIENT: YouTubeClient = WEB_REMIX
+
+    /**
+     * Clients tried for the stream, in order. Separate from [MAIN_CLIENT], which only has to be good
+     * for metadata: the VR builds hand out the longest-lived urls for music, so they go first even
+     * though the metadata keeps coming from the signed-in client. When this list reaches
+     * [MAIN_CLIENT] its already-fetched response is reused instead of asking again.
+     */
+    private val STREAM_CLIENTS: Array<YouTubeClient> = arrayOf(
+        // First on purpose: its urls play a track through, while the others get cut off partway.
+        VISIONOS,
+        ANDROID_VR_1_65_10,
+        ANDROID_VR_1_43_32,
+        WEB_REMIX,
+        TVHTML5,
         IOS,
+        // ANDROID stays out: its player request answers 400. Measured 2026-08-19.
     )
 
 
@@ -62,12 +107,43 @@ object YTPlayerUtils {
         val format: PlayerResponse.StreamingData.Format,
         val streamUrl: String,
         val streamExpiresInSeconds: Int,
+        /** Client that produced [streamUrl], so the player can report it back if the url is refused. */
+        val streamClient: String = "unknown",
+        /**
+         * Headers the media request has to carry. googlevideo issues a url on behalf of a specific
+         * client and expects the fetch to look like it came from that client; a request with the
+         * http library's own defaults is served briefly and then refused.
+         */
+        val streamHeaders: Map<String, String> = emptyMap(),
     )
+
+    /** Identifies a media request as coming from the client the stream url was issued for. */
+    private fun YouTubeClient.streamHeaders(): Map<String, String> = buildMap {
+        put("User-Agent", userAgent)
+        put("Accept", "*/*")
+        put("Accept-Language", "en-US,en;q=0.9")
+        when (clientName) {
+            "WEB_REMIX" -> {
+                put("Referer", REFERER_YOUTUBE_MUSIC)
+                put("Origin", ORIGIN_YOUTUBE_MUSIC)
+            }
+
+            "WEB_CREATOR" -> {
+                put("Referer", "https://studio.youtube.com/")
+                put("Origin", "https://studio.youtube.com")
+            }
+
+            else -> {
+                put("Referer", "https://www.youtube.com/")
+                put("Origin", "https://www.youtube.com")
+            }
+        }
+    }
 
     /**
      * Custom player response intended to use for playback.
      * Metadata like audioConfig and videoDetails are from [MAIN_CLIENT].
-     * Format & stream can be from [MAIN_CLIENT] or [STREAM_FALLBACK_CLIENTS].
+     * Format & stream can be from [MAIN_CLIENT] or [STREAM_CLIENTS].
      */
     suspend fun playerResponseForPlayback(
         videoId: String,
@@ -82,14 +158,11 @@ object YTPlayerUtils {
         val signatureTimestamp = getSignatureTimestampOrNull(videoId)
 
         val isLoggedIn = YouTube.cookie != null
-        val sessionId =
-            if (isLoggedIn) {
-                // signed in sessions use dataSyncId as identifier
-                YouTube.dataSyncId
-            } else {
-                // signed out sessions use visitorData as identifier
-                YouTube.visitorData
-            }
+        // The streaming (GVS) token is minted against this and the stream url is then fetched by a
+        // session identifying itself with visitorData, so this has to be visitorData for both
+        // signed-in and signed-out sessions. Binding it to dataSyncId while requests carry
+        // visitorData is honoured for roughly the first minute of a track and refused after that.
+        val sessionId = YouTube.visitorData
 
         Log.d(TAG, "[$videoId] signatureTimestamp: $signatureTimestamp, isLoggedIn: $isLoggedIn, " +
                 "dataSyncId present: ${!YouTube.dataSyncId.isNullOrBlank()} (len=${YouTube.dataSyncId?.length ?: 0}), " +
@@ -112,31 +185,33 @@ object YTPlayerUtils {
         var format: PlayerResponse.StreamingData.Format? = null
         var streamUrl: String? = null
         var streamExpiresInSeconds: Int? = null
+        var streamClient: String? = null
+        var streamHeaders: Map<String, String> = emptyMap()
 
         var streamPlayerResponse: PlayerResponse? = null
-        for (clientIndex in (-1 until STREAM_FALLBACK_CLIENTS.size)) {
+        for ((clientIndex, client) in STREAM_CLIENTS.withIndex()) {
             // reset for each client
             format = null
             streamUrl = null
             streamExpiresInSeconds = null
+            streamClient = null
+
+            Log.d(TAG, "Trying stream client ${clientIndex + 1}/${STREAM_CLIENTS.size}: ${client.clientName}")
+
+            if (client.loginRequired && !isLoggedIn) {
+                // skip client if it requires login but user is not logged in
+                continue
+            }
+            if (client.clientName == "WEB_REMIX" && hasRecentWebRemixFailure(videoId)) {
+                Log.d(TAG, "[$videoId] skipping WEB_REMIX after a rejected stream")
+                continue
+            }
 
             // decide which client to use for streams and load its player response
-            val client: YouTubeClient
-            if (clientIndex == -1) {
-                Log.d(TAG, "Trying client: ${MAIN_CLIENT.clientName}")
-                // try with streams from main client first
-                client = MAIN_CLIENT
+            if (client == MAIN_CLIENT) {
+                // its response was already fetched for the metadata
                 streamPlayerResponse = mainPlayerResponse
             } else {
-                Log.d(TAG, "Trying fallback client: ${STREAM_FALLBACK_CLIENTS[clientIndex].clientName}")
-                // after main client use fallback clients
-                client = STREAM_FALLBACK_CLIENTS[clientIndex]
-
-                if (client.loginRequired && !isLoggedIn) {
-                    // skip client if it requires login but user is not logged in
-                    continue
-                }
-
                 val playerResult =
                     YouTube.player(videoId, playlistId, client, signatureTimestamp, webPlayerPot)
                 playerResult.exceptionOrNull()?.let {
@@ -172,11 +247,14 @@ object YTPlayerUtils {
                     streamUrl += "&pot=$webStreamingPot";
                 }
 
-                if (clientIndex == STREAM_FALLBACK_CLIENTS.size - 1) {
+                streamClient = client.clientName
+                streamHeaders = client.streamHeaders()
+
+                if (clientIndex == STREAM_CLIENTS.lastIndex) {
                     // skip validateStatus for the last client
                     break
                 }
-                if (validateStatus(streamUrl)) {
+                if (validateStatus(streamUrl, streamHeaders)) {
                     // working stream found
                     Log.i(TAG, "[$videoId] [${client.clientName}] found working stream")
                     break
@@ -215,6 +293,7 @@ object YTPlayerUtils {
             format,
             streamUrl,
             streamExpiresInSeconds,
+            streamClient ?: MAIN_CLIENT.clientName,
         )
     }
 
@@ -232,8 +311,7 @@ object YTPlayerUtils {
         // Include the web player integrity fields because omitting the player PoToken may
         // cause the request to return UNPLAYABLE.
         val signatureTimestamp = getSignatureTimestampOrNull(videoId)
-        val sessionId = if (YouTube.cookie != null) YouTube.dataSyncId else YouTube.visitorData
-        val webPlayerPot = getWebClientPoTokenOrNull(videoId, sessionId)?.playerRequestPoToken
+        val webPlayerPot = getWebClientPoTokenOrNull(videoId, YouTube.visitorData)?.playerRequestPoToken
         return YouTube.player(videoId, playlistId, WEB_REMIX, signatureTimestamp, webPlayerPot)
     }
 
@@ -257,13 +335,21 @@ object YTPlayerUtils {
      * If this returns true the url is likely to work.
      * If this returns false the url might cause an error during playback.
      */
-    private fun validateStatus(url: String): Boolean {
+    private fun validateStatus(url: String, headers: Map<String, String> = emptyMap()): Boolean {
         try {
+            // googlevideo often rejects HEAD with 403 even when the stream plays; validate with a
+            // tiny ranged GET instead, which is how the player actually fetches the media.
             val requestBuilder = okhttp3.Request.Builder()
-                .head()
+                .header("Range", "bytes=0-0")
                 .url(url)
             val response = httpClient.newCall(requestBuilder.build()).execute()
-            return response.isSuccessful
+            val ok = response.isSuccessful
+            if (!ok) {
+                // logged at warn so release builds still show why a client was dropped
+                Log.w(TAG, "stream validation failed: HTTP ${response.code}")
+            }
+            response.close()
+            return ok
         } catch (e: Exception) {
             reportException(e)
         }
@@ -309,13 +395,13 @@ object YTPlayerUtils {
     }
 
     // Reports exceptions; returns null on failure.
-    private fun getWebClientPoTokenOrNull(videoId: String, sessionId: String?): PoTokenResult? {
-        if (sessionId == null) {
-            Log.d(TAG, "[$videoId] Session identifier is null")
+    private fun getWebClientPoTokenOrNull(videoId: String, visitorData: String?): PoTokenResult? {
+        if (visitorData == null) {
+            Log.d(TAG, "[$videoId] visitorData is null")
             return null
         }
         try {
-            return poTokenGenerator.getWebClientPoToken(videoId, sessionId)
+            return poTokenGenerator.getWebClientPoToken(videoId, visitorData)
         } catch (e: Exception) {
             reportException(e)
         }
