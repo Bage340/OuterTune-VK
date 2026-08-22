@@ -12,7 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: release-signing
     steps:
       - name: Check out exact fixed OuterTune source
         uses: actions/checkout@v4
@@ -50,22 +49,24 @@ jobs:
         shell: bash
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
 
-      - name: Prepare release signing for same-package build
+      - name: Generate isolated signing key for same-package APK
         shell: bash
-        env:
-          KEYSTORE: ${{ secrets.KEYSTORE }}
-          KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
         run: |
-          test -n "$KEYSTORE"
-          test -n "$KEYSTORE_PROPERTIES"
-          KEYSTORE_FILE="$GITHUB_WORKSPACE/source/outertune-custom-release.jks"
-          printf '%s' "$KEYSTORE" | base64 --decode > "$KEYSTORE_FILE"
-          printf '%s' "$KEYSTORE_PROPERTIES" > "$GITHUB_WORKSPACE/source/keystore.properties"
-          sed -i '/^storeFile=/d' "$GITHUB_WORKSPACE/source/keystore.properties"
-          printf 'storeFile=%s\n' "$KEYSTORE_FILE" >> "$GITHUB_WORKSPACE/source/keystore.properties"
+          KEYSTORE_FILE="$GITHUB_WORKSPACE/source/outertune-clean-build.jks"
+          keytool -genkeypair -v \
+            -keystore "$KEYSTORE_FILE" \
+            -storepass 'OuterTuneCleanBuild2026' \
+            -keypass 'OuterTuneCleanBuild2026' \
+            -alias outertune-clean-build \
+            -keyalg RSA -keysize 4096 -validity 10000 \
+            -dname 'CN=OuterTune Clean Build, OU=Local Build, O=OuterTune, L=Local, ST=Local, C=US'
+          cat > "$GITHUB_WORKSPACE/source/keystore.properties" <<EOF
+          storeFile=$KEYSTORE_FILE
+          storePassword=OuterTuneCleanBuild2026
+          keyAlias=outertune-clean-build
+          keyPassword=OuterTuneCleanBuild2026
+          EOF
           test -s "$KEYSTORE_FILE"
-          grep -q '^keyAlias=' "$GITHUB_WORKSPACE/source/keystore.properties"
-          grep -q '^storePassword=' "$GITHUB_WORKSPACE/source/keystore.properties"
 
       - name: Build clean fixed APKs
         shell: bash
@@ -96,13 +97,6 @@ jobs:
           cp "$DEBUGAPK" OuterTune-0.10.15-403fix-core-debug-side-by-side.apk
           sha256sum OuterTune-0.10.15-403fix-core-*.apk | tee SHA256SUMS.txt
 
-      - name: Remove signing material
-        if: always()
-        shell: bash
-        run: |
-          rm -f "$GITHUB_WORKSPACE/source/outertune-custom-release.jks"
-          rm -f "$GITHUB_WORKSPACE/source/keystore.properties"
-
       - name: Upload final APKs
         uses: actions/upload-artifact@v4
         with:
@@ -117,3 +111,10 @@ jobs:
             debug-badging.txt
             userdebug-signature.txt
             debug-signature.txt
+
+      - name: Remove signing material
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$GITHUB_WORKSPACE/source/outertune-clean-build.jks"
+          rm -f "$GITHUB_WORKSPACE/source/keystore.properties"
