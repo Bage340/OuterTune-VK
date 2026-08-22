@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - 'codex/outertune-403-fix'
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
