@@ -12,6 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    environment: release-signing
     steps:
       - name: Check out exact fixed OuterTune source
         uses: actions/checkout@v4
@@ -22,17 +23,18 @@ jobs:
           submodules: recursive
           path: source
 
-      - name: Verify exact source and fix
+      - name: Verify exact source and requested fix
         shell: bash
         run: |
           cd source
           test "$(git rev-parse HEAD)" = "b7f58abfd3e77b7548bee353761828cfd213a0c2"
+          test "$(git -C media rev-parse HEAD)" = "3f52f92e3532b9915ae6fec3dd72ebff9bde0e0a"
           grep -q 'versionCode = 85' app/build.gradle.kts
           grep -q 'versionName = "0.10.15"' app/build.gradle.kts
           grep -q 'applicationId = "com.dd3boh.outertune"' app/build.gradle.kts
           grep -R -q 'VISIONOS' innertube app/src/main/java
           if grep -R -q 'com.bage340.outertunevk' app innertube; then
-            echo 'Unexpected OuterTune-VK package content found' >&2
+            echo 'Unexpected OuterTune-VK code found in checked-out source' >&2
             exit 1
           fi
 
@@ -48,103 +50,70 @@ jobs:
         shell: bash
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
 
-      - name: Build core userdebug and debug APKs
-        shell: bash
-        run: |
-          cd source
-          ./gradlew :app:assembleCoreUserdebug :app:assembleCoreDebug --stacktrace -DskipFormatKtlint
-
-      - name: Verify unsigned/update package identity
-        shell: bash
-        run: |
-          USERDEBUG="$(find source/app/build/outputs/apk/core/userdebug -name '*.apk' -print -quit)"
-          DEBUGAPK="$(find source/app/build/outputs/apk/core/debug -name '*.apk' -print -quit)"
-          test -n "$USERDEBUG"
-          test -n "$DEBUGAPK"
-          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)"
-          test -x "$AAPT"
-          "$AAPT" dump badging "$USERDEBUG" | tee userdebug-badging.txt
-          "$AAPT" dump badging "$DEBUGAPK" | tee debug-badging.txt
-          grep -q "package: name='com.dd3boh.outertune' versionCode='85'" userdebug-badging.txt
-          grep -q "package: name='com.dd3boh.outertune.debug' versionCode='85'" debug-badging.txt
-
-      - name: Upload unsigned and side-by-side APKs
-        uses: actions/upload-artifact@v4
-        with:
-          name: clean-outertune-0.10.15-403fix-build
-          if-no-files-found: error
-          retention-days: 1
-          path: |
-            source/app/build/outputs/apk/core/userdebug/*.apk
-            source/app/build/outputs/apk/core/debug/*.apk
-            userdebug-badging.txt
-            debug-badging.txt
-
-  sign-update-apk:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment: release-signing
-    steps:
-      - name: Download built APKs
-        uses: actions/download-artifact@v4
-        with:
-          name: clean-outertune-0.10.15-403fix-build
-          path: built
-
-      - name: Ensure APK signing tools are available
-        shell: bash
-        run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
-          if [ ! -x "$APKSIGNER" ]; then
-            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.0.0'
-          fi
-
-      - name: Sign same-package userdebug APK with repository release key
+      - name: Prepare release signing for same-package build
         shell: bash
         env:
           KEYSTORE: ${{ secrets.KEYSTORE }}
           KEYSTORE_PROPERTIES: ${{ secrets.KEYSTORE_PROPERTIES }}
         run: |
-          KEYSTORE_FILE="$RUNNER_TEMP/outertune-custom-release.jks"
-          PROPERTIES_FILE="$RUNNER_TEMP/outertune-custom-keystore.properties"
+          test -n "$KEYSTORE"
+          test -n "$KEYSTORE_PROPERTIES"
+          KEYSTORE_FILE="$GITHUB_WORKSPACE/source/outertune-custom-release.jks"
           printf '%s' "$KEYSTORE" | base64 --decode > "$KEYSTORE_FILE"
-          printf '%s' "$KEYSTORE_PROPERTIES" > "$PROPERTIES_FILE"
-          property() { sed -n "s/^$1=//p" "$PROPERTIES_FILE" | tail -n 1; }
-          KS_ALIAS="$(property keyAlias)"
-          KS_PASS="$(property storePassword)"
-          KEY_PASS="$(property keyPassword)"
-          test -n "$KS_ALIAS"
-          test -n "$KS_PASS"
-          if [ -z "$KEY_PASS" ]; then KEY_PASS="$KS_PASS"; fi
-          export KS_PASS KEY_PASS
-          APK="$(find built -path '*userdebug*' -name '*.apk' -print -quit)"
-          test -n "$APK"
-          OUT="OuterTune-0.10.15-403fix-core-update-signed.apk"
-          cp "$APK" "$OUT"
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
-          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)"
-          test -x "$APKSIGNER"
-          test -x "$AAPT"
-          "$APKSIGNER" sign \
-            --ks "$KEYSTORE_FILE" \
-            --ks-key-alias "$KS_ALIAS" \
-            --ks-pass env:KS_PASS \
-            --key-pass env:KEY_PASS \
-            "$OUT"
-          "$APKSIGNER" verify --verbose --print-certs "$OUT" | tee signature.txt
-          "$AAPT" dump badging "$OUT" | tee final-badging.txt
-          grep -q "package: name='com.dd3boh.outertune' versionCode='85'" final-badging.txt
-          rm -f "$KEYSTORE_FILE" "$PROPERTIES_FILE"
+          printf '%s' "$KEYSTORE_PROPERTIES" > "$GITHUB_WORKSPACE/source/keystore.properties"
+          sed -i '/^storeFile=/d' "$GITHUB_WORKSPACE/source/keystore.properties"
+          printf 'storeFile=%s\n' "$KEYSTORE_FILE" >> "$GITHUB_WORKSPACE/source/keystore.properties"
+          test -s "$KEYSTORE_FILE"
+          grep -q '^keyAlias=' "$GITHUB_WORKSPACE/source/keystore.properties"
+          grep -q '^storePassword=' "$GITHUB_WORKSPACE/source/keystore.properties"
 
-      - name: Upload signed update-package APK
+      - name: Build clean fixed APKs
+        shell: bash
+        run: |
+          cd source
+          ./gradlew :app:assembleCoreUserdebug :app:assembleCoreDebug --stacktrace -DskipFormatKtlint
+
+      - name: Verify package identity, version and signatures
+        shell: bash
+        run: |
+          USERDEBUG="$(find source/app/build/outputs/apk/core/userdebug -name '*universal*.apk' -print -quit)"
+          if [ -z "$USERDEBUG" ]; then USERDEBUG="$(find source/app/build/outputs/apk/core/userdebug -name '*.apk' -print -quit)"; fi
+          DEBUGAPK="$(find source/app/build/outputs/apk/core/debug -name '*universal*.apk' -print -quit)"
+          if [ -z "$DEBUGAPK" ]; then DEBUGAPK="$(find source/app/build/outputs/apk/core/debug -name '*.apk' -print -quit)"; fi
+          test -n "$USERDEBUG"
+          test -n "$DEBUGAPK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          "$AAPT" dump badging "$USERDEBUG" | tee userdebug-badging.txt
+          "$AAPT" dump badging "$DEBUGAPK" | tee debug-badging.txt
+          grep -q "package: name='com.dd3boh.outertune' versionCode='85'" userdebug-badging.txt
+          grep -q "package: name='com.dd3boh.outertune.debug' versionCode='85'" debug-badging.txt
+          "$APKSIGNER" verify --verbose --print-certs "$USERDEBUG" | tee userdebug-signature.txt
+          "$APKSIGNER" verify --verbose --print-certs "$DEBUGAPK" | tee debug-signature.txt
+          cp "$USERDEBUG" OuterTune-0.10.15-403fix-core-same-package.apk
+          cp "$DEBUGAPK" OuterTune-0.10.15-403fix-core-debug-side-by-side.apk
+          sha256sum OuterTune-0.10.15-403fix-core-*.apk | tee SHA256SUMS.txt
+
+      - name: Remove signing material
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$GITHUB_WORKSPACE/source/outertune-custom-release.jks"
+          rm -f "$GITHUB_WORKSPACE/source/keystore.properties"
+
+      - name: Upload final APKs
         uses: actions/upload-artifact@v4
         with:
-          name: OuterTune-0.10.15-403fix-signed
+          name: OuterTune-0.10.15-403fix-final
           if-no-files-found: error
           retention-days: 1
           path: |
-            OuterTune-0.10.15-403fix-core-update-signed.apk
-            signature.txt
-            final-badging.txt
+            OuterTune-0.10.15-403fix-core-same-package.apk
+            OuterTune-0.10.15-403fix-core-debug-side-by-side.apk
+            SHA256SUMS.txt
+            userdebug-badging.txt
+            debug-badging.txt
+            userdebug-signature.txt
+            debug-signature.txt
