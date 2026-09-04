@@ -1,0 +1,185 @@
+name: TEMP build OuterTune v90 playlist/download reliability fixes
+
+on:
+  push:
+    branches:
+      - tmp-build-outertune-playlist-retry-v90
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out exact OuterTune base
+        uses: actions/checkout@v4
+        with:
+          repository: yuuichi-s/AsterTune
+          ref: b7f58abfd3e77b7548bee353761828cfd213a0c2
+          fetch-depth: 0
+          submodules: recursive
+          path: source
+
+      - name: Apply v89 fixes plus playlist/local-source and retry fixes
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd source
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # --- YTPlayerUtils: preserve v89 header propagation and add bounded resolver retries ---
+          yt = Path('app/src/main/java/com/dd3boh/outertune/utils/YTPlayerUtils.kt')
+          s = yt.read_text()
+          old = '            streamClient ?: MAIN_CLIENT.clientName,\n        )'
+          new = '            streamClient ?: MAIN_CLIENT.clientName,\n            streamHeaders,\n        )'
+          if old not in s:
+              raise SystemExit('YT PlaybackData constructor anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '''            val requestBuilder = okhttp3.Request.Builder()\n                .header("Range", "bytes=0-0")\n                .url(url)'''
+          new = '''            val requestBuilder = okhttp3.Request.Builder()\n                .header("Range", "bytes=0-0")\n                .url(url)\n            headers.forEach { (name, value) -> requestBuilder.header(name, value) }'''
+          if old not in s:
+              raise SystemExit('YT validateStatus anchor not found')
+          s = s.replace(old, new, 1)
+
+          anchor = '''    /**\n     * Fetches a WEB_REMIX player response for non-streaming data, including\n'''
+          retry_fn = '''    /**\n     * Retries transient player-resolution failures a few times. YouTube can briefly answer\n     * \"Video unavailable\" for a valid track; downloads should not become permanently failed\n     * because of one such response.\n     */\n    suspend fun playerResponseForPlaybackWithRetry(\n        videoId: String,\n        playlistId: String? = null,\n        audioQuality: AudioQuality,\n        connectivityManager: ConnectivityManager,\n        attempts: Int = 3,\n    ): Result<PlaybackData> {\n        var result = playerResponseForPlayback(\n            videoId = videoId,\n            playlistId = playlistId,\n            audioQuality = audioQuality,\n            connectivityManager = connectivityManager,\n        )\n        for (attempt in 2..attempts) {\n            if (result.isSuccess) return result\n            Log.w(\n                TAG,\n                \"[$videoId] stream resolution failed: ${result.exceptionOrNull()?.message}; retry $attempt/$attempts\"\n            )\n            kotlinx.coroutines.delay(250L * (attempt - 1))\n            result = playerResponseForPlayback(\n                videoId = videoId,\n                playlistId = playlistId,\n                audioQuality = audioQuality,\n                connectivityManager = connectivityManager,\n            )\n        }\n        return result\n    }\n\n'''
+          if anchor not in s:
+              raise SystemExit('YT retry insertion anchor not found')
+          s = s.replace(anchor, retry_fn + anchor, 1)
+          yt.write_text(s)
+
+          # --- DownloadUtil: preserve v89 fixes, retry source resolution, and harden rare formats ---
+          dl = Path('app/src/main/java/com/dd3boh/outertune/playback/DownloadUtil.kt')
+          s = dl.read_text()
+          old = '    private val songUrlCache = HashMap<String, Pair<String, Long>>()\n    private val dataSourceFactory = ResolvingDataSource.Factory('
+          new = '    private val songUrlCache = HashMap<String, Pair<String, Long>>()\n    private val songUrlHeaders = HashMap<String, Map<String, String>>()\n    private val dataSourceFactory = ResolvingDataSource.Factory('
+          if old not in s:
+              raise SystemExit('Download cache anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '''        songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {\n            return@Factory dataSpec.withUri(it.first.toUri())\n        }'''
+          new = '''        songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {\n            return@Factory dataSpec.withUri(it.first.toUri())\n                .withRequestHeaders(dataSpec.httpRequestHeaders + songUrlHeaders[mediaId].orEmpty())\n        }'''
+          if old not in s:
+              raise SystemExit('Download cached URL anchor not found')
+          s = s.replace(old, new, 1)
+
+          if 'YTPlayerUtils.playerResponseForPlayback(' not in s:
+              raise SystemExit('Download player resolver call not found')
+          s = s.replace('YTPlayerUtils.playerResponseForPlayback(', 'YTPlayerUtils.playerResponseForPlaybackWithRetry(', 1)
+
+          old = '''        database.query {\n            upsert(\n                FormatEntity(\n                    id = mediaId,\n                    itag = format.itag,\n                    mimeType = format.mimeType.split(";")[0],\n                    codecs = format.mimeType.split("codecs=")[1].removeSurrounding("\\\"") ,\n                    bitrate = format.bitrate,\n                    sampleRate = format.audioSampleRate,\n                    contentLength = format.contentLength!!,\n                    loudnessDb = playbackData.audioConfig?.loudnessDb,\n                    playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl\n                )\n            )\n        }'''
+          # The source has no space before the comma after removeSurrounding; use exact secondary anchor below.
+          old2 = '''        database.query {\n            upsert(\n                FormatEntity(\n                    id = mediaId,\n                    itag = format.itag,\n                    mimeType = format.mimeType.split(";")[0],\n                    codecs = format.mimeType.split("codecs=")[1].removeSurrounding("\\\""),\n                    bitrate = format.bitrate,\n                    sampleRate = format.audioSampleRate,\n                    contentLength = format.contentLength!!,\n                    loudnessDb = playbackData.audioConfig?.loudnessDb,\n                    playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl\n                )\n            )\n        }'''
+          new = '''        format.contentLength?.let { contentLength ->\n            database.query {\n                upsert(\n                    FormatEntity(\n                        id = mediaId,\n                        itag = format.itag,\n                        mimeType = format.mimeType.substringBefore(";"),\n                        codecs = format.mimeType.substringAfter("codecs=", "").removeSurrounding("\\\""),\n                        bitrate = format.bitrate,\n                        sampleRate = format.audioSampleRate,\n                        contentLength = contentLength,\n                        loudnessDb = playbackData.audioConfig?.loudnessDb,\n                        playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl\n                    )\n                )\n            }\n        }'''
+          if old2 not in s:
+              raise SystemExit('Download FormatEntity block anchor not found')
+          s = s.replace(old2, new, 1)
+
+          old = '''        val streamUrl = playbackData.streamUrl.let {\n            // Specify range to avoid YouTube's throttling\n            "${it}&range=0-${format.contentLength ?: 10000000}"\n        }'''
+          new = '''        val streamUrl = format.contentLength?.let { contentLength ->\n            // Keep the bounded range when YouTube reports a real length; never truncate an\n            // unknown-length track to an arbitrary 10 MB fallback.\n            "${playbackData.streamUrl}&range=0-$contentLength"\n        } ?: playbackData.streamUrl'''
+          if old not in s:
+              raise SystemExit('Download range block anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '''        songUrlCache[mediaId] = streamUrl to System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)\n        dataSpec.withUri(streamUrl.toUri())'''
+          new = '''        songUrlCache[mediaId] = streamUrl to System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)\n        songUrlHeaders[mediaId] = playbackData.streamHeaders\n        dataSpec.withUri(streamUrl.toUri())\n            .withRequestHeaders(dataSpec.httpRequestHeaders + playbackData.streamHeaders)'''
+          if old not in s:
+              raise SystemExit('Download fresh URL anchor not found')
+          s = s.replace(old, new, 1)
+
+          if 'maxParallelDownloads = 3' not in s:
+              raise SystemExit('parallel download setting not found')
+          s = s.replace('maxParallelDownloads = 3', 'maxParallelDownloads = 1', 1)
+
+          old = '''    private fun downloadSong(id: String, title: String) {\n        if (downloads.value[id] != null) return\n        val downloadRequest = DownloadRequest.Builder(id, id.toUri())'''
+          new = '''    private fun downloadSong(id: String, title: String) {\n        if (downloads.value[id] != null) return\n        // A manual retry must resolve a fresh stream instead of reusing the URL that just failed.\n        songUrlCache.remove(id)\n        songUrlHeaders.remove(id)\n        val downloadRequest = DownloadRequest.Builder(id, id.toUri())'''
+          if old not in s:
+              raise SystemExit('downloadSong anchor not found')
+          s = s.replace(old, new, 1)
+          dl.write_text(s)
+
+          # --- MusicService: playlist items must prefer the actual downloaded/local file ---
+          ms = Path('app/src/main/java/com/dd3boh/outertune/playback/MusicService.kt')
+          s = ms.read_text()
+          old = '''            var song = queueBoard.value.getCurrentQueue()?.findSong(dataSpec.key ?: "")\n            if (song == null) { // in the case of resumption, queueBoard may not be ready yet\n                song = runBlocking { database.song(dataSpec.key).first()?.toMediaMetadata() }\n            }\n            // local song\n            if (song?.localPath != null) {'''
+          new = '''            // Playlist queue metadata can be stale and omit localPath. Prefer the physical\n            // downloaded file and then the DB copy before falling back to queue metadata.\n            downloadUtil.localMgr.getFilePathIfExists(mediaId)?.let { downloadedUri ->\n                if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: custom downloaded song (direct lookup)")\n                return@Factory dataSpec.withUri(downloadedUri)\n            }\n\n            val queueSong = queueBoard.value.getCurrentQueue()?.findSong(mediaId)\n            val dbSong = runBlocking { database.song(mediaId).first()?.toMediaMetadata() }\n            val song = if (dbSong?.localPath != null) dbSong else queueSong ?: dbSong\n\n            // local song\n            if (song?.localPath != null) {'''
+          if old not in s:
+              raise SystemExit('MusicService queue/local anchor not found')
+          s = s.replace(old, new, 1)
+
+          if 'YTPlayerUtils.playerResponseForPlayback(' not in s:
+              raise SystemExit('MusicService player resolver call not found')
+          s = s.replace('YTPlayerUtils.playerResponseForPlayback(', 'YTPlayerUtils.playerResponseForPlaybackWithRetry(', 1)
+          ms.write_text(s)
+
+          # --- Version / unsigned build for local signing ---
+          gradle = Path('app/build.gradle.kts')
+          s = gradle.read_text()
+          if 'versionCode = 85' not in s:
+              raise SystemExit('versionCode 85 not found')
+          s = s.replace('versionCode = 85', 'versionCode = 90', 1)
+          s = s.replace('            signingConfig = signingConfigs.getByName("ot_release")', '            signingConfig = null', 1)
+          gradle.write_text(s)
+          PY
+
+          # Keep the same static fresh cipher snapshot used by v89; do not backport the runtime subsystem.
+          curl -fL 'https://raw.githubusercontent.com/yuuichi-s/AsterTune/a3b444d477e14655735a48cf46da112b10ad7e43/app/src/main/assets/player_configs.json' -o app/src/main/assets/player_configs.json
+
+          grep -q 'playerResponseForPlaybackWithRetry' app/src/main/java/com/dd3boh/outertune/utils/YTPlayerUtils.kt
+          grep -q 'custom downloaded song (direct lookup)' app/src/main/java/com/dd3boh/outertune/playback/MusicService.kt
+          grep -q 'maxParallelDownloads = 1' app/src/main/java/com/dd3boh/outertune/playback/DownloadUtil.kt
+          grep -q 'versionCode = 90' app/build.gradle.kts
+          grep -q 'applicationId = "com.dd3boh.outertune"' app/build.gradle.kts
+          grep -q '"schemaVersion": 1' app/src/main/assets/player_configs.json
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+          cache-dependency-path: source/**/*.gradle*
+
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+
+      - name: Build unsigned same-package APK
+        shell: bash
+        run: |
+          cd source
+          ./gradlew :app:assembleCoreUserdebug --stacktrace -DskipFormatKtlint
+
+      - name: Collect APK and signing tools
+        shell: bash
+        run: |
+          APK="$(find source/app/build/outputs/apk/core/userdebug -name '*universal*.apk' -print -quit)"
+          if [ -z "$APK" ]; then APK="$(find source/app/build/outputs/apk/core/userdebug -name '*.apk' -print -quit)"; fi
+          test -n "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)"
+          APKSIGNER_JAR="$(find "$ANDROID_HOME/build-tools" -path '*/lib/apksigner.jar' -type f | sort -V | tail -n 1)"
+          ZIPALIGN="$(find "$ANDROID_HOME/build-tools" -name zipalign -type f | sort -V | tail -n 1)"
+          "$AAPT" dump badging "$APK" | tee apk-badging.txt
+          grep -q "package: name='com.dd3boh.outertune' versionCode='90' versionName='0.10.15'" apk-badging.txt
+          cp "$APK" OuterTune-0.10.15-v90-playlist-download-fix-unsigned.apk
+          cp "$APKSIGNER_JAR" apksigner.jar
+          cp "$ZIPALIGN" zipalign
+          chmod +x zipalign
+          sha256sum OuterTune-0.10.15-v90-playlist-download-fix-unsigned.apk | tee SHA256SUMS.txt
+
+      - name: Upload unsigned build
+        uses: actions/upload-artifact@v4
+        with:
+          name: OuterTune-0.10.15-v90-playlist-download-fix-unsigned
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            OuterTune-0.10.15-v90-playlist-download-fix-unsigned.apk
+            apksigner.jar
+            zipalign
+            apk-badging.txt
+            SHA256SUMS.txt
