@@ -29,7 +29,7 @@ android {
         applicationId = "com.dd3boh.outertune"
         minSdk = 24
         targetSdk = 36
-        versionCode = 85
+        versionCode = 90
         versionName = "0.10.15"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -62,7 +62,7 @@ android {
             isShrinkResources = true
             isCrunchPngs = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("ot_release")
+            signingConfig = null
         }
         debug {
             applicationIdSuffix = ".debug"

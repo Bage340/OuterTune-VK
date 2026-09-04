@@ -85,6 +85,7 @@ class DownloadUtil @Inject constructor(
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
     private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
     private val songUrlCache = HashMap<String, Pair<String, Long>>()
+    private val songUrlHeaders = HashMap<String, Map<String, String>>()
     private val dataSourceFactory = ResolvingDataSource.Factory(
         CacheDataSource.Factory()
             .setCache(playerCache)
@@ -104,10 +105,11 @@ class DownloadUtil @Inject constructor(
 
         songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {
             return@Factory dataSpec.withUri(it.first.toUri())
+                .withRequestHeaders(dataSpec.httpRequestHeaders + songUrlHeaders[mediaId].orEmpty())
         }
 
         val playbackData = runBlocking(Dispatchers.IO) {
-            YTPlayerUtils.playerResponseForPlayback(
+            YTPlayerUtils.playerResponseForPlaybackWithRetry(
                 mediaId,
                 audioQuality = audioQuality,
                 connectivityManager = connectivityManager,
@@ -115,34 +117,39 @@ class DownloadUtil @Inject constructor(
         }.getOrThrow()
         val format = playbackData.format
 
-        database.query {
-            upsert(
-                FormatEntity(
-                    id = mediaId,
-                    itag = format.itag,
-                    mimeType = format.mimeType.split(";")[0],
-                    codecs = format.mimeType.split("codecs=")[1].removeSurrounding("\""),
-                    bitrate = format.bitrate,
-                    sampleRate = format.audioSampleRate,
-                    contentLength = format.contentLength!!,
-                    loudnessDb = playbackData.audioConfig?.loudnessDb,
-                    playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+        format.contentLength?.let { contentLength ->
+            database.query {
+                upsert(
+                    FormatEntity(
+                        id = mediaId,
+                        itag = format.itag,
+                        mimeType = format.mimeType.substringBefore(";"),
+                        codecs = format.mimeType.substringAfter("codecs=", "").removeSurrounding("\""),
+                        bitrate = format.bitrate,
+                        sampleRate = format.audioSampleRate,
+                        contentLength = contentLength,
+                        loudnessDb = playbackData.audioConfig?.loudnessDb,
+                        playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+                    )
                 )
-            )
+            }
         }
 
-        val streamUrl = playbackData.streamUrl.let {
-            // Specify range to avoid YouTube's throttling
-            "${it}&range=0-${format.contentLength ?: 10000000}"
-        }
+        val streamUrl = format.contentLength?.let { contentLength ->
+            // Keep the bounded range when YouTube reports a real length; never truncate an
+            // unknown-length track to an arbitrary 10 MB fallback.
+            "${playbackData.streamUrl}&range=0-$contentLength"
+        } ?: playbackData.streamUrl
 
         songUrlCache[mediaId] = streamUrl to System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)
+        songUrlHeaders[mediaId] = playbackData.streamHeaders
         dataSpec.withUri(streamUrl.toUri())
+            .withRequestHeaders(dataSpec.httpRequestHeaders + playbackData.streamHeaders)
     }
     val downloadNotificationHelper = DownloadNotificationHelper(context, ExoDownloadService.CHANNEL_ID)
     val downloadManager: DownloadManager =
         DownloadManager(context, databaseProvider, downloadCache, dataSourceFactory, Executor(Runnable::run)).apply {
-            maxParallelDownloads = 3
+            maxParallelDownloads = 1
             requirements = downloadRequirements(context.dataStore.get(DownloadOnWifiOnlyKey, true))
             addListener(
                 ExoDownloadService.TerminalStateNotificationHelper(
@@ -204,6 +211,9 @@ class DownloadUtil @Inject constructor(
 
     private fun downloadSong(id: String, title: String) {
         if (downloads.value[id] != null) return
+        // A manual retry must resolve a fresh stream instead of reusing the URL that just failed.
+        songUrlCache.remove(id)
+        songUrlHeaders.remove(id)
         val downloadRequest = DownloadRequest.Builder(id, id.toUri())
             .setCustomCacheKey(id)
             .setData(title.toByteArray())

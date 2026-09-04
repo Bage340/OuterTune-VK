@@ -743,10 +743,17 @@ class MusicService : MediaLibraryService(),
             val mediaId = dataSpec.key ?: error("No media id")
             if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: song id = $mediaId")
 
-            var song = queueBoard.value.getCurrentQueue()?.findSong(dataSpec.key ?: "")
-            if (song == null) { // in the case of resumption, queueBoard may not be ready yet
-                song = runBlocking { database.song(dataSpec.key).first()?.toMediaMetadata() }
+            // Playlist queue metadata can be stale and omit localPath. Prefer the physical
+            // downloaded file and then the DB copy before falling back to queue metadata.
+            downloadUtil.localMgr.getFilePathIfExists(mediaId)?.let { downloadedUri ->
+                if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: custom downloaded song (direct lookup)")
+                return@Factory dataSpec.withUri(downloadedUri)
             }
+
+            val queueSong = queueBoard.value.getCurrentQueue()?.findSong(mediaId)
+            val dbSong = runBlocking { database.song(mediaId).first()?.toMediaMetadata() }
+            val song = if (dbSong?.localPath != null) dbSong else queueSong ?: dbSong
+
             // local song
             if (song?.localPath != null) {
                 if (song.isLocal) {
@@ -797,7 +804,7 @@ class MusicService : MediaLibraryService(),
 
             val playbackData = runBlocking(Dispatchers.IO) {
                 val audioQuality by enumPreference(this@MusicService, AudioQualityKey, AudioQuality.AUTO)
-                YTPlayerUtils.playerResponseForPlayback(
+                YTPlayerUtils.playerResponseForPlaybackWithRetry(
                     mediaId,
                     audioQuality = audioQuality,
                     connectivityManager = connectivityManager,

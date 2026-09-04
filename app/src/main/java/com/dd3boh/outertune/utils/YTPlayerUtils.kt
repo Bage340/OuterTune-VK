@@ -294,7 +294,43 @@ object YTPlayerUtils {
             streamUrl,
             streamExpiresInSeconds,
             streamClient ?: MAIN_CLIENT.clientName,
+            streamHeaders,
         )
+    }
+
+    /**
+     * Retries transient player-resolution failures a few times. YouTube can briefly answer
+     * "Video unavailable" for a valid track; downloads should not become permanently failed
+     * because of one such response.
+     */
+    suspend fun playerResponseForPlaybackWithRetry(
+        videoId: String,
+        playlistId: String? = null,
+        audioQuality: AudioQuality,
+        connectivityManager: ConnectivityManager,
+        attempts: Int = 3,
+    ): Result<PlaybackData> {
+        var result = playerResponseForPlayback(
+            videoId = videoId,
+            playlistId = playlistId,
+            audioQuality = audioQuality,
+            connectivityManager = connectivityManager,
+        )
+        for (attempt in 2..attempts) {
+            if (result.isSuccess) return result
+            Log.w(
+                TAG,
+                "[$videoId] stream resolution failed: ${result.exceptionOrNull()?.message}; retry $attempt/$attempts"
+            )
+            kotlinx.coroutines.delay(250L * (attempt - 1))
+            result = playerResponseForPlayback(
+                videoId = videoId,
+                playlistId = playlistId,
+                audioQuality = audioQuality,
+                connectivityManager = connectivityManager,
+            )
+        }
+        return result
     }
 
     /**
@@ -342,6 +378,7 @@ object YTPlayerUtils {
             val requestBuilder = okhttp3.Request.Builder()
                 .header("Range", "bytes=0-0")
                 .url(url)
+            headers.forEach { (name, value) -> requestBuilder.header(name, value) }
             val response = httpClient.newCall(requestBuilder.build()).execute()
             val ok = response.isSuccessful
             if (!ok) {
