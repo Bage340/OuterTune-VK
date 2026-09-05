@@ -253,18 +253,8 @@ class MusicService : MediaLibraryService(),
     )
 
     private val lyricsFetchTargets = MutableStateFlow(LyricsFetchTargets(null, emptyList()))
-    /**
-     * Resolved stream urls by media id, with the time they claim to stay valid until. Hoisted out of
-     * [createDataSourceFactory] so a url googlevideo refuses mid-song can be dropped and resolved
-     * again, which is the only way past a url that validates and then dies a minute in.
-     */
-    private val songUrlCache = HashMap<String, Pair<String, Long>>()
-
-    /** Client each cached url came from, so a refused one can be skipped on the next resolution. */
-    private val songUrlClient = HashMap<String, String>()
-
-    /** Headers each cached url has to be fetched with, kept alongside it for the cache-hit path. */
-    private val songUrlHeaders = HashMap<String, Map<String, String>>()
+    /** Shared atomically by data source callbacks and playback error recovery. */
+    private val songUrlCache = StreamUrlCache()
 
     /** Refresh attempts per media id, so a song that cannot play at all stops retrying. */
     private val streamRefreshes = HashMap<String, Int>()
@@ -745,59 +735,70 @@ class MusicService : MediaLibraryService(),
 
             // Playlist queue metadata can be stale and omit localPath. Prefer the physical
             // downloaded file and then the DB copy before falling back to queue metadata.
-            downloadUtil.localMgr.getFilePathIfExists(mediaId)?.let { downloadedUri ->
-                if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: custom downloaded song (direct lookup)")
-                return@Factory dataSpec.withUri(downloadedUri)
-            }
-
+            val downloadedUri = downloadUtil.localMgr.getFilePathIfExists(mediaId)
             val queueSong = queueBoard.value.getCurrentQueue()?.findSong(mediaId)
             val dbSong = runBlocking { database.song(mediaId).first()?.toMediaMetadata() }
             val song = if (dbSong?.localPath != null) dbSong else queueSong ?: dbSong
 
-            // local song
-            if (song?.localPath != null) {
-                if (song.isLocal) {
-                    if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: local song")
-                    val file = File(song.localPath)
-                    if (!file.exists()) {
-                        throw PlaybackException(
-                            "File not found",
-                            Throwable(),
-                            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND
-                        )
-                    }
-
-                    return@Factory dataSpec.withUri(file.toUri())
-                } else {
-                    val isDownloadNew = downloadUtil.localMgr.getFilePathIfExists(mediaId)
-                    isDownloadNew?.let {
-                        if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: Custom downloaded song")
-                        return@Factory dataSpec.withUri(it)
-                    }
+            val localFile = song?.localPath?.let(::File)
+            if (downloadedUri == null && song?.isLocal == true && song.localPath != null) {
+                if (localFile?.exists() != true) {
+                    throw PlaybackException(
+                        "Local file not found",
+                        null,
+                        PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
+                    )
                 }
             }
 
-            val isDownload =
-                downloadCache.isCached(mediaId, dataSpec.position, if (dataSpec.length >= 0) dataSpec.length else 1)
+            val isDownload = downloadUtil.isDownloadCompleted(mediaId) &&
+                downloadCache.isCached(
+                    mediaId,
+                    dataSpec.position,
+                    if (dataSpec.length >= 0) dataSpec.length else 1,
+                )
             val isCache = playerCache.isCached(mediaId, dataSpec.position, CHUNK_LENGTH)
-            if (isDownload || isCache) {
-                if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: remote song (cache = ${isCache}, download = ${isDownload})")
-                offloadScope.launch { recoverSong(mediaId) }
-                return@Factory dataSpec
+            when (
+                selectPlaybackSourceKind(
+                    customDownloadFound = downloadedUri != null,
+                    databaseFileFound = localFile?.exists() == true,
+                    downloadCacheHit = isDownload,
+                    playerCacheHit = isCache,
+                )
+            ) {
+                PlaybackSourceKind.CUSTOM_DOWNLOAD -> {
+                    if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: custom downloaded song (direct lookup)")
+                    return@Factory dataSpec.withUri(checkNotNull(downloadedUri))
+                }
+
+                PlaybackSourceKind.DATABASE_FILE -> {
+                    if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: DB local file")
+                    return@Factory dataSpec.withUri(checkNotNull(localFile).toUri())
+                }
+
+                PlaybackSourceKind.DOWNLOAD_CACHE -> {
+                    if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: completed download cache")
+                    return@Factory dataSpec
+                }
+
+                PlaybackSourceKind.PLAYER_CACHE -> {
+                    if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: player cache")
+                    offloadScope.launch { recoverSong(mediaId) }
+                    return@Factory dataSpec
+                }
+
+                PlaybackSourceKind.REMOTE -> Unit
             }
 
-            songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {
+            songUrlCache[mediaId]?.let { cachedStream ->
                 if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: remote song (temp cache)")
                 offloadScope.launch { recoverSong(mediaId) }
                 // Bounded like the fresh-resolve path below; letting this read run open-ended was
                 // measurably worse (playback died at 31 s rather than 62 s). The headers matter as
                 // much as the url: googlevideo expects the fetch to look like the client it issued
                 // the url for, and every read past the first chunk comes through here.
-                return@Factory dataSpec.withUri(it.first.toUri())
+                return@Factory dataSpec.withResolvedStream(cachedStream)
                     .subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
-                    .withRequestHeaders(
-                        dataSpec.httpRequestHeaders + songUrlHeaders[mediaId].orEmpty()
-                    )
             }
 
             if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: remote song (online fetch)")
@@ -810,8 +811,24 @@ class MusicService : MediaLibraryService(),
                     connectivityManager = connectivityManager,
                 )
             }.getOrElse { throwable ->
+                val sourceDiagnostics = buildString {
+                    append("mediaId=").append(mediaId)
+                    append(", playlistId=").append(queueBoard.value.getCurrentQueue()?.playlistId)
+                    append(", dataSpecKey=").append(dataSpec.key)
+                    append(", queueMediaId=").append(queueSong?.id)
+                    append(", dbSongId=").append(dbSong?.id)
+                    append(", localPath=").append(song?.localPath)
+                    append(", localPathExists=").append(localFile?.exists() == true)
+                    append(", customDownloadFound=").append(downloadedUri != null)
+                    append(", downloadCacheHit=").append(isDownload)
+                }
+                Log.e(TAG, "Playback source resolution failed: $sourceDiagnostics", throwable)
                 when (throwable) {
-                    is PlaybackException -> throw throwable
+                    is PlaybackException -> throw PlaybackException(
+                        "${throwable.message}\n$sourceDiagnostics",
+                        throwable,
+                        throwable.errorCode,
+                    )
 
                     is ConnectException, is UnknownHostException -> {
                         throw PlaybackException(
@@ -838,32 +855,35 @@ class MusicService : MediaLibraryService(),
             }
             val format = playbackData.format
 
-            database.query {
-                upsert(
-                    FormatEntity(
-                        id = mediaId,
-                        itag = format.itag,
-                        mimeType = format.mimeType.split(";")[0],
-                        codecs = format.mimeType.split("codecs=")[1].removeSurrounding("\""),
-                        bitrate = format.bitrate,
-                        sampleRate = format.audioSampleRate,
-                        contentLength = format.contentLength!!,
-                        loudnessDb = playbackData.audioConfig?.loudnessDb,
-                        playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+            format.contentLength?.let { contentLength ->
+                database.query {
+                    upsert(
+                        FormatEntity(
+                            id = mediaId,
+                            itag = format.itag,
+                            mimeType = format.mimeType.substringBefore(";"),
+                            codecs = format.mimeType.substringAfter("codecs=", "")
+                                .removeSurrounding("\""),
+                            bitrate = format.bitrate,
+                            sampleRate = format.audioSampleRate,
+                            contentLength = contentLength,
+                            loudnessDb = playbackData.audioConfig?.loudnessDb,
+                            playbackTrackingUrl = playbackData.playbackTracking?.videostatsPlaybackUrl?.baseUrl,
+                        )
                     )
-                )
+                }
             }
             offloadScope.launch { recoverSong(mediaId, playbackData) }
 
-            val streamUrl = playbackData.streamUrl
-
-            songUrlCache[mediaId] =
-                streamUrl to System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)
-            songUrlClient[mediaId] = playbackData.streamClient
-            songUrlHeaders[mediaId] = playbackData.streamHeaders
-            dataSpec.withUri(streamUrl.toUri())
+            val stream = songUrlCache.put(
+                mediaId = mediaId,
+                url = playbackData.streamUrl,
+                requestHeaders = playbackData.streamHeaders,
+                clientName = playbackData.streamClient,
+                expiresInSeconds = playbackData.streamExpiresInSeconds,
+            )
+            dataSpec.withResolvedStream(stream)
                 .subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
-                .withRequestHeaders(dataSpec.httpRequestHeaders + playbackData.streamHeaders)
         }
     }
 
@@ -1016,13 +1036,11 @@ class MusicService : MediaLibraryService(),
         }
         streamRefreshes[mediaId] = attempts + 1
 
-        val failedClient = songUrlClient.remove(mediaId)
-        songUrlHeaders.remove(mediaId)
-        songUrlCache.remove(mediaId)
-        if (failedClient == "WEB_REMIX") {
+        val failedStream = songUrlCache.invalidate(mediaId)
+        if (failedStream?.clientName == "WEB_REMIX") {
             YTPlayerUtils.markWebRemixFailed(mediaId)
         }
-        Log.w(TAG, "stream for $mediaId refused on $failedClient, resolving again")
+        Log.w(TAG, "stream for $mediaId refused on ${failedStream?.clientName}, resolving again")
 
         player.prepare()
         return true
@@ -1070,7 +1088,7 @@ class MusicService : MediaLibraryService(),
         // back and resolve again against a different client rather than dropping the song.
         val responseCode = (error.cause as? InvalidResponseCodeException)?.responseCode
         val mediaId = player.currentMediaItem?.mediaId
-        if ((responseCode == 403 || responseCode == 410) && mediaId != null &&
+        if (responseCode in RETRYABLE_STREAM_RESPONSE_CODES && mediaId != null &&
             refreshStreamAndRetry(mediaId)
         ) {
             return
@@ -1210,7 +1228,13 @@ class MusicService : MediaLibraryService(),
                 }
 
                 // TODO: support playlist id
-                val ytHist = mediaItem.metadata?.isLocal != true && !dataStore.get(PauseRemoteListenHistoryKey, false)
+                val hasPhysicalFile = mediaItem.metadata?.localPath?.let(::File)?.exists() == true ||
+                    downloadUtil.localMgr.getFilePathIfExists(mediaItem.mediaId) != null
+                val isCompletedDownload = downloadUtil.isDownloadCompleted(mediaItem.mediaId)
+                val ytHist = mediaItem.metadata?.isLocal != true &&
+                    !hasPhysicalFile &&
+                    !isCompletedDownload &&
+                    !dataStore.get(PauseRemoteListenHistoryKey, false)
                 if (SERVICE_DEBUG) Log.d(TAG, "Trying to register remote history: $ytHist")
                 if (ytHist) {
                     val metaResult = YTPlayerUtils.playerResponseForMetadata(mediaItem.mediaId, null)
@@ -1324,6 +1348,7 @@ class MusicService : MediaLibraryService(),
 
         /** Stream url resolutions allowed per song before a refused stream is treated as fatal. */
         const val MAX_STREAM_REFRESHES = 5
+        private val RETRYABLE_STREAM_RESPONSE_CODES = setOf(403, 404, 410, 416)
 
         const val COMMAND_GET_BINDER = "GET_BINDER"
     }

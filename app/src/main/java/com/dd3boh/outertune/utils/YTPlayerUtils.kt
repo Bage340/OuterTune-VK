@@ -38,6 +38,10 @@ object YTPlayerUtils {
 
     private const val TAG = "YTPlayerUtils"
 
+    private val URL_DIAGNOSTIC_PATTERN = Regex("""(?i)\bhttps?://\S+""")
+    private val SECRET_DIAGNOSTIC_PATTERN =
+        Regex("""(?i)\b(cookie|authorization|(?:po)?token|sig(?:nature)?)\s*[:=]\s*[^\s,|]+""")
+
     private val httpClient = OkHttpClient.Builder()
         .proxy(YouTube.proxy)
         .build()
@@ -108,14 +112,63 @@ object YTPlayerUtils {
         val streamUrl: String,
         val streamExpiresInSeconds: Int,
         /** Client that produced [streamUrl], so the player can report it back if the url is refused. */
-        val streamClient: String = "unknown",
+        val streamClient: String,
         /**
          * Headers the media request has to carry. googlevideo issues a url on behalf of a specific
          * client and expects the fetch to look like it came from that client; a request with the
          * http library's own defaults is served briefly and then refused.
          */
-        val streamHeaders: Map<String, String> = emptyMap(),
+        val streamHeaders: Map<String, String>,
     )
+
+    internal data class StreamClientDiagnostic(
+        val clientName: String,
+        val status: String?,
+        val reason: String?,
+        val hasAudioFormat: Boolean,
+        val hasStreamUrl: Boolean,
+        val validationHttpCode: Int?,
+        val validationError: String? = null,
+    )
+
+    private data class StreamValidationResult(
+        val httpCode: Int? = null,
+        val errorType: String? = null,
+    ) {
+        val isSuccessful: Boolean
+            get() = httpCode in 200..299
+    }
+
+    private data class ResolvedStream(
+        val playerResponse: PlayerResponse,
+        val format: PlayerResponse.StreamingData.Format,
+        val url: String,
+        val expiresInSeconds: Int,
+        val clientName: String,
+        val headers: Map<String, String>,
+    )
+
+    internal fun diagnosticsSummary(diagnostics: List<StreamClientDiagnostic>): String =
+        diagnostics.joinToString(" | ") { diagnostic ->
+            val validation = diagnostic.validationHttpCode?.let { "HTTP $it" }
+                ?: diagnostic.validationError
+                ?: "-"
+            "${diagnostic.clientName}:status=${sanitizeDiagnostic(diagnostic.status)}," +
+                "reason=${sanitizeDiagnostic(diagnostic.reason)}," +
+                "audio=${diagnostic.hasAudioFormat},url=${diagnostic.hasStreamUrl}," +
+                "validate=$validation"
+        }
+
+    private fun sanitizeDiagnostic(value: String?): String = value
+        ?.replace('\n', ' ')
+        ?.replace('\r', ' ')
+        ?.replace(URL_DIAGNOSTIC_PATTERN, "[redacted-url]")
+        ?.replace(SECRET_DIAGNOSTIC_PATTERN) { match ->
+            "${match.groupValues[1]}=[redacted]"
+        }
+        ?.take(120)
+        ?.ifBlank { "-" }
+        ?: "-"
 
     /** Identifies a media request as coming from the client the stream url was issued for. */
     private fun YouTubeClient.streamHeaders(): Map<String, String> = buildMap {
@@ -150,6 +203,7 @@ object YTPlayerUtils {
         playlistId: String? = null,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
+        clientStartIndex: Int = 0,
     ): Result<PlaybackData> = runCatching {
         Log.d(TAG, "Playback info requested: $videoId")
 
@@ -157,7 +211,7 @@ object YTPlayerUtils {
         // response is needed even when its streams won't work, so this is allowed to be null.
         val signatureTimestamp = getSignatureTimestampOrNull(videoId)
 
-        val isLoggedIn = YouTube.cookie != null
+        val isLoggedIn = YouTube.cookie != null && !YouTube.dataSyncId.isNullOrBlank()
         // The streaming (GVS) token is minted against this and the stream url is then fetched by a
         // session identifying itself with visitorData, so this has to be visitorData for both
         // signed-in and signed-out sessions. Binding it to dataSyncId while requests carry
@@ -174,127 +228,160 @@ object YTPlayerUtils {
             Log.w(TAG, "[$videoId] No po token")
         }
 
-        val mainPlayerResponse =
+        val mainPlayerResult =
             YouTube.player(videoId, playlistId, MAIN_CLIENT, signatureTimestamp, webPlayerPot)
-                .getOrThrow()
+        mainPlayerResult.exceptionOrNull()?.let {
+            Log.w(TAG, "[$videoId] [${MAIN_CLIENT.clientName}] metadata request failed: ${it.javaClass.simpleName}")
+        }
+        val mainPlayerResponse = mainPlayerResult.getOrNull()
 
-        val audioConfig = mainPlayerResponse.playerConfig?.audioConfig
-        val videoDetails = mainPlayerResponse.videoDetails
-        val playbackTracking = mainPlayerResponse.playbackTracking
+        val diagnostics = mutableListOf<StreamClientDiagnostic>()
+        var resolvedStream: ResolvedStream? = null
+        val normalizedStartIndex = Math.floorMod(clientStartIndex, STREAM_CLIENTS.size)
+        val orderedClients = STREAM_CLIENTS.indices.map { offset ->
+            STREAM_CLIENTS[(normalizedStartIndex + offset) % STREAM_CLIENTS.size]
+        }
 
-        var format: PlayerResponse.StreamingData.Format? = null
-        var streamUrl: String? = null
-        var streamExpiresInSeconds: Int? = null
-        var streamClient: String? = null
-        var streamHeaders: Map<String, String> = emptyMap()
-
-        var streamPlayerResponse: PlayerResponse? = null
-        for ((clientIndex, client) in STREAM_CLIENTS.withIndex()) {
-            // reset for each client
-            format = null
-            streamUrl = null
-            streamExpiresInSeconds = null
-            streamClient = null
-
-            Log.d(TAG, "Trying stream client ${clientIndex + 1}/${STREAM_CLIENTS.size}: ${client.clientName}")
+        for ((clientIndex, client) in orderedClients.withIndex()) {
+            Log.d(TAG, "Trying stream client ${clientIndex + 1}/${orderedClients.size}: ${client.clientName}")
 
             if (client.loginRequired && !isLoggedIn) {
-                // skip client if it requires login but user is not logged in
+                diagnostics += StreamClientDiagnostic(
+                    clientName = client.clientName,
+                    status = "SKIPPED",
+                    reason = "login context unavailable",
+                    hasAudioFormat = false,
+                    hasStreamUrl = false,
+                    validationHttpCode = null,
+                )
                 continue
             }
             if (client.clientName == "WEB_REMIX" && hasRecentWebRemixFailure(videoId)) {
                 Log.d(TAG, "[$videoId] skipping WEB_REMIX after a rejected stream")
+                diagnostics += StreamClientDiagnostic(
+                    clientName = client.clientName,
+                    status = "SKIPPED",
+                    reason = "recent stream rejection",
+                    hasAudioFormat = false,
+                    hasStreamUrl = false,
+                    validationHttpCode = null,
+                )
                 continue
             }
 
-            // decide which client to use for streams and load its player response
-            if (client == MAIN_CLIENT) {
-                // its response was already fetched for the metadata
-                streamPlayerResponse = mainPlayerResponse
+            val playerResult = if (client == MAIN_CLIENT) {
+                mainPlayerResult
             } else {
-                val playerResult =
-                    YouTube.player(videoId, playlistId, client, signatureTimestamp, webPlayerPot)
-                playerResult.exceptionOrNull()?.let {
-                    Log.e(TAG, "[$videoId] [${client.clientName}] player request failed", it)
-                }
-                streamPlayerResponse = playerResult.getOrNull()
+                YouTube.player(videoId, playlistId, client, signatureTimestamp, webPlayerPot)
+            }
+            val streamPlayerResponse = playerResult.getOrNull()
+            if (streamPlayerResponse == null) {
+                val errorType = playerResult.exceptionOrNull()?.javaClass?.simpleName ?: "unknown error"
+                Log.w(TAG, "[$videoId] [${client.clientName}] player request failed: $errorType")
+                diagnostics += StreamClientDiagnostic(
+                    clientName = client.clientName,
+                    status = "REQUEST_ERROR",
+                    reason = errorType,
+                    hasAudioFormat = false,
+                    hasStreamUrl = false,
+                    validationHttpCode = null,
+                )
+                continue
             }
 
             Log.d(TAG, "[$videoId] stream client: ${client.clientName}, " +
-                    "playabilityStatus: ${streamPlayerResponse?.playabilityStatus?.let {
+                    "playabilityStatus: ${streamPlayerResponse.playabilityStatus.let {
                         it.status + (it.reason?.let { " - $it" } ?: "")
                     }}")
 
-            // process current client response
-            if (streamPlayerResponse?.playabilityStatus?.status == "OK") {
-                format = findFormat(streamPlayerResponse, audioQuality, connectivityManager)
-                if (format == null) {
-                    Log.w(TAG, "[$videoId] [${client.clientName}] OK but no audio format found")
-                    continue
-                }
-                streamUrl = findUrlOrNull(format, videoId)
-                if (streamUrl == null) {
-                    Log.w(TAG, "[$videoId] [${client.clientName}] OK but failed to build stream url (deobfuscation?)")
-                    continue
-                }
-                streamExpiresInSeconds = streamPlayerResponse.streamingData?.expiresInSeconds
-                if (streamExpiresInSeconds == null) {
-                    Log.w(TAG, "[$videoId] [${client.clientName}] OK but missing expiresInSeconds")
-                    continue
-                }
+            val playabilityStatus = streamPlayerResponse.playabilityStatus
+            if (playabilityStatus.status != "OK") {
+                diagnostics += StreamClientDiagnostic(
+                    clientName = client.clientName,
+                    status = playabilityStatus.status,
+                    reason = playabilityStatus.reason,
+                    hasAudioFormat = false,
+                    hasStreamUrl = false,
+                    validationHttpCode = null,
+                )
+                continue
+            }
 
+            val formats = findFormats(streamPlayerResponse, audioQuality, connectivityManager)
+            val expiresInSeconds = streamPlayerResponse.streamingData?.expiresInSeconds
+            if (formats.isEmpty() || expiresInSeconds == null) {
+                diagnostics += StreamClientDiagnostic(
+                    clientName = client.clientName,
+                    status = playabilityStatus.status,
+                    reason = if (formats.isEmpty()) "no audio format" else "missing expiresInSeconds",
+                    hasAudioFormat = formats.isNotEmpty(),
+                    hasStreamUrl = false,
+                    validationHttpCode = null,
+                )
+                continue
+            }
+
+            val streamHeaders = client.streamHeaders()
+            var builtAnyUrl = false
+            var lastValidation: StreamValidationResult? = null
+            for (format in formats) {
+                var streamUrl = findUrlOrNull(format, videoId) ?: continue
+                builtAnyUrl = true
                 if (client.useWebPoTokens && webStreamingPot != null) {
-                    streamUrl += "&pot=$webStreamingPot";
+                    streamUrl += "&pot=$webStreamingPot"
                 }
-
-                streamClient = client.clientName
-                streamHeaders = client.streamHeaders()
-
-                if (clientIndex == STREAM_CLIENTS.lastIndex) {
-                    // skip validateStatus for the last client
+                val validation = validateStatus(streamUrl, streamHeaders)
+                lastValidation = validation
+                if (validation.isSuccessful) {
+                    resolvedStream = ResolvedStream(
+                        playerResponse = streamPlayerResponse,
+                        format = format,
+                        url = streamUrl,
+                        expiresInSeconds = expiresInSeconds,
+                        clientName = client.clientName,
+                        headers = streamHeaders,
+                    )
                     break
-                }
-                if (validateStatus(streamUrl, streamHeaders)) {
-                    // working stream found
-                    Log.i(TAG, "[$videoId] [${client.clientName}] found working stream")
-                    break
-                } else {
-                    Log.w(TAG, "[$videoId] [${client.clientName}] got bad http status code")
                 }
             }
+
+            diagnostics += StreamClientDiagnostic(
+                clientName = client.clientName,
+                status = playabilityStatus.status,
+                reason = when {
+                    !builtAnyUrl -> "stream URL unavailable"
+                    resolvedStream == null -> "stream validation failed"
+                    else -> playabilityStatus.reason
+                },
+                hasAudioFormat = true,
+                hasStreamUrl = builtAnyUrl,
+                validationHttpCode = lastValidation?.httpCode,
+                validationError = lastValidation?.errorType,
+            )
+            if (resolvedStream != null) break
         }
 
-        if (streamPlayerResponse == null) {
-            throw Exception("Bad stream player response")
-        }
-        if (streamPlayerResponse.playabilityStatus.status != "OK") {
+        val selected = resolvedStream ?: run {
+            val summary = diagnosticsSummary(diagnostics)
+            Log.e(TAG, "[$videoId] no validated stream: $summary")
             throw PlaybackException(
-                streamPlayerResponse.playabilityStatus.reason,
+                "No validated stream\n$summary",
                 null,
-                PlaybackException.ERROR_CODE_REMOTE_ERROR
+                PlaybackException.ERROR_CODE_REMOTE_ERROR,
             )
         }
-        if (streamExpiresInSeconds == null) {
-            throw Exception("Missing stream expire time")
-        }
-        if (format == null) {
-            throw Exception("Could not find format")
-        }
-        if (streamUrl == null) {
-            throw Exception("Could not find stream url")
-        }
-
-        Log.d(TAG, "[$videoId] stream url: $streamUrl")
+        val metadataResponse = mainPlayerResponse ?: selected.playerResponse
+        Log.i(TAG, "[$videoId] resolved ${selected.clientName} itag=${selected.format.itag}")
 
         PlaybackData(
-            audioConfig,
-            videoDetails,
-            playbackTracking,
-            format,
-            streamUrl,
-            streamExpiresInSeconds,
-            streamClient ?: MAIN_CLIENT.clientName,
-            streamHeaders,
+            audioConfig = metadataResponse.playerConfig?.audioConfig,
+            videoDetails = metadataResponse.videoDetails,
+            playbackTracking = metadataResponse.playbackTracking,
+            format = selected.format,
+            streamUrl = selected.url,
+            streamExpiresInSeconds = selected.expiresInSeconds,
+            streamClient = selected.clientName,
+            streamHeaders = selected.headers,
         )
     }
 
@@ -309,28 +396,29 @@ object YTPlayerUtils {
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
         attempts: Int = 3,
+        rejectedClient: String? = null,
     ): Result<PlaybackData> {
-        var result = playerResponseForPlayback(
-            videoId = videoId,
-            playlistId = playlistId,
-            audioQuality = audioQuality,
-            connectivityManager = connectivityManager,
-        )
-        for (attempt in 2..attempts) {
-            if (result.isSuccess) return result
-            Log.w(
-                TAG,
-                "[$videoId] stream resolution failed: ${result.exceptionOrNull()?.message}; retry $attempt/$attempts"
-            )
-            kotlinx.coroutines.delay(250L * (attempt - 1))
+        require(attempts > 0) { "attempts must be positive" }
+        val startIndex = STREAM_CLIENTS.indexOfFirst { it.clientName == rejectedClient } + 1
+        var result: Result<PlaybackData>? = null
+        for (attempt in 1..attempts) {
+            if (attempt > 1) {
+                kotlinx.coroutines.delay(250L * (attempt - 1))
+            }
             result = playerResponseForPlayback(
                 videoId = videoId,
                 playlistId = playlistId,
                 audioQuality = audioQuality,
                 connectivityManager = connectivityManager,
+                clientStartIndex = startIndex + attempt - 1,
+            )
+            if (result.isSuccess) return result
+            Log.w(
+                TAG,
+                "[$videoId] stream resolution failed: ${result.exceptionOrNull()?.message}; retry $attempt/$attempts"
             )
         }
-        return result
+        return checkNotNull(result)
     }
 
     /**
@@ -351,27 +439,28 @@ object YTPlayerUtils {
         return YouTube.player(videoId, playlistId, WEB_REMIX, signatureTimestamp, webPlayerPot)
     }
 
-    private fun findFormat(
+    private fun findFormats(
         playerResponse: PlayerResponse,
         audioQuality: AudioQuality,
         connectivityManager: ConnectivityManager,
-    ): PlayerResponse.StreamingData.Format? =
+    ): List<PlayerResponse.StreamingData.Format> =
         playerResponse.streamingData?.adaptiveFormats
             ?.filter { it.isAudio }
-            ?.maxByOrNull {
+            ?.sortedByDescending {
                 it.bitrate * when (audioQuality) {
                     AudioQuality.AUTO -> if (connectivityManager.isActiveNetworkMetered) -1 else 1
                     AudioQuality.HIGH -> 1
                     AudioQuality.LOW -> -1
                 } + (if (it.mimeType.startsWith("audio/webm")) 10240 else 0) // prefer opus stream
             }
+            .orEmpty()
 
     /**
      * Checks if the stream url returns a successful status.
      * If this returns true the url is likely to work.
      * If this returns false the url might cause an error during playback.
      */
-    private fun validateStatus(url: String, headers: Map<String, String> = emptyMap()): Boolean {
+    private fun validateStatus(url: String, headers: Map<String, String>): StreamValidationResult {
         try {
             // googlevideo often rejects HEAD with 403 even when the stream plays; validate with a
             // tiny ranged GET instead, which is how the player actually fetches the media.
@@ -379,18 +468,16 @@ object YTPlayerUtils {
                 .header("Range", "bytes=0-0")
                 .url(url)
             headers.forEach { (name, value) -> requestBuilder.header(name, value) }
-            val response = httpClient.newCall(requestBuilder.build()).execute()
-            val ok = response.isSuccessful
-            if (!ok) {
-                // logged at warn so release builds still show why a client was dropped
-                Log.w(TAG, "stream validation failed: HTTP ${response.code}")
+            httpClient.newCall(requestBuilder.build()).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Log.w(TAG, "stream validation failed: HTTP ${response.code}")
+                }
+                return StreamValidationResult(httpCode = response.code)
             }
-            response.close()
-            return ok
         } catch (e: Exception) {
-            reportException(e)
+            Log.w(TAG, "stream validation failed: ${e.javaClass.simpleName}")
+            return StreamValidationResult(errorType = e.javaClass.simpleName)
         }
-        return false
     }
 
     // Reports exceptions; returns null on failure.

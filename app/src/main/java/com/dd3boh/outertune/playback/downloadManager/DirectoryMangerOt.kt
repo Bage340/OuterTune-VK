@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
-import androidx.documentfile.provider.TreeDocumentFileOt
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.scanDfRecursive
 import com.dd3boh.outertune.utils.scanners.documentFileFromUri
@@ -16,14 +15,16 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
     var mainDir: DocumentFile? = null
     var allDirs: List<DocumentFile> = mutableListOf()
 
-    var availableFiles: Set<DocumentFile> = mutableSetOf()
+    private val fileIndexLock = Any()
+    private var availableFiles: Set<DocumentFile> = emptySet()
+    private var availableFilesById: Map<String, DocumentFile> = emptyMap()
 
     init {
         doInit(context, dir, extraDirs)
     }
 
     fun doInit(context: Context, dir: Uri, extraDirs: List<Uri>) {
-        Log.i(TAG, "Initializing download manager: $dir")
+        Log.i(TAG, "Initializing download manager (directory configured=${dir != Uri.EMPTY})")
         this.context = context
         this.dir = dir
         try {
@@ -45,6 +46,7 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
                 )
             }
             allDirs = newAllDirs.toList()
+            replaceFileIndex(emptyList())
             Log.i(TAG, "Download manager initialized successfully. ${allDirs.size}")
         } catch (e: Exception) {
             if (mainDir == null) {
@@ -57,6 +59,7 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
 
             mainDir = null
             allDirs = mutableListOf()
+            replaceFileIndex(emptyList())
 //            reportException(e)
 //            Toast.makeText(context, "Failed to initiate download manager: " + e.message, Toast.LENGTH_LONG).show()
             // TODO: snackbar for failed uri or not set up?
@@ -65,7 +68,14 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
 
     fun deleteFile(mediaId: String): Boolean {
         val file = isExists(mediaId)
-        return file?.delete() == true
+        val deleted = file?.delete() == true
+        if (deleted) {
+            synchronized(fileIndexLock) {
+                availableFiles = availableFiles - file
+                availableFilesById = availableFilesById - mediaId
+            }
+        }
+        return deleted
     }
 
     fun saveFile(mediaId: String, input: InputStream, displayName: String?): Uri? {
@@ -80,9 +90,14 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
         val newFile = directory.createFile("audio/mka", fileName)
 
         newFile?.uri?.let { uri ->
-            resolver.openOutputStream(uri)?.use { out ->
+            val output = resolver.openOutputStream(uri) ?: run {
+                newFile.delete()
+                return null
+            }
+            output.use { out ->
                 input.copyTo(out)
             }
+            addToFileIndex(mediaId, newFile)
             return uri
         }
 
@@ -90,7 +105,13 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
     }
 
     fun isExists(mediaId: String): DocumentFile? {
-        return availableFiles.find { (it as TreeDocumentFileOt).id == mediaId }
+        val file = synchronized(fileIndexLock) { availableFilesById[mediaId] } ?: return null
+        if (file.exists()) return file
+        synchronized(fileIndexLock) {
+            availableFiles = availableFiles - file
+            availableFilesById = availableFilesById - mediaId
+        }
+        return null
     }
 
     fun getFilePathIfExists(mediaId: String): Uri? {
@@ -107,24 +128,20 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
     fun getAvailableFiles() = getAvailableFiles(true)
 
     fun getAvailableFiles(useCache: Boolean = true): Map<String, Uri> {
-        val availableFiles = HashMap<String, Uri>()
-        val result = ArrayList<DocumentFile>()
         if (useCache) {
-            result.addAll(this.availableFiles.toList())
-        } else {
-            for (dir in allDirs) {
-                scanDfRecursive(dir, result, true)
+            return synchronized(fileIndexLock) {
+                availableFilesById.mapValues { it.value.uri }
             }
         }
 
-        for (file in result) {
-            val path = file.name ?: continue
-            availableFiles.put(path.substringAfterLast('[').substringBeforeLast(']'), file.uri)
+        val result = ArrayList<DocumentFile>()
+        for (dir in allDirs) {
+            scanDfRecursive(dir, result, true)
         }
-        if (!useCache) {
-            this.availableFiles = result.toSet()
+        replaceFileIndex(result)
+        return synchronized(fileIndexLock) {
+            availableFilesById.mapValues { it.value.uri }
         }
-        return availableFiles
     }
 
     fun getMainDlStorageUsage(): Long {
@@ -137,10 +154,7 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
 
     fun getTotalDlStorageUsage(): Long {
         if (allDirs.isEmpty()) return 0
-        val result = ArrayList<DocumentFile>()
-        availableFiles.sumOf { it.length() }
-
-        return availableFiles.sumOf { it.length() }
+        return synchronized(fileIndexLock) { availableFiles.sumOf { it.length() } }
     }
 
     fun getExtraDlStorageUsage(): Long {
@@ -153,4 +167,34 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
 
         return result.filter { it.name != null }.sumOf { it.length() }
     }
+
+    private fun addToFileIndex(mediaId: String, file: DocumentFile) {
+        synchronized(fileIndexLock) {
+            availableFiles = availableFiles + file
+            availableFilesById = availableFilesById + (mediaId to file)
+        }
+    }
+
+    private fun replaceFileIndex(files: Collection<DocumentFile>) {
+        val candidates = files.filter { it.isFile }.mapNotNull { file ->
+            mediaIdFromDownloadFileName(file.name)?.let { mediaId -> mediaId to file }
+        }
+        // Keep a playable copy when main and extra download directories contain the same ID.
+        val indexedFiles = candidates.distinctBy { it.first }.toMap()
+        synchronized(fileIndexLock) {
+            availableFiles = files.toSet()
+            availableFilesById = indexedFiles
+        }
+    }
+
+}
+
+internal fun mediaIdFromDownloadFileName(fileName: String?): String? {
+    val name = fileName ?: return null
+    if (!name.endsWith(".mka", ignoreCase = true)) return null
+    val stem = name.dropLast(4)
+    if (!stem.endsWith(']')) return null
+    val openingBracket = stem.lastIndexOf(" [")
+    if (openingBracket < 0 || openingBracket + 2 >= stem.lastIndex) return null
+    return stem.substring(openingBracket + 2, stem.lastIndex)
 }

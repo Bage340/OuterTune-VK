@@ -69,6 +69,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.concurrent.Executor
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -84,8 +85,8 @@ class DownloadUtil @Inject constructor(
 
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
     private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
-    private val songUrlCache = HashMap<String, Pair<String, Long>>()
-    private val songUrlHeaders = HashMap<String, Map<String, String>>()
+    private val songUrlCache = StreamUrlCache()
+    private val rejectedStreamClients = ConcurrentHashMap<String, String>()
     private val dataSourceFactory = ResolvingDataSource.Factory(
         CacheDataSource.Factory()
             .setCache(playerCache)
@@ -93,6 +94,16 @@ class DownloadUtil @Inject constructor(
                 OkHttpDataSource.Factory(
                     OkHttpClient.Builder()
                         .proxy(YouTube.proxy)
+                        .addNetworkInterceptor { chain ->
+                            val response = chain.proceed(chain.request())
+                            if (response.code in RETRYABLE_STREAM_RESPONSE_CODES) {
+                                songUrlCache.invalidateUrl(chain.request().url.toString())?.let { rejected ->
+                                    rejectedStreamClients[rejected.mediaId] = rejected.clientName
+                                    Log.w(TAG, "Invalidated rejected ${rejected.clientName} download stream: HTTP ${response.code}")
+                                }
+                            }
+                            response
+                        }
                         .build()
                 )
             )
@@ -103,9 +114,8 @@ class DownloadUtil @Inject constructor(
             return@Factory dataSpec
         }
 
-        songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {
-            return@Factory dataSpec.withUri(it.first.toUri())
-                .withRequestHeaders(dataSpec.httpRequestHeaders + songUrlHeaders[mediaId].orEmpty())
+        songUrlCache[mediaId]?.let { cachedStream ->
+            return@Factory dataSpec.withResolvedStream(cachedStream)
         }
 
         val playbackData = runBlocking(Dispatchers.IO) {
@@ -113,6 +123,7 @@ class DownloadUtil @Inject constructor(
                 mediaId,
                 audioQuality = audioQuality,
                 connectivityManager = connectivityManager,
+                rejectedClient = rejectedStreamClients.remove(mediaId),
             )
         }.getOrThrow()
         val format = playbackData.format
@@ -141,10 +152,14 @@ class DownloadUtil @Inject constructor(
             "${playbackData.streamUrl}&range=0-$contentLength"
         } ?: playbackData.streamUrl
 
-        songUrlCache[mediaId] = streamUrl to System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)
-        songUrlHeaders[mediaId] = playbackData.streamHeaders
-        dataSpec.withUri(streamUrl.toUri())
-            .withRequestHeaders(dataSpec.httpRequestHeaders + playbackData.streamHeaders)
+        val stream = songUrlCache.put(
+            mediaId = mediaId,
+            url = streamUrl,
+            requestHeaders = playbackData.streamHeaders,
+            clientName = playbackData.streamClient,
+            expiresInSeconds = playbackData.streamExpiresInSeconds,
+        )
+        dataSpec.withResolvedStream(stream)
     }
     val downloadNotificationHelper = DownloadNotificationHelper(context, ExoDownloadService.CHANNEL_ID)
     val downloadManager: DownloadManager =
@@ -170,6 +185,13 @@ class DownloadUtil @Inject constructor(
     var isProcessingDownloads = MutableStateFlow(false)
 
     fun getDownload(songId: String): Flow<LocalDateTime?> = downloads.map { it[songId] }
+
+    fun isDownloadCompleted(songId: String): Boolean = try {
+        downloadManager.downloadIndex.getDownload(songId)?.state == Download.STATE_COMPLETED
+    } catch (exception: IOException) {
+        Log.w(TAG, "Unable to read download state: ${exception.javaClass.simpleName}")
+        false
+    }
 
     fun download(songs: List<MediaMetadata>) {
         if (songs.any { downloads.value[it.id] == null }) notifyIfWaitingForWifi()
@@ -212,8 +234,7 @@ class DownloadUtil @Inject constructor(
     private fun downloadSong(id: String, title: String) {
         if (downloads.value[id] != null) return
         // A manual retry must resolve a fresh stream instead of reusing the URL that just failed.
-        songUrlCache.remove(id)
-        songUrlHeaders.remove(id)
+        songUrlCache.invalidate(id)
         val downloadRequest = DownloadRequest.Builder(id, id.toUri())
             .setCustomCacheKey(id)
             .setData(title.toByteArray())
@@ -463,6 +484,7 @@ class DownloadUtil @Inject constructor(
     }
 
     companion object {
+        private val RETRYABLE_STREAM_RESPONSE_CODES = setOf(403, 404, 410, 416)
         val STATE_DOWNLOADING: LocalDateTime = Instant.ofEpochMilli(1).atZone(ZoneOffset.UTC).toLocalDateTime()
         val STATE_INVALID: LocalDateTime = Instant.ofEpochMilli(0).atZone(ZoneOffset.UTC).toLocalDateTime()
 
