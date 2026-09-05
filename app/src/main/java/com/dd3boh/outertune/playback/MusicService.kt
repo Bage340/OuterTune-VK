@@ -740,16 +740,8 @@ class MusicService : MediaLibraryService(),
             val dbSong = runBlocking { database.song(mediaId).first()?.toMediaMetadata() }
             val song = if (dbSong?.localPath != null) dbSong else queueSong ?: dbSong
 
-            val localFile = song?.localPath?.let(::File)
-            if (downloadedUri == null && song?.isLocal == true && song.localPath != null) {
-                if (localFile?.exists() != true) {
-                    throw PlaybackException(
-                        "Local file not found",
-                        null,
-                        PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
-                    )
-                }
-            }
+            val localFile = findLocalPlaybackFile(dbSong, queueSong)
+            val isLocal = isLocalPlayback(mediaId, dbSong, queueSong)
 
             val isDownload = downloadUtil.isDownloadCompleted(mediaId) &&
                 downloadCache.isCached(
@@ -764,6 +756,7 @@ class MusicService : MediaLibraryService(),
                     databaseFileFound = localFile?.exists() == true,
                     downloadCacheHit = isDownload,
                     playerCacheHit = isCache,
+                    isLocal = isLocal,
                 )
             ) {
                 PlaybackSourceKind.CUSTOM_DOWNLOAD -> {
@@ -773,8 +766,20 @@ class MusicService : MediaLibraryService(),
 
                 PlaybackSourceKind.DATABASE_FILE -> {
                     if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: DB local file")
-                    return@Factory dataSpec.withUri(checkNotNull(localFile).toUri())
+                    val file = checkNotNull(localFile)
+                    if (dbSong?.isLocal == true && dbSong.localPath != file.absolutePath) {
+                        database.query { restoreLocalSongPath(mediaId, file.absolutePath, dbSong.localPath) }
+                    }
+                    return@Factory dataSpec.withUri(file.toUri())
                 }
+
+                PlaybackSourceKind.MISSING_LOCAL -> throw PlaybackException(
+                    "Local audio file is missing or inaccessible. Check media permission and rescan the music folder.\n" +
+                        "mediaId=$mediaId, dbLocalPath=${dbSong?.localPath}, " +
+                        "queueLocalPath=${queueSong?.localPath}, originalPath=${dbSong?.thumbnailUrl}",
+                    null,
+                    PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
+                )
 
                 PlaybackSourceKind.DOWNLOAD_CACHE -> {
                     if (SERVICE_DEBUG) Log.d(TAG, "PLAYING: completed download cache")

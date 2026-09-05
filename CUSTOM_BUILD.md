@@ -33,6 +33,12 @@ version, alignment, APK SHA-256, and this certificate SHA-256 before publishing:
 
 ## v91 release notes
 
+- Repair local-library playback after a scan cleared `localPath`: check both DB/queue paths,
+  then the exact audio path retained as song artwork by the local scanners. Persist a readable
+  recovered path without changing IDs, likes, playlist membership, or a newer scanner update.
+- Preserve the last known path when a scan disables a local song. Generated local IDs
+  (`LS` plus eight letters) never enter YouTube resolution, even with missing queue metadata.
+- Report missing/inaccessible local files as a local storage error instead of “video unavailable”.
 - Prefer physical downloads and fresh database paths when playlist queue metadata is stale.
 - Keep the download file index updated after save/delete/rescan, using exact media IDs.
 - Require completed download state before treating internal download cache as offline audio.
@@ -48,6 +54,13 @@ Test the same downloaded song from an online playlist, library, and queue with
 airplane mode enabled. Exercise shuffle, next/previous, repeat, seeking, and app
 restart. Then test remote playback, a complete playlist download, an individual
 download, and retry of a failed download. Existing downloads and user data must remain.
+
+For the local-library repair, first retry the reported “Lost Frequency” entry without
+rescanning, including airplane mode. If its original audio path is still readable, it
+should recover automatically. Also check next/previous and playback after a restart.
+An actually moved/deleted file or revoked media permission cannot be repaired from an ID
+alone; the local error includes the recorded paths for diagnosis. No title-based file search
+is used, and no permission is requested automatically during playback.
 
 If a Source error persists, collect its extended diagnostics. Equal IDs with a
 missing local path indicate a storage/index problem; differing IDs require further

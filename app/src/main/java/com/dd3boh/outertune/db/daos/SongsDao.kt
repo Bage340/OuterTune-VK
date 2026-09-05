@@ -404,11 +404,15 @@ interface SongsDao {
     @Query("UPDATE song SET liked = 0, likedDate = null WHERE id = :songId")
     fun removeLike(songId: String)
 
-    @Query("UPDATE song SET inLibrary = null WHERE localPath = null")
+    @Query("UPDATE song SET inLibrary = null WHERE isLocal = 1 AND localPath IS NULL")
     fun disableInvalidLocalSongs()
 
-    @Query("UPDATE song SET inLibrary = null, localPath = null WHERE id = :songId")
+    // Keep the last known path so queued/playlist songs can play after storage is available again.
+    @Query("UPDATE song SET inLibrary = null WHERE id = :songId AND isLocal = 1")
     fun disableLocalSong(songId: String)
+
+    @Query("UPDATE song SET localPath = :localPath WHERE id = :songId AND isLocal = 1 AND localPath IS :previousPath")
+    fun restoreLocalSongPath(songId: String, localPath: String, previousPath: String?)
 
     fun updateLocalSongPath(songId: String, inLibrary: LocalDateTime?, localPath: String?) {
         if (localPath != null) {
